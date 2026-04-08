@@ -8,6 +8,8 @@ const { GoogleGenAI } = require('@google/genai');
 const sqlite3 = require('sqlite3').verbose();
 const ExcelJS = require('exceljs');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel } = require('docx');
+const { PDFDocument } = require('pdf-lib');
+const archiver = require('archiver');
 
 // ─── Config ──────────────────────────────────────────────
 const app = express();
@@ -295,6 +297,65 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
   } catch (err) {
     console.error('Chat error:', err.message);
     res.status(500).json({ error: 'AI processing failed', details: err.message });
+  }
+});
+
+// ─── PDF TOOL: Merge ─────────────────────────────────────
+app.post('/api/tools/merge', upload.array('files'), async (req, res) => {
+  try {
+    if (!req.files || req.files.length < 2) {
+      return res.status(400).json({ error: 'Please upload at least 2 PDF files to merge.' });
+    }
+
+    const mergedPdf = await PDFDocument.create();
+    for (const file of req.files) {
+      const pdfBytes = fs.readFileSync(file.path);
+      const pdf = await PDFDocument.load(pdfBytes);
+      const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+      copiedPages.forEach((page) => mergedPdf.addPage(page));
+      // Cleanup temp files
+      fs.unlinkSync(file.path);
+    }
+
+    const mergedPdfBytes = await mergedPdf.save();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Merged.pdf');
+    res.send(Buffer.from(mergedPdfBytes));
+  } catch (err) {
+    res.status(500).json({ error: 'Merge failed', details: err.message });
+  }
+});
+
+// ─── PDF TOOL: Split ─────────────────────────────────────
+app.post('/api/tools/split', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Please upload a PDF to split.' });
+
+    const pdfBytes = fs.readFileSync(req.file.path);
+    const pdf = await PDFDocument.load(pdfBytes);
+    const pageCount = pdf.getPageCount();
+
+    if (pageCount < 2) {
+      return res.status(400).json({ error: 'This PDF only has 1 page and cannot be split.' });
+    }
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Split_Pages.zip');
+    archive.pipe(res);
+
+    for (let i = 0; i < pageCount; i++) {
+      const subPdf = await PDFDocument.create();
+      const [copiedPage] = await subPdf.copyPages(pdf, [i]);
+      subPdf.addPage(copiedPage);
+      const subPdfBytes = await subPdf.save();
+      archive.append(Buffer.from(subPdfBytes), { name: `page_${i + 1}.pdf` });
+    }
+
+    await archive.finalize();
+    fs.unlinkSync(req.file.path);
+  } catch (err) {
+    res.status(500).json({ error: 'Split failed', details: err.message });
   }
 });
 

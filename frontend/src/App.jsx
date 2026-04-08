@@ -36,6 +36,118 @@ const API = import.meta.env.PROD || !window.location.origin.includes('localhost'
   ? '/api' 
   : 'http://localhost:5000/api';
 
+// ─── Tool Modal (Merge, Split, etc.) ───────────────────────
+function ToolModal({ tool, onClose }) {
+  const [files, setFiles] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const title = tool.label;
+
+  const handleRun = async () => {
+    if (files.length === 0) return;
+    setIsProcessing(true);
+    try {
+      const formData = new FormData();
+      if (tool.id === 'merge') {
+        files.forEach(f => formData.append('files', f));
+      } else {
+        formData.append('file', files[0]);
+      }
+
+      const response = await axios.post(`${API}/tools/${tool.id}`, formData, {
+        responseType: 'blob',
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', response.headers['content-disposition']?.split('filename=')[1]?.replace(/"/g, '') || `OneStopDoc_${tool.id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      onClose();
+    } catch (err) {
+      alert(`Efficiency error: ${tool.label} failed.`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-surface border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden"
+      >
+        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+              <tool.icon size={24} />
+            </div>
+            <h2 className="text-xl font-bold">{title}</h2>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+            <X size={20} className="text-muted" />
+          </button>
+        </div>
+
+        <div className="p-8">
+          <div
+            onClick={() => document.getElementById('tool-file-input').click()}
+            className="border-2 border-dashed border-white/10 hover:border-primary/40 rounded-3xl p-12 cursor-pointer transition-all text-center group"
+          >
+            <input
+              id="tool-file-input"
+              type="file"
+              multiple={tool.id === 'merge'}
+              accept=".pdf"
+              className="hidden"
+              onChange={(e) => setFiles(Array.from(e.target.files))}
+            />
+            <div className="w-16 h-16 bg-surface/50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+              <Paperclip size={32} className="text-muted group-hover:text-primary" />
+            </div>
+            <p className="font-medium mb-1">Select your PDF files</p>
+            <p className="text-xs text-muted">Drag & drop or click to browser</p>
+          </div>
+
+          {files.length > 0 && (
+            <div className="mt-6 space-y-2 overflow-y-auto max-h-[200px] custom-scrollbar">
+              <p className="text-[10px] font-bold text-primary uppercase tracking-widest pl-1">Selected Files</p>
+              {files.map((f, i) => (
+                <div key={i} className="flex items-center justify-between bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <FileText size={16} className="text-primary shrink-0" />
+                    <span className="text-sm truncate">{f.name}</span>
+                  </div>
+                  <button onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))} className="p-1 hover:text-red-400">
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 bg-black/20 flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-white/5 hover:bg-white/10 transition-all">
+            Cancel
+          </button>
+          <button
+            onClick={handleRun}
+            disabled={isProcessing || files.length === 0}
+            className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-primary hover:bg-primary/90 text-white transition-all shadow-lg shadow-primary/20 disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+            {isProcessing ? 'Processing...' : `Run ${tool.label}`}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 // ─── Markdown-lite renderer ──────────────────────────────
 function renderContent(text) {
   if (!text) return null;
@@ -215,6 +327,7 @@ export default function App() {
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeTool, setActiveTool] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -386,12 +499,12 @@ export default function App() {
                 <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">File Manipulation</p>
                 <div className="space-y-1">
                   {[
-                    { icon: Combine, label: 'Merge PDF' },
-                    { icon: Scissors, label: 'Split PDF' },
-                    { icon: Minimize2, label: 'Compress PDF' },
-                    { icon: Eraser, label: 'Repair PDF' },
+                    { id: 'merge', icon: Combine, label: 'Merge PDF' },
+                    { id: 'split', icon: Scissors, label: 'Split PDF' },
+                    { id: 'compress', icon: Minimize2, label: 'Compress PDF' },
+                    { id: 'repair', icon: Eraser, label: 'Repair PDF' },
                   ].map(tool => (
-                    <button key={tool.label} className="tool-btn">
+                    <button key={tool.label} className="tool-btn" onClick={() => setActiveTool(tool)}>
                       <tool.icon size={14} /> {tool.label}
                     </button>
                   ))}
@@ -598,6 +711,8 @@ export default function App() {
           </div>
         </div>
       </main>
+
+      {activeTool && <ToolModal tool={activeTool} onClose={() => setActiveTool(null)} />}
     </div>
   );
 }
