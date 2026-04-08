@@ -576,10 +576,11 @@ export default function App() {
                 <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">Conversion</p>
                 <div className="space-y-1">
                   {[
-                    { icon: ArrowRightLeft, label: 'PDF to Word/Excel' },
-                    { icon: ArrowRightLeft, label: 'Word/Excel to PDF' },
+                    { id: 'pdf-to-word', icon: FileType, label: 'PDF to Word' },
+                    { id: 'pdf-to-excel', icon: FileSpreadsheet, label: 'PDF to Excel' },
+                    { id: 'excel-to-pdf', icon: ArrowRightLeft, label: 'Excel to PDF' },
                   ].map(tool => (
-                    <button key={tool.label} className="tool-btn">
+                    <button key={tool.id} className="tool-btn" onClick={() => setActiveTool(tool)}>
                       <tool.icon size={14} /> {tool.label}
                     </button>
                   ))}

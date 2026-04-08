@@ -416,6 +416,126 @@ app.post('/api/tools/compress', upload.single('file'), async (req, res) => {
   }
 });
 
+// ─── CONVERSION: PDF to Excel ────────────────────────────
+app.post('/api/tools/pdf-to-excel', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Please upload a PDF.' });
+
+    const pdfData = {
+      inlineData: {
+        data: fs.readFileSync(req.file.path).toString('base64'),
+        mimetype: 'application/pdf',
+      },
+    };
+
+    const prompt = "Extract all tabular data from this PDF as a JSON array of objects. Be precise.";
+    const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" }).generateContent([prompt, pdfData]);
+    const response = await result.response;
+    const text = response.text();
+    const jsonStr = text.match(/```json\n([\s\S]*?)\n```/)?.[1] || text;
+    const data = JSON.parse(jsonStr);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('OneStopDoc_Export');
+    
+    if (data.length > 0) {
+      const headers = Object.keys(data[0]);
+      worksheet.addRow(headers);
+      data.forEach(row => worksheet.addRow(headers.map(h => row[h])));
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Converted.xlsx');
+    res.send(buffer);
+    fs.unlinkSync(req.file.path);
+  } catch (err) {
+    res.status(500).json({ error: 'PDF to Excel conversion failed', details: err.message });
+  }
+});
+
+// ─── CONVERSION: PDF to Word ─────────────────────────────
+app.post('/api/tools/pdf-to-word', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Please upload a PDF.' });
+
+    const pdfData = {
+      inlineData: {
+        data: fs.readFileSync(req.file.path).toString('base64'),
+        mimetype: 'application/pdf',
+      },
+    };
+
+    const prompt = "Extract the main text content of this PDF. Maintain the general hierarchy and headings.";
+    const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" }).generateContent([prompt, pdfData]);
+    const response = await result.response;
+    const content = response.text();
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({
+            text: "OneStopDoc Intelligence Report",
+            heading: HeadingLevel.HEADING_1,
+          }),
+          ...content.split('\n').filter(l => l.trim() !== '').map(line => 
+            new Paragraph({
+              children: [new TextRun(line.replace(/#|*/g, ''))],
+              spacing: { after: 200 },
+            })
+          ),
+        ],
+      }],
+    });
+
+    const buffer = await Packer.toBuffer(doc);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Converted.docx');
+    res.send(buffer);
+    fs.unlinkSync(req.file.path);
+  } catch (err) {
+    res.status(500).json({ error: 'PDF to Word conversion failed', details: err.message });
+  }
+});
+
+// ─── CONVERSION: Excel to PDF ────────────────────────────
+app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Please upload an Excel file.' });
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(req.file.path);
+    const worksheet = workbook.worksheets[0];
+    
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([600, 800]);
+    const { width, height } = page.getSize();
+    
+    let y = height - 50;
+    page.drawText('Excel to PDF Conversion', { x: 50, y, size: 18, color: { type: 'RGB', red: 0, green: 0, blue: 0 } });
+    y -= 40;
+
+    worksheet.eachRow((row, rowNumber) => {
+      if (y < 50) return; // Simple page limit for now
+      let x = 50;
+      row.eachCell((cell) => {
+        page.drawText(String(cell.value || ''), { x, y, size: 8 });
+        x += 100;
+      });
+      y -= 15;
+    });
+
+    const pdfBytes = await pdfDoc.save();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Excel_to_PDF.pdf');
+    res.send(Buffer.from(pdfBytes));
+    fs.unlinkSync(req.file.path);
+  } catch (err) {
+    res.status(500).json({ error: 'Excel to PDF conversion failed', details: err.message });
+  }
+});
+
 // ─── Export conversation data as CSV ─────────────────────
 app.get('/api/conversations/:id/export', async (req, res) => {
   const { format } = req.query;
