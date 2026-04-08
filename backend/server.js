@@ -347,7 +347,7 @@ const FRONTEND_DIR = path.join(__dirname, '../frontend/dist');
 if (fs.existsSync(FRONTEND_DIR)) {
   console.log(`📦 Serving static frontend from: ${FRONTEND_DIR}`);
   app.use(express.static(FRONTEND_DIR));
-  app.get('*', (req, res) => {
+  app.get(/.*/, (req, res) => {
     res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
   });
 }
