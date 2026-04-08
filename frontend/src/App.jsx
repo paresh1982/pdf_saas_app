@@ -38,6 +38,7 @@ const API = '/api';
 function ToolModal({ tool, onClose }) {
   const [files, setFiles] = useState([]);
   const [pageRange, setPageRange] = useState('');
+  const [instructions, setInstructions] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const title = tool.label;
 
@@ -52,6 +53,9 @@ function ToolModal({ tool, onClose }) {
         formData.append('file', files[0]);
         if (tool.id === 'split' && pageRange) {
           formData.append('ranges', pageRange);
+        }
+        if (tool.id === 'edit' && instructions) {
+          formData.append('instructions', instructions);
         }
       }
 
@@ -139,6 +143,18 @@ function ToolModal({ tool, onClose }) {
                 className="w-full bg-surface/50 border border-white/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted/30"
               />
               <p className="text-[10px] text-muted/40 px-2 italic">Leave blank to split into individual pages.</p>
+            </div>
+          )}
+
+          {files.length > 0 && tool.id === 'edit' && (
+            <div className="mt-8 space-y-3">
+              <label className="text-[10px] font-bold text-primary uppercase tracking-widest pl-1">Edit Instructions</label>
+              <textarea 
+                placeholder="e.g. Change the invoice date to 2024-12-01 and update the vendor name to ABC Corp"
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                className="w-full bg-surface/50 border border-white/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted/30 min-h-[100px] resize-none"
+              />
             </div>
           )}
 
@@ -546,10 +562,10 @@ export default function App() {
                 <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">Core Editing</p>
                 <div className="space-y-1">
                   {[
-                    { icon: Type, label: 'Edit Text/Images' },
-                    { icon: FileText, label: 'Add Annotations' },
+                    { id: 'edit', icon: Type, label: 'Edit Content' },
+                    { id: 'repair', icon: Eraser, label: 'Repair PDF' },
                   ].map(tool => (
-                    <button key={tool.label} className="tool-btn">
+                    <button key={tool.id} className="tool-btn" onClick={() => setActiveTool(tool)}>
                       <tool.icon size={14} /> {tool.label}
                     </button>
                   ))}

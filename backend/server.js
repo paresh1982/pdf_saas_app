@@ -536,6 +536,72 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
   }
 });
 
+// ─── PDF TOOL: Repair ───────────────────────────────────
+app.post('/api/tools/repair', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Please upload a PDF to repair.' });
+
+    const pdfBytes = fs.readFileSync(req.file.path);
+    // Lenient loading to handle corruption
+    const pdf = await PDFDocument.load(pdfBytes, { 
+      ignoreEncryption: true,
+      throwOnInvalidObject: false 
+    });
+    
+    // Saving with full object streams often fixes XREF table damage
+    const repairedBytes = await pdf.save({ useObjectStreams: true });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Repaired.pdf');
+    res.send(Buffer.from(repairedBytes));
+    
+    fs.unlinkSync(req.file.path);
+  } catch (err) {
+    res.status(500).json({ error: 'Repair failed', details: err.message });
+  }
+});
+
+// ─── PDF TOOL: A.I. Editor ──────────────────────────────
+app.post('/api/tools/edit', upload.single('file'), async (req, res) => {
+  try {
+    const { instructions } = req.body;
+    if (!req.file || !instructions) return res.status(400).json({ error: 'Missing file or instructions.' });
+
+    const pdfData = {
+      inlineData: {
+        data: fs.readFileSync(req.file.path).toString('base64'),
+        mimetype: 'application/pdf',
+      },
+    };
+
+    const prompt = `You are a PDF Content Editor. 
+    TASK: ${instructions}
+    
+    Analyze the document and provide the FULL TEXT of the page, but with the requested changes applied perfectly. 
+    Maintain the structure exactly.`;
+
+    const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" }).generateContent([prompt, pdfData]);
+    const response = await result.response;
+    const editedText = response.text();
+
+    // For now, we return a new PDF with the AI-edited content
+    // In a future phase, we would use pdf-lib to overwrite specific offsets
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([600, 800]);
+    page.drawText('OneStopDoc A.I. Edited Document', { x: 50, y: 750, size: 10 });
+    page.drawText(editedText.substring(0, 2000), { x: 50, y: 700, size: 8, lineHeight: 12 });
+
+    const pdfBytes = await pdfDoc.save();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Edited.pdf');
+    res.send(Buffer.from(pdfBytes));
+    
+    fs.unlinkSync(req.file.path);
+  } catch (err) {
+    res.status(500).json({ error: 'Editing failed', details: err.message });
+  }
+});
+
 // ─── Export conversation data as CSV ─────────────────────
 app.get('/api/conversations/:id/export', async (req, res) => {
   const { format } = req.query;
