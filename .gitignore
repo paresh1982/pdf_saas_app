@@ -1,6 +1,6 @@
 node_modules
 .env
 backend/uploads/
-backend/nexgen.db
+backend/*.db
 frontend/dist
 .DS_Store

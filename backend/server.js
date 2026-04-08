@@ -19,7 +19,7 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // ─── SQLite Setup ────────────────────────────────────────
-const db = new sqlite3.Database(path.join(__dirname, 'nexgen.db'));
+const db = new sqlite3.Database(path.join(__dirname, 'onestopdoc.db'));
 
 db.serialize(() => {
   // Conversations table
@@ -354,8 +354,8 @@ if (fs.existsSync(FRONTEND_DIR)) {
 
 // ─── Start Server ────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 NexGen AI v3.0 running on http://localhost:${PORT}`);
+  console.log(`🚀 OneStopDoc v3.0 running on http://localhost:${PORT}`);
   console.log(`🧠 Engine: Gemini 2.5 Pro | Mode: Universal Chat`);
-  console.log(`📊 Database: nexgen.db`);
+  console.log(`📊 Database: onestopdoc.db`);
   console.log(`📁 Uploads: ${UPLOAD_DIR}`);
 });

@@ -317,7 +317,7 @@ export default function App() {
                 <div className="w-8 h-8 bg-gradient-to-br from-primary to-sky-500 rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
                   <Zap size={18} className="text-white fill-white" />
                 </div>
-                <h1 className="text-lg font-bold tracking-tight">NexGen AI</h1>
+                <h1 className="text-lg font-bold tracking-tight">OneStopDoc</h1>
               </div>
             </div>
 
@@ -502,7 +502,7 @@ export default function App() {
             </div>
 
             <p className="text-[10px] text-muted/60 text-center mt-3">
-              NexGen AI can make mistakes. Verify important data.
+              OneStopDoc can make mistakes. Verify important data.
             </p>
           </div>
         </div>
