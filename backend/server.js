@@ -310,7 +310,7 @@ app.post('/api/tools/merge', upload.array('files'), async (req, res) => {
     const mergedPdf = await PDFDocument.create();
     for (const file of req.files) {
       const pdfBytes = fs.readFileSync(file.path);
-      const pdf = await PDFDocument.load(pdfBytes);
+      const pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
       const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
       copiedPages.forEach((page) => mergedPdf.addPage(page));
       // Cleanup temp files
@@ -332,7 +332,7 @@ app.post('/api/tools/split', upload.single('file'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Please upload a PDF to split.' });
 
     const pdfBytes = fs.readFileSync(req.file.path);
-    const pdf = await PDFDocument.load(pdfBytes);
+    const pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
     const pageCount = pdf.getPageCount();
 
     if (pageCount < 2) {

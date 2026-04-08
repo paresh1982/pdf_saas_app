@@ -67,7 +67,15 @@ function ToolModal({ tool, onClose }) {
       link.remove();
       onClose();
     } catch (err) {
-      alert(`Efficiency error: ${tool.label} failed.`);
+      let errorMsg = `Efficiency error: ${tool.label} failed.`;
+      if (err.response?.data instanceof Blob) {
+        const text = await err.response.data.text();
+        try {
+          const json = JSON.parse(text);
+          errorMsg = json.details || json.error || errorMsg;
+        } catch (e) {}
+      }
+      alert(errorMsg);
     } finally {
       setIsProcessing(false);
     }
