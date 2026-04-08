@@ -30,3 +30,11 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+@layer components {
+  .tool-btn {
+    @apply w-full flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-medium text-muted hover:bg-surface hover:text-white transition-all text-left;
+  }
+  .view-btn {
+    @apply text-[10px] text-muted hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-white/5 hover:bg-white/5 transition-all font-medium;
+  }
+}

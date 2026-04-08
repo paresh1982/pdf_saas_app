@@ -6,6 +6,8 @@ const path = require('path');
 const fs = require('fs');
 const { GoogleGenAI } = require('@google/genai');
 const sqlite3 = require('sqlite3').verbose();
+const ExcelJS = require('exceljs');
+const { Document, Packer, Paragraph, TextRun, HeadingLevel } = require('docx');
 
 // ─── Config ──────────────────────────────────────────────
 const app = express();
@@ -297,14 +299,15 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
 });
 
 // ─── Export conversation data as CSV ─────────────────────
-app.get('/api/conversations/:id/export', (req, res) => {
+app.get('/api/conversations/:id/export', async (req, res) => {
+  const { format } = req.query;
+  
   db.all(
     'SELECT role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at ASC',
     [req.params.id],
-    (err, rows) => {
+    async (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
 
-      // Find JSON blocks in AI responses and flatten them
       const jsonBlocks = [];
       for (const row of rows) {
         if (row.role === 'model') {
@@ -316,12 +319,69 @@ app.get('/api/conversations/:id/export', (req, res) => {
                 const parsed = JSON.parse(clean);
                 if (Array.isArray(parsed)) jsonBlocks.push(...parsed);
                 else jsonBlocks.push(parsed);
-              } catch (e) { /* skip unparseable */ }
+              } catch (e) { }
             }
           }
         }
       }
 
+      // ─── Export: Excel (.xlsx) ───
+      if (format === 'xlsx' && jsonBlocks.length > 0) {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('OneStopDoc Extraction');
+        
+        const headers = Object.keys(jsonBlocks[0]);
+        sheet.columns = headers.map(h => ({ header: h.toUpperCase(), key: h }));
+        
+        // Style headers
+        sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8B5CF6' } }; // Brand Primary
+        
+        sheet.addRows(jsonBlocks);
+        
+        // Auto-width adjustment
+        sheet.columns.forEach(column => {
+          let maxLen = column.header.length;
+          column.eachCell({ includeEmpty: true }, (cell) => {
+            const len = cell.value ? cell.value.toString().length : 0;
+            if (len > maxLen) maxLen = len;
+          });
+          column.width = Math.min(maxLen + 2, 50);
+        });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=OneStopDoc_Export_${Date.now()}.xlsx`);
+        return workbook.xlsx.write(res).then(() => res.end());
+      }
+
+      // ─── Export: Word (.docx) ───
+      if (format === 'docx') {
+        const doc = new Document({
+          sections: [{
+            properties: {},
+            children: [
+              new Paragraph({ text: "OneStopDoc Intelligence Report", heading: HeadingLevel.TITLE }),
+              new Paragraph({ text: `Generated: ${new Date().toLocaleString()}`, spacing: { after: 400 } }),
+              ...rows.map(msg => [
+                new Paragraph({
+                  children: [
+                    new TextRun({ text: msg.role === 'user' ? "YOU: " : "AI: ", bold: true, color: msg.role === 'user' ? "8B5CF6" : "0EA5E9" }),
+                    new TextRun({ text: msg.content.replace(/```json[\s\S]*?```/g, '[Structured Data Table Attached]') })
+                  ],
+                  spacing: { before: 200 }
+                })
+              ]).flat()
+            ]
+          }]
+        });
+
+        const buffer = await Packer.toBuffer(doc);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `attachment; filename=OneStopDoc_Report_${Date.now()}.docx`);
+        return res.send(buffer);
+      }
+
+      // Default: Metadata JSON
       res.json({ messages: rows, structured_data: jsonBlocks });
     }
   );

@@ -16,6 +16,18 @@ import {
   Bot,
   User,
   Sparkles,
+  FileSpreadsheet,
+  FileType,
+  Combine,
+  Scissors,
+  RotateCw,
+  Minimize2,
+  Eraser,
+  Type,
+  ArrowRightLeft,
+  Layout,
+  Settings,
+  HelpCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -109,10 +121,16 @@ function DynamicTable({ data, raw }) {
           <Sparkles size={12} /> Structured Data • {data.length} rows
         </span>
         <div className="flex gap-2">
-          <button onClick={copyJSON} className="text-[10px] text-muted hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-white/5 transition-all">
+          <button onClick={copyJSON} className="view-btn">
             {copied ? <Check size={10} /> : <Copy size={10} />} {copied ? 'Copied' : 'JSON'}
           </button>
-          <button onClick={downloadCSV} className="text-[10px] text-muted hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-white/5 transition-all">
+          <button onClick={() => window.open(`${API}/conversations/${activeConvId}/export?format=xlsx`, '_blank')} className="view-btn text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10">
+            <FileSpreadsheet size={10} /> Excel (.xlsx)
+          </button>
+          <button onClick={() => window.open(`${API}/conversations/${activeConvId}/export?format=docx`, '_blank')} className="view-btn text-blue-400 border-blue-500/20 hover:bg-blue-500/10">
+            <FileType size={10} /> Word (.docx)
+          </button>
+          <button onClick={downloadCSV} className="view-btn">
             <Download size={10} /> CSV
           </button>
         </div>
@@ -332,27 +350,98 @@ export default function App() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-1">
-              {conversations.map(conv => (
-                <button
-                  key={conv.id}
-                  onClick={() => setActiveConvId(conv.id)}
-                  className={`w-full text-left px-4 py-3 rounded-xl flex items-center justify-between group transition-all ${
-                    activeConvId === conv.id ? 'bg-primary/15 text-white border border-primary/20' : 'text-muted hover:bg-surface hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <MessageSquarePlus size={14} className="shrink-0" />
-                    <span className="text-xs font-medium truncate">{conv.title}</span>
-                  </div>
-                  <button
-                    onClick={(e) => deleteConv(conv.id, e)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all"
-                  >
-                    <Trash2 size={12} className="text-red-400" />
-                  </button>
-                </button>
-              ))}
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-6 py-2">
+              {/* --- Intelligence --- */}
+              <div>
+                <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">Intelligence</p>
+                <div className="space-y-1">
+                  {conversations.map(conv => (
+                    <button
+                      key={conv.id}
+                      onClick={() => setActiveConvId(conv.id)}
+                      className={`w-full text-left px-4 py-2.5 rounded-xl flex items-center justify-between group transition-all ${
+                        activeConvId === conv.id ? 'bg-primary/15 text-white border border-primary/20' : 'text-muted hover:bg-surface hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <MessageSquarePlus size={14} className="shrink-0" />
+                        <span className="text-xs font-medium truncate">{conv.title}</span>
+                      </div>
+                      <button
+                        onClick={(e) => deleteConv(conv.id, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all"
+                      >
+                        <Trash2 size={12} className="text-red-400" />
+                      </button>
+                    </button>
+                  ))}
+                  {conversations.length === 0 && (
+                    <p className="px-4 py-2 text-[10px] text-muted/30 italic">No recent chats</p>
+                  )}
+                </div>
+              </div>
+
+              {/* --- File Manipulation --- */}
+              <div>
+                <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">File Manipulation</p>
+                <div className="space-y-1">
+                  {[
+                    { icon: Combine, label: 'Merge PDF' },
+                    { icon: Scissors, label: 'Split PDF' },
+                    { icon: Minimize2, label: 'Compress PDF' },
+                    { icon: Eraser, label: 'Repair PDF' },
+                  ].map(tool => (
+                    <button key={tool.label} className="tool-btn">
+                      <tool.icon size={14} /> {tool.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* --- Core Editing --- */}
+              <div>
+                <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">Core Editing</p>
+                <div className="space-y-1">
+                  {[
+                    { icon: Type, label: 'Edit Text/Images' },
+                    { icon: FileText, label: 'Add Annotations' },
+                  ].map(tool => (
+                    <button key={tool.label} className="tool-btn">
+                      <tool.icon size={14} /> {tool.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* --- Page Organization --- */}
+              <div>
+                <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">Page Organization</p>
+                <div className="space-y-1">
+                  {[
+                    { icon: RotateCw, label: 'Rotate Pages' },
+                    { icon: Layout, label: 'Reorder / Delete' },
+                  ].map(tool => (
+                    <button key={tool.label} className="tool-btn">
+                      <tool.icon size={14} /> {tool.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* --- Conversion --- */}
+              <div>
+                <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">Conversion</p>
+                <div className="space-y-1">
+                  {[
+                    { icon: ArrowRightLeft, label: 'PDF to Word/Excel' },
+                    { icon: ArrowRightLeft, label: 'Word/Excel to PDF' },
+                  ].map(tool => (
+                    <button key={tool.label} className="tool-btn">
+                      <tool.icon size={14} /> {tool.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="p-4 border-t border-white/5">
