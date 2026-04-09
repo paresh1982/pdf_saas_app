@@ -176,6 +176,9 @@ async function callGemini(contents, maxRetries = 3) {
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-pro',
         contents,
+        config: {
+          systemInstruction: SYSTEM_PROMPT,
+        }
       });
       return response.text;
     } catch (err) {
@@ -190,42 +193,7 @@ async function callGemini(contents, maxRetries = 3) {
   }
 }
 
-// ─── Helper: Build Gemini conversation from DB messages ──
-function buildGeminiContents(messages, pdfData = null) {
-  const contents = [];
 
-  // System instruction as first user message
-  contents.push({
-    role: 'user',
-    parts: [{ text: SYSTEM_PROMPT }],
-  });
-  contents.push({
-    role: 'model',
-    parts: [{ text: 'Understood. I am NexGen AI, ready to analyze any document you provide. Drop a PDF and tell me what you need.' }],
-  });
-
-  // Add conversation history
-  for (const msg of messages) {
-    const parts = [];
-
-    // If this message has PDF attachments, include ALL of them
-    if (msg.role === 'user' && msg.pdfParts && msg.pdfParts.length > 0) {
-      for (const pdf of msg.pdfParts) {
-        parts.push({
-          inlineData: {
-            mimeType: 'application/pdf',
-            data: pdf.data,
-          },
-        });
-      }
-    }
-
-    parts.push({ text: msg.content });
-    contents.push({ role: msg.role, parts });
-  }
-
-  return contents;
-}
 
 // ─── Routes ──────────────────────────────────────────────
 
