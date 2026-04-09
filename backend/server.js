@@ -178,6 +178,7 @@ async function callGemini(contents, maxRetries = 3) {
         contents,
         config: {
           systemInstruction: SYSTEM_PROMPT,
+          tools: [{ codeExecution: {} }],
         }
       });
       return response.text;
