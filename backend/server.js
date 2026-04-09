@@ -1,3 +1,13 @@
+// ─── Rescue Logger ──────────────────────────────────────
+process.on('uncaughtException', (err) => {
+  console.error('💥 FATAL CRASH (Uncaught Exception):', err.stack);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 FATAL CRASH (Unhandled Rejection):', reason);
+  process.exit(1);
+});
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -17,7 +27,10 @@ const PORT = process.env.PORT || 5000;
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'MISSING_KEY' });
+if (!process.env.GEMINI_API_KEY) {
+  console.warn('⚠️ WARNING: GEMINI_API_KEY is not set in environment variables.');
+}
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
