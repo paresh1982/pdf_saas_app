@@ -63,6 +63,18 @@ db.serialize(() => {
     extracted_text TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  // ─── Migration: Add user_id column if missing ────────────
+  db.all("PRAGMA table_info(conversations)", (err, rows) => {
+    if (rows && !rows.find(r => r.name === 'user_id')) {
+      db.run("ALTER TABLE conversations ADD COLUMN user_id TEXT");
+    }
+  });
+  db.all("PRAGMA table_info(documents)", (err, rows) => {
+    if (rows && !rows.find(r => r.name === 'user_id')) {
+      db.run("ALTER TABLE documents ADD COLUMN user_id TEXT");
+    }
+  });
 });
 
 // ─── Multer Storage ──────────────────────────────────────
@@ -114,7 +126,7 @@ async function getFileContext(file) {
     return {
       inlineData: {
         data: fs.readFileSync(file.path).toString('base64'),
-        mimetype: 'application/pdf',
+        mimeType: 'application/pdf',
       },
     };
   } else if (file.mimetype.includes('spreadsheet') || file.mimetype.includes('excel') || file.mimetype.includes('csv')) {
@@ -135,13 +147,12 @@ async function getFileContext(file) {
 }
 
 async function callGemini(contents, maxRetries = 3) {
+  const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
-        contents,
-      });
-      return response.text;
+      const result = await model.generateContent({ contents });
+      const response = await result.response;
+      return response.text();
     } catch (err) {
       if (err?.status === 429 && attempt < maxRetries) {
         const cooldown = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
