@@ -111,7 +111,7 @@ function ToolModal({ tool, onClose }) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-surface border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden"
+        className="bg-surface border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         <div className="p-6 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -125,7 +125,7 @@ function ToolModal({ tool, onClose }) {
           </button>
         </div>
 
-        <div className="p-8">
+        <div className="p-8 overflow-y-auto custom-scrollbar">
           <div
             onClick={() => document.getElementById('tool-file-input').click()}
             className="border-2 border-dashed border-white/10 hover:border-primary/40 rounded-3xl p-12 cursor-pointer transition-all text-center group"
