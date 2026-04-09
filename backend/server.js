@@ -160,12 +160,13 @@ async function getFileContext(file) {
 }
 
 async function callGemini(contents, maxRetries = 3) {
-  const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const result = await model.generateContent({ contents });
-      const response = await result.response;
-      return response.text();
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-pro',
+        contents,
+      });
+      return response.text;
     } catch (err) {
       if (err?.status === 429 && attempt < maxRetries) {
         const cooldown = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
@@ -480,9 +481,11 @@ app.post('/api/tools/pdf-to-excel', upload.single('file'), async (req, res) => {
     };
 
     const prompt = "Extract all tabular data from this PDF as a JSON array of objects. Be precise.";
-    const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" }).generateContent([prompt, pdfData]);
-    const response = await result.response;
-    const text = response.text();
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      contents: [{ role: 'user', parts: [{ text: prompt }, pdfData] }]
+    });
+    const text = response.text;
     const jsonStr = text.match(/```json\n([\s\S]*?)\n```/)?.[1] || text;
     const data = JSON.parse(jsonStr);
 
@@ -518,9 +521,11 @@ app.post('/api/tools/pdf-to-word', upload.single('file'), async (req, res) => {
     };
 
     const prompt = "Extract the main text content of this PDF. Maintain the general hierarchy and headings.";
-    const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" }).generateContent([prompt, pdfData]);
-    const response = await result.response;
-    const content = response.text();
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      contents: [{ role: 'user', parts: [{ text: prompt }, pdfData] }]
+    });
+    const content = response.text;
 
     const doc = new Document({
       sections: [{
@@ -631,9 +636,11 @@ app.post('/api/tools/edit', upload.single('file'), async (req, res) => {
     Analyze the document and provide the FULL TEXT of the page, but with the requested changes applied perfectly. 
     Maintain the structure exactly.`;
 
-    const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" }).generateContent([prompt, pdfData]);
-    const response = await result.response;
-    const editedText = response.text();
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      contents: [{ role: 'user', parts: [{ text: prompt }, pdfData] }]
+    });
+    const editedText = response.text;
 
     // For now, we return a new PDF with the AI-edited content
     // In a future phase, we would use pdf-lib to overwrite specific offsets
