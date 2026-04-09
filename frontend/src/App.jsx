@@ -420,6 +420,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTool, setActiveTool] = useState(null);
+  const [uploadMode, setUploadMode] = useState('single'); // 'single' or 'multiple'
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -693,8 +694,25 @@ export default function App() {
                 </div>
                 <h2 className="text-2xl font-bold mb-2">What do you need from your documents?</h2>
                 <p className="text-muted text-sm mb-8 leading-relaxed">
-                  Upload any PDF, Excel, or Word file — invoices, contracts, spreadsheets, lab reports — and tell me what you need.
+                  Analyze documents, extract tabular data, or convert files with NexGen Intelligence.
                 </p>
+
+                {/* --- Upload Tabs --- */}
+                <div className="flex bg-surface/50 p-1 rounded-2xl border border-white/5 mb-6">
+                  <button 
+                    onClick={() => { setUploadMode('single'); setAttachedFiles([]); }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-muted hover:text-white'}`}
+                  >
+                    <FileText size={14} /> Single Document
+                  </button>
+                  <button 
+                    onClick={() => { setUploadMode('multiple'); setAttachedFiles([]); }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${uploadMode === 'multiple' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-muted hover:text-white'}`}
+                  >
+                    <Layout size={14} /> Batch Processor
+                  </button>
+                </div>
+
                 <div
                   onClick={() => fileInputRef.current?.click()}
                   onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
@@ -702,20 +720,38 @@ export default function App() {
                   onDrop={(e) => {
                     e.preventDefault();
                     e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
-                    const files = Array.from(e.dataTransfer.files).filter(f => {
+                    const dropped = Array.from(e.dataTransfer.files).filter(f => {
                       const ext = f.name.toLowerCase().split('.').pop();
                       return ['pdf', 'xlsx', 'xls', 'csv', 'docx', 'doc'].includes(ext);
                     });
-                    if (files.length) setAttachedFiles(prev => [...prev, ...files]);
+                    
+                    if (uploadMode === 'single') {
+                      if (dropped.length > 0) setAttachedFiles([dropped[0]]);
+                    } else {
+                      setAttachedFiles(prev => [...prev, ...dropped]);
+                    }
                   }}
-                  className="w-full max-w-md border-2 border-dashed border-white/10 hover:border-primary/40 rounded-2xl p-10 cursor-pointer transition-all duration-300 group"
+                  className="w-full max-w-md border-2 border-dashed border-white/10 hover:border-primary/40 rounded-3xl p-12 cursor-pointer transition-all duration-300 group bg-surface/20"
                 >
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Paperclip size={28} />
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      {uploadMode === 'single' ? <Paperclip size={32} /> : <Combine size={32} />}
                     </div>
-                    <p className="text-sm font-medium text-white">Drop Documents here or click to upload</p>
-                    <p className="text-[11px] text-muted/80">Supports multiple files • Max 20MB each</p>
+                    <div>
+                      <p className="text-base font-bold text-white mb-1">
+                        {uploadMode === 'single' ? 'Drop your file here' : 'Drop multiple files here'}
+                      </p>
+                      <p className="text-[11px] text-muted/60">
+                        {uploadMode === 'single' ? 'Supports PDF, Word, or Excel' : 'Process up to 10 documents at once'}
+                      </p>
+                    </div>
+                    {attachedFiles.length > 0 && (
+                      <div className="mt-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20">
+                        <p className="text-[10px] font-bold text-primary italic">
+                          {attachedFiles.length} file{attachedFiles.length > 1 ? 's' : ''} staged for analysis
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>
