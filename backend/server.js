@@ -370,34 +370,66 @@ app.post('/api/tools/split', upload.single('file'), async (req, res) => {
 
     // ─── Scenario A: Specific Ranges provided ───
     if (ranges && ranges.trim() !== '') {
-      const resultPdf = await PDFDocument.create();
-      const tokens = ranges.split(',').map(s => s.trim());
+      const tokens = ranges.split(',').map(s => s.trim()).filter(t => t !== '');
       
-      for (const token of tokens) {
+      // If only ONE range is provided, return a single PDF
+      if (tokens.length === 1) {
+        const token = tokens[0];
+        const resultPdf = await PDFDocument.create();
+        let indices = [];
+        
         if (token.includes('-')) {
           const [start, end] = token.split('-').map(Number);
           if (start > 0 && end <= pageCount && start <= end) {
-            const indices = Array.from({ length: end - start + 1 }, (_, i) => start - 1 + i);
-            const pages = await resultPdf.copyPages(pdf, indices);
-            pages.forEach(p => resultPdf.addPage(p));
+            indices = Array.from({ length: end - start + 1 }, (_, i) => start - 1 + i);
           }
         } else {
           const pageNum = Number(token);
-          if (pageNum > 0 && pageNum <= pageCount) {
-            const [page] = await resultPdf.copyPages(pdf, [pageNum - 1]);
-            resultPdf.addPage(page);
+          if (pageNum > 0 && pageNum <= pageCount) indices = [pageNum - 1];
+        }
+
+        if (indices.length === 0) return res.status(400).json({ error: 'Invalid page range provided.' });
+
+        const copiedPages = await resultPdf.copyPages(pdf, indices);
+        copiedPages.forEach(p => resultPdf.addPage(p));
+        const outBytes = await resultPdf.save();
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Split.pdf');
+        return res.send(Buffer.from(outBytes));
+      } 
+      
+      // If MULTIPLE ranges are provided, return a ZIP archive
+      else {
+        const archive = archiver('zip', { zlib: { level: 9 } });
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Split_Ranges.zip');
+        archive.pipe(res);
+
+        for (let i = 0; i < tokens.length; i++) {
+          const token = tokens[i];
+          const rangePdf = await PDFDocument.create();
+          let indices = [];
+
+          if (token.includes('-')) {
+            const [start, end] = token.split('-').map(Number);
+            if (start > 0 && end <= pageCount && start <= end) {
+              indices = Array.from({ length: end - start + 1 }, (_, i) => start - 1 + i);
+            }
+          } else {
+            const pageNum = Number(token);
+            if (pageNum > 0 && pageNum <= pageCount) indices = [pageNum - 1];
+          }
+
+          if (indices.length > 0) {
+            const copiedPages = await rangePdf.copyPages(pdf, indices);
+            copiedPages.forEach(p => rangePdf.addPage(p));
+            const rangeBytes = await rangePdf.save();
+            archive.append(Buffer.from(rangeBytes), { name: `split_part_${i + 1}.pdf` });
           }
         }
+        await archive.finalize();
+        return;
       }
-
-      if (resultPdf.getPageCount() === 0) {
-        return res.status(400).json({ error: 'No valid pages found in the specified range.' });
-      }
-
-      const outBytes = await resultPdf.save();
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Split_Range.pdf');
-      res.send(Buffer.from(outBytes));
     } 
     // ─── Scenario B: Explode all pages (Default) ───
     else {
