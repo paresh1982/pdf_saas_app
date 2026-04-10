@@ -797,7 +797,7 @@ export default function App() {
                     e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
                     const dropped = Array.from(e.dataTransfer.files).filter(f => {
                       const ext = f.name.toLowerCase().split('.').pop();
-                      return ['pdf', 'xlsx', 'xls', 'csv', 'docx', 'doc'].includes(ext);
+                      return ['pdf', 'xlsx', 'xls', 'csv', 'docx', 'doc', 'png', 'jpg', 'jpeg'].includes(ext);
                     });
                     
                     if (uploadMode === 'single') {
@@ -817,7 +817,7 @@ export default function App() {
                         {uploadMode === 'single' ? 'Drop your file here' : 'Drop multiple files here'}
                       </p>
                       <p className="text-[11px] text-muted/60">
-                        {uploadMode === 'single' ? 'Supports PDF, Word, or Excel' : 'Process up to 10 documents at once'}
+                        {uploadMode === 'single' ? 'Supports PDF, Word, Excel, or Images' : 'Process up to 10 documents at once'}
                       </p>
                     </div>
                     {attachedFiles.length > 0 && (
@@ -885,7 +885,7 @@ export default function App() {
                   id="file-input"
                   multiple
                   className="hidden"
-                  accept=".pdf,.xlsx,.xls,.csv,.docx,.doc"
+                  accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.png,.jpg,.jpeg"
                   onChange={handleFileSelect}
                 />
               </button>

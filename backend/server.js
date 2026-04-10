@@ -792,70 +792,83 @@ app.post('/api/tools/reorder', upload.single('file'), async (req, res) => {
   }
 });
 
-// ─── TOOL HELPER: Multimodal Data Resolver ──────────────
-const getMultimodalData = (filePath) => {
-  const ext = path.extname(filePath).toLowerCase();
-  const base64 = fs.readFileSync(filePath).toString('base64');
-  const mimeMap = {
-    '.pdf': 'application/pdf',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg'
-  };
-  return {
-    inlineData: {
-      data: base64,
-      mimeType: mimeMap[ext] || 'application/pdf'
+// ─── TOOL HELPER: Clean JSON Extraction ──────────────
+const extractCleanJson = (raw) => {
+  try {
+    const jsonMatch = raw.match(/\[[\s\S]*\]|\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON structure found");
+    return JSON.parse(jsonMatch[0]);
+  } catch (e) {
+    // Aggressive line-by-line fallback for markdown pipe tables if AI fails JSON
+    if (raw.includes('|')) {
+      const lines = raw.split('\n').filter(l => l.includes('|') && !l.includes('---'));
+      return lines.map(line => {
+        const parts = line.split('|').map(s => s.trim()).filter(s => s);
+        return parts.reduce((acc, p, i) => ({ ...acc, [`Col${i+1}`]: p }), {});
+      });
     }
-  };
+    throw e;
+  }
+};
+
+// ─── TOOL HELPER: Deep Excel Value Resolver ──────────
+const getDeepCellValue = (cell) => {
+  if (!cell || cell.value === null || cell.value === undefined) return '';
+  
+  // Handle Objects (Formulas, Shared Strings, RichText)
+  if (typeof cell.value === 'object') {
+    if (cell.value.result !== undefined) return String(cell.value.result);
+    if (cell.value.text !== undefined) return String(cell.value.text);
+    if (Array.isArray(cell.value.richText)) return cell.value.richText.map(rt => rt.text).join('');
+    if (cell.value.formula) return String(cell.value.result || '');
+    return ''; // Do NOT stringify the object, it causes [object Object]
+  }
+  
+  return String(cell.value);
 };
 
 // ─── PDF TOOL: PDF to Word (Supports Images) ─────────────
 app.post('/api/tools/pdf-to-word', upload.single('file'), async (req, res) => {
   try {
     const inputData = getMultimodalData(req.file.path);
-    const prompt = `Act as an expert document formatter. Extract text, headings, and tables from this ${inputData.inlineData.mimeType.startsWith('image') ? 'image' : 'document'}. 
-    Format as a JSON ARRAY of blocks: { "type": "paragraph"|"h1"|"h2"|"table", "content": "text" | [rows] }.
-    Differentiate headings from normal text. Maintain visual structure. Only provide the JSON array.`;
+    const prompt = `Act as an expert document formatter. Extract ALL content from this ${inputData.inlineData.mimeType.startsWith('image') ? 'image' : 'document'}.
+    Group text into: "h1" (Main Titles), "h2" (Section Headers), "paragraph" (Normal text), or "table" (Grid data).
+    For tables, provide a 2D array of strings. 
+    FORMAT: JSON array of { "type": "h1"|"h2"|"paragraph"|"table", "content": "..." | [[row1], [row2]] }.
+    Only provide the JSON array.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-pro",
       contents: [{ role: 'user', parts: [{ text: prompt }, inputData] }]
     });
 
-    const cleanJson = response.text.replace(/```json\n?/g, '').replace(/```/g, '').trim();
-    const blocks = JSON.parse(cleanJson);
+    const blocks = extractCleanJson(response.text);
 
     const doc = new Document({
       sections: [{
         children: blocks.map(block => {
-          if (block.type === 'h1') return new Paragraph({ text: block.content, heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } });
-          if (block.type === 'h2') return new Paragraph({ text: block.content, heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 150 } });
+          if (block.type === 'h1') return new Paragraph({ text: String(block.content), heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } });
+          if (block.type === 'h2') return new Paragraph({ text: String(block.content), heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 150 } });
           if (block.type === 'table') {
-            const rows = Array.isArray(block.content) ? block.content : [];
+            const grid = Array.isArray(block.content) ? block.content : [];
             return new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
-              rows: rows.map(row => new TableRow({
-                children: Object.values(row).map(val => new TableCell({
+              rows: grid.map(row => new TableRow({
+                children: (Array.isArray(row) ? row : Object.values(row)).map(val => new TableCell({
                   children: [new Paragraph({ text: String(val || ''), spacing: { before: 100, after: 100 } })]
                 }))
               }))
             });
           }
-          return new Paragraph({ children: [new TextRun({ text: block.content || "", size: 22 })], spacing: { after: 200 } });
+          return new Paragraph({ children: [new TextRun({ text: String(block.content || ""), size: 22 })], spacing: { after: 200 } });
         }).flat()
       }],
-      styles: {
-        default: {
-          heading1: { run: { size: 32, bold: true, color: "2563EB" } },
-          heading2: { run: { size: 26, bold: true, color: "1E40AF" } },
-        }
-      }
+      styles: { default: { heading1: { run: { size: 32, bold: true, color: "2563EB" } }, heading2: { run: { size: 26, bold: true, color: "1E40AF" } } } }
     });
 
     const buffer = await Packer.toBuffer(doc);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Doc_Export.docx');
+    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Rich_Export.docx');
     res.send(buffer);
     fs.unlinkSync(req.file.path);
   } catch (err) {
@@ -867,53 +880,35 @@ app.post('/api/tools/pdf-to-word', upload.single('file'), async (req, res) => {
 app.post('/api/tools/pdf-to-excel', upload.single('file'), async (req, res) => {
   try {
     const inputData = getMultimodalData(req.file.path);
-    const prompt = `Act as a visual mirror engine. Extract all tabular data from this ${inputData.inlineData.mimeType.startsWith('image') ? 'image' : 'document'} exactly as it appears.
-    Maintain exact row/column mapping. Format as a clean JSON ARRAY. ONLY provide the JSON array.`;
+    const prompt = `Act as a visual mirror engine. Extract all tabular data exactly as it appears.
+    IF it is a vertical form (Labels on left), return a 2-column mapping [{ "Field": "Value" }].
+    IF it is horizontal, return an array of objects.
+    Only provide clean JSON array.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-pro",
       contents: [{ role: 'user', parts: [{ text: prompt }, inputData] }]
     });
 
-    const cleanJson = response.text.replace(/```json\n?/g, '').replace(/```/g, '').trim();
-    const rows = JSON.parse(cleanJson);
-
+    const rows = extractCleanJson(response.text);
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Extraction');
-    rows.forEach(row => sheet.addRow(Object.values(row)));
+    
+    rows.forEach(row => {
+      const dataRow = Array.isArray(row) ? row : Object.entries(row).flat();
+      sheet.addRow(dataRow);
+    });
+
+    // Auto-fit & Pro Style
+    sheet.columns.forEach(column => { column.width = 30; });
 
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Data.xlsx');
+    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Grid_Data.xlsx');
     res.send(buffer);
     fs.unlinkSync(req.file.path);
   } catch (err) {
     res.status(500).json({ error: 'Excel conversion failed', details: err.message });
-  }
-});
-
-// ─── PDF TOOL: Image to PDF ──────────────────────────────
-app.post('/api/tools/image-to-pdf', upload.single('file'), async (req, res) => {
-  try {
-    const pdfDoc = await PDFDocument.create();
-    const imageBytes = fs.readFileSync(req.file.path);
-    const ext = path.extname(req.file.path).toLowerCase();
-    
-    let image;
-    if (ext === '.png') image = await pdfDoc.embedPng(imageBytes);
-    else image = await pdfDoc.embedJpg(imageBytes);
-
-    const { width, height } = image.scale(1);
-    const page = pdfDoc.addPage([width, height]);
-    page.drawImage(image, { x: 0, y: 0, width, height });
-
-    const pdfBytes = await pdfDoc.save();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=Converted_Image.pdf');
-    res.send(Buffer.from(pdfBytes));
-    fs.unlinkSync(req.file.path);
-  } catch (err) {
-    res.status(500).json({ error: 'Image to PDF failed', details: err.message });
   }
 });
 
@@ -924,7 +919,6 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(req.file.path);
     
-    // Improved sheet filter (Case-insensitive, Trimmed)
     const targetNames = sheets ? sheets.split(',').map(s => s.trim().toLowerCase()) : [];
     const pdfDoc = await PDFDocument.create();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -933,8 +927,7 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
     for (const worksheet of workbook.worksheets) {
       if (targetNames.length > 0 && !targetNames.includes(worksheet.name.trim().toLowerCase())) continue;
 
-      // --- NEW: Calculate Fit-to-Page Scaling ---
-      const page = pdfDoc.addPage([1190, 842]); // Larger A3-like Lanscape to prevent clipping
+      const page = pdfDoc.addPage([1190, 842]); 
       let y = 800;
       page.drawText(`WORKBOOK: ${worksheet.name.toUpperCase()}`, { x: 50, y: 815, size: 14, font: fontBold, color: rgb(0.14, 0.38, 0.92) });
 
@@ -942,22 +935,12 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
         if (y < 40) return;
         let x = 50;
         row.eachCell({ includeEmpty: true }, (cell) => {
-          // --- HARDENED: Recursive Value Extraction ---
-          let val = '';
-          if (cell.value && typeof cell.value === 'object') {
-            // Check for formula, result, text, or richText array
-            val = cell.value.result ?? cell.value.text ?? (Array.isArray(cell.value.richText) ? cell.value.richText.map(rt => rt.text).join('') : '');
-            if (!val) val = JSON.stringify(cell.value); // Fallback
-          } else {
-            val = String(cell.value ?? '');
-          }
-
-          if (val.length > 50) val = val.substring(0, 47) + '...';
-          
+          const val = getDeepCellValue(cell);
+          const drawVal = val.length > 60 ? val.substring(0, 57) + '...' : val;
           try {
-            page.drawText(val, { x, y, size: 8, font });
+            page.drawText(drawVal, { x, y, size: 8, font });
           } catch(e) {}
-          x += 110; // Fixed width for alignment
+          x += 110; 
         });
         y -= 20;
       });
@@ -965,7 +948,7 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
 
     const pdfBytes = await pdfDoc.save();
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=Excel_Pro_Mirror.pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Pro_Mirror.pdf');
     res.send(Buffer.from(pdfBytes));
     fs.unlinkSync(req.file.path);
   } catch (err) {
