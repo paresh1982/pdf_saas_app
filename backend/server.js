@@ -802,11 +802,9 @@ app.post('/api/tools/pdf-to-word', upload.single('file'), async (req, res) => {
       },
     };
 
-    const prompt = `Extract all text and tables from this document. 
-    1. If the table is Vertical (Labels on Left, Values on Right), extract as a JSON ARRAY of { "Field": "Value" } objects.
-    2. Maintain the exact visual sequence. 
-    3. Do NOT merge rows into a single entry. 
-    Only provide the JSON array.`;
+    const prompt = `Act as an expert document formatter. Extract text, headings, and tables. 
+    Format as a JSON ARRAY of blocks: { "type": "paragraph"|"h1"|"h2"|"table", "content": "text" | [rows] }.
+    Differentiate headings from normal text. Only provide the JSON array.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-pro",
@@ -814,34 +812,54 @@ app.post('/api/tools/pdf-to-word', upload.single('file'), async (req, res) => {
     });
 
     const cleanJson = response.text.replace(/```json\n?/g, '').replace(/```/g, '').trim();
-    const data = JSON.parse(cleanJson);
-    const rows = Array.isArray(data) ? data : [data];
+    const blocks = JSON.parse(cleanJson);
 
     const doc = new Document({
       sections: [{
-        children: [
-          new Paragraph({ text: "OneStopDoc Visual Export", heading: HeadingLevel.TITLE }),
-          new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: rows.map(row => new TableRow({
-              children: Object.entries(row).map(([key, val]) => new TableCell({
-                width: { size: 50, type: WidthType.PERCENTAGE },
-                children: [new Paragraph({ 
-                  children: [
-                    new TextRun({ text: key + ": ", bold: true }),
-                    new TextRun({ text: String(val || '') })
-                  ]
-                })]
+        children: blocks.map(block => {
+          if (block.type === 'h1') {
+            return new Paragraph({
+              text: block.content,
+              heading: HeadingLevel.HEADING_1,
+              spacing: { before: 400, after: 200 },
+            });
+          }
+          if (block.type === 'h2') {
+            return new Paragraph({
+              text: block.content,
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 300, after: 150 },
+            });
+          }
+          if (block.type === 'table') {
+            const rows = Array.isArray(block.content) ? block.content : [];
+            if (rows.length === 0) return new Paragraph({ text: "" });
+            return new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: rows.map(row => new TableRow({
+                children: Object.values(row).map(val => new TableCell({
+                  children: [new Paragraph({ text: String(val || ''), spacing: { before: 100, after: 100 } })]
+                }))
               }))
-            }))
-          })
-        ]
-      }]
+            });
+          }
+          return new Paragraph({
+            children: [new TextRun({ text: block.content || "", size: 22 })],
+            spacing: { after: 200 }
+          });
+        }).flat()
+      }],
+      styles: {
+        default: {
+          heading1: { run: { size: 32, bold: true, color: "2563EB", font: "Helvetica" } },
+          heading2: { run: { size: 26, bold: true, color: "1E40AF", font: "Helvetica" } },
+        }
+      }
     });
 
     const buffer = await Packer.toBuffer(doc);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', 'attachment; filename=NexGen_Document_Mirror.docx');
+    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Pro_Export.docx');
     res.send(buffer);
     fs.unlinkSync(req.file.path);
   } catch (err) {
@@ -859,12 +877,9 @@ app.post('/api/tools/pdf-to-excel', upload.single('file'), async (req, res) => {
       },
     };
 
-    const prompt = `Act as a visual mirror engine. 
-    1. If the PDF has a vertical form (labels on left), create a 2-column mapping.
-    2. Extract each field as a separate row in the JSON array.
-    3. Format: [{ "Label": "Field Name", "Value": "Data" }, ...]
-    4. Maintain the exact vertical sequence of the document.
-    ONLY provide the clean JSON array.`;
+    const prompt = `Extract all tables from this document visually. 
+    Maintain exact row/column mapping. 
+    Format as a clean JSON ARRAY. ONLY provide the JSON array.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-pro",
@@ -872,26 +887,25 @@ app.post('/api/tools/pdf-to-excel', upload.single('file'), async (req, res) => {
     });
 
     const cleanJson = response.text.replace(/```json\n?/g, '').replace(/```/g, '').trim();
-    const data = JSON.parse(cleanJson);
-    const rows = Array.isArray(data) ? data : [data];
+    const rows = JSON.parse(cleanJson);
 
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Visual Extraction');
-    
-    // No headers, direct visual mapping
-    rows.forEach(row => {
-      const values = Object.values(row);
-      sheet.addRow(values);
-    });
+    rows.forEach(row => sheet.addRow(Object.values(row)));
 
-    // Styling & Formatting
-    sheet.getColumn(1).font = { bold: true };
-    sheet.getColumn(1).width = 30;
-    sheet.getColumn(2).width = 50;
+    // Auto-fit & Pro Style
+    sheet.columns.forEach(column => {
+      let maxLen = 10;
+      column.eachCell({ includeEmpty: true }, (cell) => {
+        const len = cell.value ? cell.value.toString().length : 0;
+        if (len > maxLen) maxLen = len;
+      });
+      column.width = Math.min(maxLen + 2, 50);
+    });
 
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=NexGen_Excel_Mirror.xlsx');
+    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Mirror.xlsx');
     res.send(buffer);
     fs.unlinkSync(req.file.path);
   } catch (err) {
@@ -902,37 +916,44 @@ app.post('/api/tools/pdf-to-excel', upload.single('file'), async (req, res) => {
 // ─── PDF TOOL: Excel to PDF ──────────────────────────────
 app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
   try {
-    const { sheets } = req.body; // Comma separated sheet names
+    const { sheets } = req.body; 
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(req.file.path);
     
-    const targetSheetNames = sheets ? sheets.split(',').map(s => s.trim().toLowerCase()) : [];
+    // Improved sheet filter (Case-insensitive, Trimmed)
+    const targetNames = sheets ? sheets.split(',').map(s => s.trim().toLowerCase()) : [];
     const pdfDoc = await PDFDocument.create();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     
     for (const worksheet of workbook.worksheets) {
-      if (targetSheetNames.length > 0 && !targetSheetNames.includes(worksheet.name.toLowerCase())) continue;
+      if (targetNames.length > 0 && !targetNames.includes(worksheet.name.trim().toLowerCase())) continue;
 
-      const page = pdfDoc.addPage([842, 595]); // Landscape A4
-      let y = 550;
-      page.drawText(`Sheet: ${worksheet.name}`, { x: 40, y: 570, size: 14, font: fontBold });
+      // --- NEW: Calculate Fit-to-Page Scaling ---
+      const page = pdfDoc.addPage([1190, 842]); // Larger A3-like Lanscape to prevent clipping
+      let y = 800;
+      page.drawText(`WORKBOOK: ${worksheet.name.toUpperCase()}`, { x: 50, y: 815, size: 14, font: fontBold, color: rgb(0.14, 0.38, 0.92) });
 
-      worksheet.eachRow((row, rowNumber) => {
-        if (y < 40) return; // Simple page clip
-        let x = 40;
-        row.eachCell((cell) => {
-          // --- FIX: Handle [object Object] by extracting raw text/value ---
+      worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+        if (y < 40) return;
+        let x = 50;
+        row.eachCell({ includeEmpty: true }, (cell) => {
+          // --- HARDENED: Recursive Value Extraction ---
           let val = '';
           if (cell.value && typeof cell.value === 'object') {
-            val = cell.value.result || cell.value.text || JSON.stringify(cell.value);
-            if (val.includes('{"')) val = '[Complex Data]'; // Hidden fallback
+            // Check for formula, result, text, or richText array
+            val = cell.value.result ?? cell.value.text ?? (Array.isArray(cell.value.richText) ? cell.value.richText.map(rt => rt.text).join('') : '');
+            if (!val) val = JSON.stringify(cell.value); // Fallback
           } else {
-            val = String(cell.value || '');
+            val = String(cell.value ?? '');
           }
+
+          if (val.length > 50) val = val.substring(0, 47) + '...';
           
-          page.drawText(val.substring(0, 30), { x, y, size: 8, font });
-          x += 90;
+          try {
+            page.drawText(val, { x, y, size: 8, font });
+          } catch(e) {}
+          x += 110; // Fixed width for alignment
         });
         y -= 20;
       });
@@ -940,7 +961,7 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
 
     const pdfBytes = await pdfDoc.save();
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=Excel_Converted.pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=Excel_Pro_Mirror.pdf');
     res.send(Buffer.from(pdfBytes));
     fs.unlinkSync(req.file.path);
   } catch (err) {
