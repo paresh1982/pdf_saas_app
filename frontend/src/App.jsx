@@ -72,6 +72,7 @@ function ToolModal({ tool, onClose }) {
         if (tool.id === 'edit' && instructions) formData.append('instructions', instructions);
         if (tool.id === 'rotate') formData.append('degrees', degrees);
         if (tool.id === 'reorder') formData.append('sequence', sequence);
+        if (tool.id === 'excel-to-pdf') formData.append('sheets', sequence);
       }
 
       const response = await axios.post(`${API}/tools/${tool.id}`, formData, {
@@ -137,7 +138,7 @@ function ToolModal({ tool, onClose }) {
                 id="tool-file-input"
                 type="file"
                 multiple={tool.id === 'merge'}
-                accept=".pdf"
+                accept={tool.id.includes('excel') ? '.xlsx,.xls' : tool.id.includes('word') ? '.docx' : '.pdf'}
                 className="hidden"
                 onChange={(e) => setFiles(Array.from(e.target.files))}
               />
@@ -146,7 +147,9 @@ function ToolModal({ tool, onClose }) {
                   <Paperclip size={32} />
                 </div>
                 <div>
-                  <p className="text-base font-bold text-foreground mb-1">Select your PDF files</p>
+                  <p className="text-base font-bold text-foreground mb-1">
+                    Select your {tool.id.includes('excel') ? 'Excel' : tool.id.includes('word') ? 'Word' : 'PDF'} files
+                  </p>
                   <p className="text-[11px] text-muted/60">Drag & drop or click to browser</p>
                 </div>
               </div>
@@ -224,6 +227,19 @@ function ToolModal({ tool, onClose }) {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {files.length > 0 && tool.id === 'excel-to-pdf' && (
+            <div className="mt-8 space-y-3">
+              <label className="text-[10px] font-bold text-primary uppercase tracking-widest pl-1">Target Sheets (Optional)</label>
+              <input 
+                type="text"
+                placeholder="e.g. Sheet1, Sales, Data (Leave blank for all)"
+                value={sequence}
+                onChange={(e) => setSequence(e.target.value)}
+                className="w-full bg-background border border-border rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted/30 text-foreground"
+              />
             </div>
           )}
 
@@ -663,6 +679,7 @@ export default function App() {
                     { id: 'pdf-to-word', icon: FileType, label: 'PDF to Word' },
                     { id: 'pdf-to-excel', icon: FileSpreadsheet, label: 'PDF to Excel' },
                     { id: 'excel-to-pdf', icon: ArrowRightLeft, label: 'Excel to PDF' },
+                    { id: 'word-to-pdf', icon: FileText, label: 'Word to PDF' },
                   ].map(tool => (
                     <button key={tool.id} className="tool-btn" onClick={() => setActiveTool(tool)}>
                       <tool.icon size={14} /> {tool.label}

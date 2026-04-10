@@ -21,6 +21,8 @@ const { Document, Packer, Paragraph, TextRun, HeadingLevel } = require('docx');
 const pdflib = require('pdf-lib');
 const { PDFDocument, rgb, degrees, StandardFonts } = pdflib;
 const archiver = require('archiver');
+const mammoth = require('mammoth');
+const pdfParse = require('pdf-parse');
 
 // ─── Config ──────────────────────────────────────────────
 const app = express();
@@ -787,6 +789,159 @@ app.post('/api/tools/reorder', upload.single('file'), async (req, res) => {
     fs.unlinkSync(req.file.path);
   } catch (err) {
     res.status(500).json({ error: 'Reordering failed', details: err.message });
+  }
+});
+
+// ─── PDF TOOL: PDF to Word ───────────────────────────────
+app.post('/api/tools/pdf-to-word', upload.single('file'), async (req, res) => {
+  try {
+    const pdfData = {
+      inlineData: {
+        data: fs.readFileSync(req.file.path).toString('base64'),
+        mimeType: 'application/pdf',
+      },
+    };
+
+    const prompt = "Extract all text from this PDF and format it as professional, structured content for a Word document. Maintain headers and paragraphs clearly.";
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      contents: [{ role: 'user', parts: [{ text: prompt }, pdfData] }]
+    });
+
+    const doc = new Document({
+      sections: [{
+        children: response.text.split('\n').map(line => new Paragraph({ 
+          children: [new TextRun(line)], 
+          spacing: { after: 120 } 
+        }))
+      }]
+    });
+
+    const buffer = await Packer.toBuffer(doc);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', 'attachment; filename=NexGen_Export.docx');
+    res.send(buffer);
+    fs.unlinkSync(req.file.path);
+  } catch (err) {
+    res.status(500).json({ error: 'Word conversion failed', details: err.message });
+  }
+});
+
+// ─── PDF TOOL: PDF to Excel ──────────────────────────────
+app.post('/api/tools/pdf-to-excel', upload.single('file'), async (req, res) => {
+  try {
+    const pdfData = {
+      inlineData: {
+        data: fs.readFileSync(req.file.path).toString('base64'),
+        mimeType: 'application/pdf',
+      },
+    };
+
+    const prompt = "Extract all tabular data from this PDF and provide it in a clean JSON ARRAY format. Only provide the array, no other text.";
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      contents: [{ role: 'user', parts: [{ text: prompt }, pdfData] }]
+    });
+
+    const cleanJson = response.text.replace(/```json\n?/g, '').replace(/```/g, '').trim();
+    const data = JSON.parse(cleanJson);
+    const rows = Array.isArray(data) ? data : [data];
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Extraction');
+    const headers = Object.keys(rows[0]);
+    sheet.columns = headers.map(h => ({ header: h.toUpperCase(), key: h }));
+    sheet.addRows(rows);
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=NexGen_Extraction.xlsx');
+    res.send(buffer);
+    fs.unlinkSync(req.file.path);
+  } catch (err) {
+    res.status(500).json({ error: 'Excel conversion failed', details: err.message });
+  }
+});
+
+// ─── PDF TOOL: Excel to PDF ──────────────────────────────
+app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
+  try {
+    const { sheets } = req.body; // Comma separated sheet names
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(req.file.path);
+    
+    const targetSheetNames = sheets ? sheets.split(',').map(s => s.trim().toLowerCase()) : [];
+    const pdfDoc = await PDFDocument.create();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    
+    for (const worksheet of workbook.worksheets) {
+      if (targetSheetNames.length > 0 && !targetSheetNames.includes(worksheet.name.toLowerCase())) continue;
+
+      const page = pdfDoc.addPage([842, 595]); // Landscape A4
+      let y = 550;
+      page.drawText(`Sheet: ${worksheet.name}`, { x: 40, y: 570, size: 14, font: fontBold });
+
+      worksheet.eachRow((row, rowNumber) => {
+        if (y < 40) return; // Simple page clip
+        let x = 40;
+        row.eachCell((cell) => {
+          // --- FIX: Handle [object Object] by extracting raw text/value ---
+          let val = '';
+          if (cell.value && typeof cell.value === 'object') {
+            val = cell.value.result || cell.value.text || JSON.stringify(cell.value);
+            if (val.includes('{"')) val = '[Complex Data]'; // Hidden fallback
+          } else {
+            val = String(cell.value || '');
+          }
+          
+          page.drawText(val.substring(0, 30), { x, y, size: 8, font });
+          x += 90;
+        });
+        y -= 20;
+      });
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=Excel_Converted.pdf');
+    res.send(Buffer.from(pdfBytes));
+    fs.unlinkSync(req.file.path);
+  } catch (err) {
+    res.status(500).json({ error: 'PDF conversion failed', details: err.message });
+  }
+});
+
+// ─── PDF TOOL: Word to PDF ───────────────────────────────
+app.post('/api/tools/word-to-pdf', upload.single('file'), async (req, res) => {
+  try {
+    const result = await mammoth.extractRawText({ path: req.file.path });
+    const text = result.value;
+
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([600, 800]);
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    
+    // Header
+    page.drawRectangle({ x: 0, y: 740, width: 600, height: 60, color: rgb(0.04, 0.04, 0.04) });
+    page.drawText('NexGen WORD TO PDF', { x: 50, y: 765, size: 14, font, color: rgb(1, 1, 1) });
+
+    // Draw lines with basic wrapping
+    let y = 700;
+    const lines = text.split('\n').filter(l => l.trim());
+    for (const line of lines) {
+      if (y < 50) break;
+      page.drawText(line.substring(0, 100), { x: 50, y, size: 9, font });
+      y -= 15;
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=Word_Converted.pdf');
+    res.send(Buffer.from(pdfBytes));
+    fs.unlinkSync(req.file.path);
+  } catch (err) {
+    res.status(500).json({ error: 'PDF conversion failed', details: err.message });
   }
 });
 
