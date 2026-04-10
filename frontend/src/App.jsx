@@ -29,7 +29,8 @@ import {
   Settings,
   HelpCircle,
   Sun,
-  Moon
+  Moon,
+  Menu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -114,7 +115,7 @@ function ToolModal({ tool, onClose }) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh]"
       >
         <div className="p-6 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -128,7 +129,7 @@ function ToolModal({ tool, onClose }) {
           </button>
         </div>
 
-        <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
+        <div className="p-4 md:p-8 overflow-y-auto custom-scrollbar flex-1">
           {files.length === 0 ? (
             <div
               onClick={() => document.getElementById('tool-file-input').click()}
@@ -276,7 +277,7 @@ function ToolModal({ tool, onClose }) {
           )}
         </div>
 
-        <div className="p-6 bg-background/50 flex gap-3">
+        <div className="p-4 md:p-6 bg-background/50 flex gap-3">
           <button onClick={onClose} className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-surface hover:bg-background transition-all border border-border">
             Cancel
           </button>
@@ -374,7 +375,7 @@ function DynamicTable({ data, raw }) {
 
   return (
     <div className="my-4 bg-surface border border-border rounded-2xl overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-background/50">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-4 py-3 md:py-2 border-b border-border bg-background/50 gap-3">
         <span className="text-[10px] text-primary font-bold uppercase tracking-widest flex items-center gap-2">
           <Sparkles size={12} /> Structured Data • {data.length} rows
         </span>
@@ -437,7 +438,7 @@ function ChatMessage({ msg }) {
       }`}>
         {isUser ? <User size={16} /> : <Bot size={16} />}
       </div>
-      <div className={`max-w-[75%] ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`max-w-[85%] md:max-w-[75%] ${isUser ? 'items-end' : 'items-start'}`}>
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-2">
             {attachments.map((name, i) => (
@@ -485,12 +486,30 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [attachedFiles, setAttachedFiles] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
+  const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
   const [activeTool, setActiveTool] = useState(null);
-  const [uploadMode, setUploadMode] = useState('single'); // 'single' or 'multiple'
+  const [uploadMode, setUploadMode] = useState('single');
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      // Close sidebar when transitioning from desktop to mobile
+      if (mobile) setSidebarOpen(false);
+      // Auto-open sidebar when transitioning from mobile to desktop
+      else setSidebarOpen(true);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleAction = (activeFn) => {
+    if (activeFn) activeFn();
+    if (isMobile) setSidebarOpen(false);
+  };
 
   // Load conversations
   useEffect(() => {
@@ -599,12 +618,25 @@ export default function App() {
     <div className="flex h-screen bg-background text-foreground font-sans selection:bg-primary/30">
       {/* ─── Sidebar ─── */}
       <AnimatePresence>
+        {isMobile && sidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {sidebarOpen && (
           <motion.aside
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 280, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            className="border-r border-border flex flex-col bg-surface/50 backdrop-blur-xl shrink-0 overflow-hidden"
+            initial={{ x: isMobile ? -280 : 0, width: isMobile ? 280 : 0, opacity: 0 }}
+            animate={{ x: 0, width: 280, opacity: 1 }}
+            exit={{ x: isMobile ? -280 : 0, width: 0, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className={`${isMobile ? 'fixed inset-y-0 left-0 z-[70]' : 'relative hidden lg:flex'} border-r border-border flex flex-col bg-surface/90 backdrop-blur-2xl shrink-0 overflow-hidden shadow-2xl md:shadow-none`}
           >
             <div className="p-5 flex items-center justify-between border-b border-border">
               <div className="flex items-center gap-3">
@@ -624,7 +656,7 @@ export default function App() {
 
             <div className="p-3">
               <button
-                onClick={newChat}
+                onClick={() => handleAction(newChat)}
                 className="w-full flex items-center gap-2 px-4 py-3 bg-primary/10 border border-primary/20 rounded-xl text-sm font-bold text-primary hover:bg-primary hover:text-white transition-all"
               >
                 <Plus size={16} /> New Chat
@@ -639,7 +671,7 @@ export default function App() {
                   {conversations.map(conv => (
                     <button
                       key={conv.id}
-                      onClick={() => setActiveConvId(conv.id)}
+                      onClick={() => handleAction(() => setActiveConvId(conv.id))}
                       className={`w-full text-left px-4 py-2.5 rounded-xl flex items-center justify-between group transition-all ${
                         activeConvId === conv.id ? 'bg-primary/15 text-white border border-primary/20' : 'text-muted hover:bg-surface hover:text-white'
                       }`}
@@ -672,7 +704,7 @@ export default function App() {
                     { id: 'compress', icon: Minimize2, label: 'Compress PDF' },
                     { id: 'repair', icon: Eraser, label: 'Repair PDF' },
                   ].map(tool => (
-                    <button key={tool.label} className="tool-btn" onClick={() => setActiveTool(tool)}>
+                    <button key={tool.label} className="tool-btn" onClick={() => handleAction(() => setActiveTool(tool))}>
                       <tool.icon size={14} /> {tool.label}
                     </button>
                   ))}
@@ -689,7 +721,7 @@ export default function App() {
                     { id: 'excel-to-pdf', icon: ArrowRightLeft, label: 'Excel to PDF' },
                     { id: 'word-to-pdf', icon: FileText, label: 'Word to PDF' },
                   ].map(tool => (
-                    <button key={tool.id} className="tool-btn" onClick={() => setActiveTool(tool)}>
+                    <button key={tool.id} className="tool-btn" onClick={() => handleAction(() => setActiveTool(tool))}>
                       <tool.icon size={14} /> {tool.label}
                     </button>
                   ))}
@@ -703,7 +735,7 @@ export default function App() {
                   {[
                     { id: 'edit', icon: Type, label: 'A.I. Smart Redraft' },
                   ].map(tool => (
-                    <button key={tool.id} className="tool-btn" onClick={() => setActiveTool(tool)}>
+                    <button key={tool.id} className="tool-btn" onClick={() => handleAction(() => setActiveTool(tool))}>
                       <tool.icon size={14} /> {tool.label}
                     </button>
                   ))}
@@ -718,7 +750,7 @@ export default function App() {
                     { id: 'rotate', icon: RotateCw, label: 'Rotate Pages' },
                     { id: 'reorder', icon: Layout, label: 'Organize Pages' },
                   ].map(tool => (
-                    <button key={tool.id} className="tool-btn" onClick={() => setActiveTool(tool)}>
+                    <button key={tool.id} className="tool-btn" onClick={() => handleAction(() => setActiveTool(tool))}>
                       <tool.icon size={14} /> {tool.label}
                     </button>
                   ))}
@@ -742,16 +774,16 @@ export default function App() {
       {/* ─── Main Chat Area ─── */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Chat Header */}
-        <header className="h-14 border-b border-white/5 px-6 flex items-center justify-between bg-background/80 backdrop-blur-md shrink-0">
+        <header className="h-14 border-b border-white/5 px-4 md:px-6 flex items-center justify-between bg-background/80 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 hover:bg-surface rounded-lg transition-colors text-muted hover:text-white">
-              <ChevronDown size={16} className={`transform transition-transform ${sidebarOpen ? '-rotate-90' : 'rotate-90'}`} />
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 -ml-1 lg:ml-0 hover:bg-surface rounded-lg transition-colors text-muted hover:text-white">
+              {isMobile ? <Menu size={20} /> : <ChevronDown size={16} className={`transform transition-transform ${sidebarOpen ? '-rotate-90' : 'rotate-90'}`} />}
             </button>
-            <span className="text-sm font-medium text-muted">
+            <span className="text-xs md:text-sm font-medium text-muted truncate max-w-[200px] lg:max-w-none">
               {activeConvId ? conversations.find(c => c.id === activeConvId)?.title || 'Chat' : 'New Chat'}
             </span>
           </div>
-          <span className="text-[10px] text-muted/50 font-mono uppercase tracking-widest">Gemini 2.5 Pro</span>
+            <span className="text-[10px] text-muted/50 font-mono uppercase tracking-widest hidden xl:block">Gemini 2.5 Pro</span>
         </header>
 
         {/* Messages Area */}
