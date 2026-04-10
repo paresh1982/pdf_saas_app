@@ -610,7 +610,6 @@ export default function App() {
                 <div className="space-y-1">
                   {[
                     { id: 'edit', icon: Type, label: 'Edit Content' },
-                    { id: 'repair', icon: Eraser, label: 'Repair PDF' },
                   ].map(tool => (
                     <button key={tool.id} className="tool-btn" onClick={() => setActiveTool(tool)}>
                       <tool.icon size={14} /> {tool.label}
