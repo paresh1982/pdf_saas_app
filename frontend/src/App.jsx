@@ -113,16 +113,16 @@ function ToolModal({ tool, onClose }) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-surface border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+        <div className="p-6 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
               <tool.icon size={24} />
             </div>
             <h2 className="text-xl font-bold">{title}</h2>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-background rounded-full transition-colors">
             <X size={20} className="text-muted" />
           </button>
         </div>
@@ -130,7 +130,7 @@ function ToolModal({ tool, onClose }) {
         <div className="p-8 overflow-y-auto custom-scrollbar">
           <div
             onClick={() => document.getElementById('tool-file-input').click()}
-            className="border-2 border-dashed border-white/10 hover:border-primary/40 rounded-3xl p-12 cursor-pointer transition-all text-center group"
+            className="border-2 border-dashed border-border hover:border-primary/40 rounded-3xl p-12 cursor-pointer transition-all text-center group bg-background/30"
           >
             <input
               id="tool-file-input"
@@ -155,7 +155,7 @@ function ToolModal({ tool, onClose }) {
                 placeholder="e.g. 1-3, 5, 8-10"
                 value={pageRange}
                 onChange={(e) => setPageRange(e.target.value)}
-                className="w-full bg-surface/50 border border-white/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted/30"
+                className="w-full bg-background border border-border rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted/30 text-foreground"
               />
               <p className="text-[10px] text-muted/40 px-2 italic">Leave blank to split into individual pages.</p>
             </div>
@@ -168,7 +168,7 @@ function ToolModal({ tool, onClose }) {
                 placeholder="e.g. Change the invoice date to 2024-12-01 and update the vendor name to ABC Corp"
                 value={instructions}
                 onChange={(e) => setInstructions(e.target.value)}
-                className="w-full bg-surface/50 border border-white/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted/30 min-h-[100px] resize-none"
+                className="w-full bg-background border border-border rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted/30 min-h-[100px] resize-none text-foreground"
               />
             </div>
           )}
@@ -182,7 +182,7 @@ function ToolModal({ tool, onClose }) {
                     key={deg} 
                     onClick={() => setDegrees(deg)}
                     className={`flex-1 py-3 rounded-2xl border transition-all text-sm font-medium ${
-                      degrees === deg ? 'bg-primary/20 border-primary text-white' : 'bg-surface/50 border-white/10 text-muted hover:border-white/20'
+                      degrees === deg ? 'bg-primary/20 border-primary text-foreground' : 'bg-background border-border text-muted hover:border-primary/30'
                     }`}
                   >
                     {deg}°
@@ -200,7 +200,7 @@ function ToolModal({ tool, onClose }) {
                 placeholder="e.g. 3, 1, 2, 4 (shuffles pages)"
                 value={sequence}
                 onChange={(e) => setSequence(e.target.value)}
-                className="w-full bg-surface/50 border border-white/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted/30"
+                className="w-full bg-background border border-border rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted/30 text-foreground"
               />
               <p className="text-[10px] text-muted/40 px-2 italic">Identify pages by their current numbers separated by commas.</p>
             </div>
@@ -224,8 +224,8 @@ function ToolModal({ tool, onClose }) {
           )}
         </div>
 
-        <div className="p-6 bg-black/20 flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-white/5 hover:bg-white/10 transition-all">
+        <div className="p-6 bg-background/50 flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-surface hover:bg-background transition-all border border-border">
             Cancel
           </button>
           <button
