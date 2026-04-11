@@ -990,40 +990,121 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
   }
 });
 
-// ─── PDF TOOL: Word to PDF ───────────────────────────────
+// ─── PDF TOOL: Word to PDF (High Fidelity Mirror) ───────
 app.post('/api/tools/word-to-pdf', upload.single('file'), async (req, res) => {
   try {
-    const result = await mammoth.extractRawText({ path: req.file.path });
-    const text = result.value;
+    if (!req.file) return res.status(400).json({ error: 'Please upload a Word file.' });
+
+    const inputData = getMultimodalData(req.file.path);
+    const prompt = `Act as a Professional Document Transcriber. 
+    Analyze this Word document and extract its EXACT visual structure.
+    
+    1. Identify Headers (H1, H2).
+    2. Identify regular Paragraphs.
+    3. Identify ALL Tables (extract as 2D arrays).
+    4. Group content in order.
+    
+    RETURN ONLY a JSON array of blocks:
+    [
+      { "type": "h1", "content": "Main Title" },
+      { "type": "paragraph", "content": "..." },
+      { "type": "table", "content": [["Col1", "Col2"], ["Val1", "Val2"]] }
+    ]
+    
+    CRITICAL: NO CONVERSATIONAL TEXT. ONLY RAW JSON.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      contents: [{ role: 'user', parts: [{ text: prompt }, inputData] }]
+    });
+
+    const blocks = extractCleanJson(response.text);
 
     const pdfDoc = await PDFDocument.create();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     
-    // Header Branding
-    const page = pdfDoc.addPage([600, 842]);
-    let y = 780;
-    page.drawRectangle({ x: 0, y: 800, width: 600, height: 42, color: rgb(0.1, 0.1, 0.1) });
-    page.drawText('OneStopDoc WORD TO PDF EXPORT', { x: 50, y: 815, size: 10, font: fontBold, color: rgb(1, 1, 1) });
+    let page = pdfDoc.addPage([600, 842]);
+    const { width, height } = page.getSize();
+    let y = height - 50;
+    const margin = 50;
+    const availableWidth = width - (margin * 2);
 
-    const paragraphs = text.split('\n').filter(p => p.trim());
-    for (const p of paragraphs) {
-      if (y < 40) break;
-      const lines = p.match(/.{1,95}/g) || [p];
-      for (const line of lines) {
-        if (y < 40) break;
-        page.drawText(line, { x: 50, y, size: 8.5, font });
-        y -= 13;
+    for (const block of blocks) {
+      if (y < 80) {
+        page = pdfDoc.addPage([600, 842]);
+        y = height - 50;
       }
-      y -= 10; // Paragraph spacing
+
+      const content = typeof block.content === 'string' 
+        ? block.content.replace(/\*\*\*/g, '').replace(/\*\*/g, '') 
+        : block.content;
+
+      if (block.type === 'h1' || block.type === 'h2') {
+        const size = block.type === 'h1' ? 18 : 14;
+        page.drawText(String(content), { x: margin, y: y - size, size, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+        y -= (size + 20);
+      } 
+      else if (block.type === 'table') {
+        const rows = Array.isArray(content) ? content : [];
+        if (rows.length === 0) continue;
+        
+        const colCount = rows[0].length;
+        const colWidth = availableWidth / Math.max(colCount, 1);
+        const rowHeight = 20;
+
+        for (const [rowIndex, row] of rows.entries()) {
+          if (y < 60) { page = pdfDoc.addPage([600, 842]); y = height - 50; }
+          
+          let x = margin;
+          for (const cell of row) {
+            const cellText = String(cell || '').replace(/\*\*\*/g, '').replace(/\*\*/g, '').substring(0, 40);
+            
+            // Draw Cell
+            page.drawRectangle({
+              x, y: y - rowHeight,
+              width: colWidth, height: rowHeight,
+              borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 0.5
+            });
+
+            page.drawText(cellText, {
+              x: x + 5, y: y - (rowHeight / 1.5),
+              size: 8, font: rowIndex === 0 ? fontBold : font
+            });
+            x += colWidth;
+          }
+          y -= rowHeight;
+        }
+        y -= 10;
+      } 
+      else {
+        // Paragraph with basic wrap
+        const words = String(content).split(' ');
+        let line = '';
+        for (const word of words) {
+          const testLine = line + (line ? ' ' : '') + word;
+          if (font.widthOfTextAtSize(testLine, 10) > availableWidth) {
+            page.drawText(line, { x: margin, y, size: 10, font });
+            y -= 14;
+            line = word;
+            if (y < 50) { page = pdfDoc.addPage([600, 842]); y = height - 50; }
+          } else {
+            line = testLine;
+          }
+        }
+        page.drawText(line, { x: margin, y, size: 10, font });
+        y -= 24;
+      }
     }
 
     const pdfBytes = await pdfDoc.save();
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=OneStopDoc_Word_Export.pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=NexGen_Word_Mirror.pdf');
     res.send(Buffer.from(pdfBytes));
-    fs.unlinkSync(req.file.path);
+    
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
   } catch (err) {
+    console.error('Word-to-PDF Error:', err);
     res.status(500).json({ error: 'Word to PDF failed', details: err.message });
   }
 });
