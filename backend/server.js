@@ -534,16 +534,20 @@ app.post('/api/tools/pdf-to-word', upload.single('file'), async (req, res) => {
       sections: [{
         properties: {},
         children: blocks.map(block => {
+          const cleanContent = typeof block.content === 'string' 
+            ? block.content.replace(/\*\*\*/g, '').replace(/\*\*/g, '') 
+            : block.content;
+
           if (block.type === 'h1') {
             return new Paragraph({
-              text: String(block.content),
+              text: String(cleanContent),
               heading: HeadingLevel.HEADING_1,
               spacing: { before: 400, after: 200 }
             });
           }
           if (block.type === 'h2') {
             return new Paragraph({
-              text: String(block.content),
+              text: String(cleanContent),
               heading: HeadingLevel.HEADING_2,
               spacing: { before: 300, after: 150 }
             });
@@ -553,16 +557,19 @@ app.post('/api/tools/pdf-to-word', upload.single('file'), async (req, res) => {
             return new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               rows: rows.map(row => new TableRow({
-                children: (Array.isArray(row) ? row : Object.values(row)).map(cell => new TableCell({
-                  children: [new Paragraph({ text: String(cell || ''), spacing: { before: 80, after: 80 } })],
-                  verticalAlign: VerticalAlign.CENTER,
-                }))
+                children: (Array.isArray(row) ? row : Object.values(row)).map(cell => {
+                  const cleanCell = typeof cell === 'string' ? cell.replace(/\*\*\*/g, '').replace(/\*\*/g, '') : cell;
+                  return new TableCell({
+                    children: [new Paragraph({ text: String(cleanCell || ''), spacing: { before: 80, after: 80 } })],
+                    verticalAlign: VerticalAlign.CENTER,
+                  });
+                })
               }))
             });
           }
           // Default: Paragraph
           return new Paragraph({
-            children: [new TextRun({ text: String(block.content || ""), size: 22 })],
+            children: [new TextRun({ text: String(cleanContent || ""), size: 22 })],
             spacing: { after: 200 }
           });
         }).flat()
