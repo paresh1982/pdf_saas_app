@@ -111,10 +111,13 @@ const upload = multer({
       'application/vnd.ms-excel',
       'text/csv',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/msword'
+      'application/msword',
+      'image/jpeg',
+      'image/png',
+      'image/jpg'
     ];
-    if (allowed.includes(file.mimetype)) cb(null, true);
-    else cb(new Error('Only PDF, Word, Excel, and CSV files are allowed'), false);
+    if (allowed.includes(file.mimetype) || file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only PDF, Word, Excel, CSV, and Images are allowed'), false);
   },
 });
 
@@ -142,16 +145,22 @@ RULES:
 7. Never refuse to analyze a document. Adapt to whatever the user needs.`;
 
 async function getFileContext(file) {
-  if (file.mimetype === 'application/pdf') {
+  const mimeType = file.mimetype;
+  const isImage = mimeType.startsWith('image/');
+  const isPdf = mimeType === 'application/pdf';
+  const isWord = mimeType.includes('word') || file.originalname.endsWith('.docx') || file.originalname.endsWith('.doc');
+  const isExcel = mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType.includes('csv');
+
+  if (isPdf || isImage) {
     return {
       inlineData: {
         data: fs.readFileSync(file.path).toString('base64'),
-        mimeType: 'application/pdf',
+        mimeType: isPdf ? 'application/pdf' : mimeType,
       },
     };
-  } else if (file.mimetype.includes('spreadsheet') || file.mimetype.includes('excel') || file.mimetype.includes('csv')) {
+  } else if (isExcel) {
     const workbook = new ExcelJS.Workbook();
-    if (file.mimetype === 'text/csv') await workbook.csv.readFile(file.path);
+    if (mimeType === 'text/csv') await workbook.csv.readFile(file.path);
     else await workbook.xlsx.readFile(file.path);
     
     let excelText = `EXCEL CONTENT (File: ${file.originalname}):\n`;
@@ -162,11 +171,13 @@ async function getFileContext(file) {
       });
     });
     return { text: excelText };
-  } else if (file.mimetype.includes('word') || file.originalname.endsWith('.docx') || file.originalname.endsWith('.doc')) {
+  } else if (isWord) {
+    // Gemini supports Word documents via specific MIME type or PDF fallback. 
+    // Using the official Word MIME type for better native support in 2.5 Pro.
     return {
       inlineData: {
         data: fs.readFileSync(file.path).toString('base64'),
-        mimeType: file.mimetype,
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       },
     };
   }
