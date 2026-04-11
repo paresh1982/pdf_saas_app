@@ -906,35 +906,44 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     
     for (const worksheet of workbook.worksheets) {
-      // Filter by user sheets if provided
       if (targetNames.length > 0 && !targetNames.includes(worksheet.name.trim().toLowerCase())) continue;
 
-      // Landscape A3/A4 hybrid for wide data
+      // ─── 1. Detect Data Bounding Box ───
+      let maxCol = 0;
+      let maxRow = 0;
+      worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+        maxRow = Math.max(maxRow, rowNumber);
+        row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+          maxCol = Math.max(maxCol, colNumber);
+        });
+      });
+
+      if (maxRow === 0 || maxCol === 0) continue; // Skip empty sheets
+
       const page = pdfDoc.addPage([1190, 842]); 
       const { width, height } = page.getSize();
       let y = height - 60;
       
-      // Header Branding
       page.drawRectangle({ x: 0, y: height - 40, width, height: 40, color: rgb(0.05, 0.05, 0.05) });
       page.drawText(`SHEET: ${worksheet.name.toUpperCase()}`, { x: 50, y: height - 25, size: 12, font: fontBold, color: rgb(1, 1, 1) });
 
-      // Table Settings
       const margin = 40;
-      const colWidth = (width - (margin * 2)) / Math.max(worksheet.actualColumnCount, 5);
-      const rowHeight = 20;
+      const colWidth = (width - (margin * 2)) / maxCol;
+      const rowHeight = 22;
 
-      // Draw Grid Header Background
+      // Draw Grid Header Background for the first row
       page.drawRectangle({ x: margin, y: y - rowHeight, width: width - (margin * 2), height: rowHeight, color: rgb(0.95, 0.95, 0.95) });
 
-      worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
-        if (y < 60) return; // Simple page limit
-
+      for (let r = 1; r <= maxRow; r++) {
+        if (y < 60) break;
+        const row = worksheet.getRow(r);
         let x = margin;
-        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          const val = getDeepCellValue(cell);
-          const drawVal = String(val).substring(0, 40); // Simple truncation for alignment
 
-          // Draw Cell Border
+        for (let c = 1; c <= maxCol; c++) {
+          const cell = row.getCell(c);
+          const val = getDeepCellValue(cell);
+          const drawVal = String(val).substring(0, 50);
+
           page.drawRectangle({
             x, y: y - rowHeight,
             width: colWidth, height: rowHeight,
@@ -942,21 +951,21 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
             borderWidth: 0.5
           });
 
-          // Draw Text
-          try {
-            page.drawText(drawVal, {
-              x: x + 5,
-              y: y - (rowHeight / 1.5),
-              size: 8,
-              font: rowNumber === 1 ? fontBold : font,
-              color: rgb(0.1, 0.1, 0.1)
-            });
-          } catch(e) {}
-          
+          if (val) {
+            try {
+              page.drawText(drawVal, {
+                x: x + 5,
+                y: y - (rowHeight / 1.5),
+                size: 8,
+                font: r === 1 ? fontBold : font,
+                color: rgb(0.1, 0.1, 0.1)
+              });
+            } catch(e) {}
+          }
           x += colWidth;
-        });
+        }
         y -= rowHeight;
-      });
+      }
     }
 
     const pdfBytes = await pdfDoc.save();
