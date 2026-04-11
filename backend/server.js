@@ -339,9 +339,18 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
           for (const doc of docs) {
             const filePath = path.join(UPLOAD_DIR, doc.filename);
             if (fs.existsSync(filePath)) {
+              // ─── Precise Mime-Type Mapping ───
+              const ext = doc.filename.toLowerCase().split('.').pop();
+              let mime = 'text/plain';
+              if (ext === 'pdf') mime = 'application/pdf';
+              else if (ext === 'xlsx' || ext === 'xls') mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+              else if (ext === 'docx' || ext === 'doc') mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+              else if (['jpg', 'jpeg'].includes(ext)) mime = 'image/jpeg';
+              else if (ext === 'png') mime = 'image/png';
+
               const fileContext = await getFileContext({ 
                 path: filePath, 
-                mimetype: doc.filename.endsWith('.pdf') ? 'application/pdf' : (doc.filename.endsWith('.xlsx') ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/plain'), // simplification
+                mimetype: mime,
                 originalname: doc.original_name
               });
               if (fileContext) {
