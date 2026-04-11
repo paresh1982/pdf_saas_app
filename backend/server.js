@@ -995,27 +995,34 @@ app.post('/api/tools/word-to-pdf', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Please upload a Word file.' });
 
-    const inputData = getMultimodalData(req.file.path);
-    const prompt = `Act as a Professional Document Transcriber. 
-    Analyze this Word document and extract its EXACT visual structure.
+    // ─── 1. Extract Content locally via Mammoth ───
+    const result = await mammoth.extractRawText({ path: req.file.path });
+    const wordContent = result.value;
+
+    const prompt = `Act as a Professional Document Architect. 
+    Analyze the following Word document text and reconstruct its structural elements.
     
+    DOCUMENT CONTENT:
+    ${wordContent}
+    
+    TASK:
     1. Identify Headers (H1, H2).
     2. Identify regular Paragraphs.
-    3. Identify ALL Tables (extract as 2D arrays).
+    3. Identify Tables (if data is grouped in columns/rows).
     4. Group content in order.
     
     RETURN ONLY a JSON array of blocks:
     [
-      { "type": "h1", "content": "Main Title" },
+      { "type": "h1", "content": "Title" },
       { "type": "paragraph", "content": "..." },
-      { "type": "table", "content": [["Col1", "Col2"], ["Val1", "Val2"]] }
+      { "type": "table", "content": [["Row1Col1", "Row1Col2"], ["Row2Col1", "Row2Col2"]] }
     ]
     
     CRITICAL: NO CONVERSATIONAL TEXT. ONLY RAW JSON.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-pro",
-      contents: [{ role: 'user', parts: [{ text: prompt }, inputData] }]
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
     });
 
     const blocks = extractCleanJson(response.text);
