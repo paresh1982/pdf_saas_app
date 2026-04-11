@@ -884,13 +884,29 @@ app.post('/api/tools/pdf-to-excel', upload.single('file'), async (req, res) => {
     const worksheet = workbook.addWorksheet('NexGen_Structural_Export');
     
     if (data.length > 0) {
-      const headers = Object.keys(data[0]);
-      worksheet.addRow(headers);
-      data.forEach(row => worksheet.addRow(headers.map(h => row[h])));
+      // Check if data is array of objects (Horizontal Table)
+      if (!Array.isArray(data[0]) && typeof data[0] === 'object') {
+        const headers = Object.keys(data[0]);
+        worksheet.addRow(headers);
+        data.forEach(item => {
+          worksheet.addRow(headers.map(h => {
+            let val = item[h];
+            return typeof val === 'string' ? val.replace(/\*\*\*/g, '').replace(/\*\*/g, '') : val;
+          }));
+        });
+        worksheet.getRow(1).font = { bold: true };
+      } 
+      // Array of Arrays (Vertical Form / Raw Rows)
+      else {
+        data.forEach(row => {
+          const cleanRow = Array.isArray(row) 
+            ? row.map(cell => typeof cell === 'string' ? cell.replace(/\*\*\*/g, '').replace(/\*\*/g, '') : cell)
+            : [row];
+          worksheet.addRow(cleanRow);
+        });
+      }
       
-      // Style headers
-      worksheet.getRow(1).font = { bold: true };
-      worksheet.columns.forEach(column => { column.width = 25; });
+      worksheet.columns.forEach(column => { column.width = 30; });
     }
 
     const buffer = await workbook.xlsx.writeBuffer();
