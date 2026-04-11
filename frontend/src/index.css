@@ -7,14 +7,18 @@
   --surface: #ffffff;
   --muted: #64748b;
   --foreground: #0f172a;
+  --primary: #8b5cf6;
+  --secondary: #0ea5e9;
   --border: rgba(0,0,0,0.05);
 }
 
 .dark {
   --background: #0a0a0a;
   --surface: #1a1a1a;
-  --muted: #e5e5e5;
-  --foreground: #ffffff;
+  --muted: #94a3b8;
+  --foreground: #cbd5e1; /* Even softer foreground (gray-300) */
+  --primary: #a78bfa;    /* Softer violet */
+  --secondary: #38bdf8;  /* Softer sky blue */
   --border: rgba(255,255,255,0.05);
 }
 

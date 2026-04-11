@@ -1,0 +1,7 @@
+Description,Quantity,Unit Price,Total
+"AI Consulting",2,150,300
+"Cloud Storage",1,50,50
+"API Integration",1,250,250
+"Subtotal",,,600
+"GST (18%)",,,108
+"Grand Total",,,708

@@ -639,9 +639,9 @@ export default function App() {
       <AnimatePresence>
         {sidebarOpen && (
           <motion.aside
-            initial={{ x: isMobile ? -280 : 0, width: isMobile ? 280 : 0, opacity: 0 }}
-            animate={{ x: 0, width: 280, opacity: 1 }}
-            exit={{ x: isMobile ? -280 : 0, width: 0, opacity: 0 }}
+            initial={{ x: isMobile ? -320 : 0, width: isMobile ? 320 : 0, opacity: 0 }}
+            animate={{ x: 0, width: 320, opacity: 1 }}
+            exit={{ x: isMobile ? -320 : 0, width: 0, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className={`${isMobile ? 'fixed inset-y-0 left-0 z-[70]' : 'relative hidden lg:flex'} border-r border-border flex flex-col bg-surface/90 backdrop-blur-2xl shrink-0 overflow-hidden shadow-2xl md:shadow-none`}
           >
@@ -801,7 +801,7 @@ export default function App() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center max-w-lg"
+                className="text-center max-w-2xl"
               >
                 <div className="w-16 h-16 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20">
                   <Zap size={32} className="text-white fill-white" />
@@ -845,7 +845,7 @@ export default function App() {
                       setAttachedFiles(prev => [...prev, ...dropped]);
                     }
                   }}
-                  className="w-full max-w-md border-2 border-dashed border-white/10 hover:border-primary/40 rounded-3xl p-12 cursor-pointer transition-all duration-300 group bg-surface/20"
+                  className="w-full max-w-2xl border-2 border-dashed border-white/10 hover:border-primary/40 rounded-3xl p-12 cursor-pointer transition-all duration-300 group bg-surface/20"
                 >
                   <div className="flex flex-col items-center gap-4">
                     <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -871,7 +871,7 @@ export default function App() {
               </motion.div>
             </div>
           ) : (
-            <div className="max-w-full mx-auto p-6 space-y-6">
+            <div className="max-w-5xl mx-auto p-6 space-y-6">
               {messages.map((msg, i) => (
                 <ChatMessage key={i} msg={msg} />
               ))}
@@ -895,7 +895,7 @@ export default function App() {
 
         {/* Input Area */}
         <div className="border-t border-white/5 p-4 bg-background/80 backdrop-blur-md shrink-0">
-          <div className="max-w-full mx-auto">
+          <div className="max-w-5xl mx-auto">
             {/* Attached Files Preview */}
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-3">

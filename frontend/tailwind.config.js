@@ -10,9 +10,10 @@ export default {
       colors: {
         background: 'var(--background)',
         surface: 'var(--surface)',
-        primary: '#8b5cf6', // Electric Violet
-        secondary: '#0ea5e9', // Sky Blue
+        primary: 'var(--primary)',
+        secondary: 'var(--secondary)',
         muted: 'var(--muted)',
+        foreground: 'var(--foreground)',
         success: '#10b981',
         warning: '#f59e0b',
         error: '#ef4444',
