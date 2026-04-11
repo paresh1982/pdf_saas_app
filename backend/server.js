@@ -908,17 +908,23 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
     for (const worksheet of workbook.worksheets) {
       if (targetNames.length > 0 && !targetNames.includes(worksheet.name.trim().toLowerCase())) continue;
 
-      // ─── 1. Detect Data Bounding Box ───
+      // ─── 1. Content-Aware Bounding Box Detection ───
       let maxCol = 0;
       let maxRow = 0;
-      worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-        maxRow = Math.max(maxRow, rowNumber);
-        row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
-          maxCol = Math.max(maxCol, colNumber);
+      
+      worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+        let rowHasContent = false;
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const val = getDeepCellValue(cell);
+          if (val && String(val).trim() !== '') {
+            rowHasContent = true;
+            maxCol = Math.max(maxCol, colNumber);
+          }
         });
+        if (rowHasContent) maxRow = Math.max(maxRow, rowNumber);
       });
 
-      if (maxRow === 0 || maxCol === 0) continue; // Skip empty sheets
+      if (maxRow === 0 || maxCol === 0) continue; 
 
       const page = pdfDoc.addPage([1190, 842]); 
       const { width, height } = page.getSize();
@@ -928,11 +934,14 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
       page.drawText(`SHEET: ${worksheet.name.toUpperCase()}`, { x: 50, y: height - 25, size: 12, font: fontBold, color: rgb(1, 1, 1) });
 
       const margin = 40;
-      const colWidth = (width - (margin * 2)) / maxCol;
+      // Smarter column width: First column wider for labels, others even
+      const availableWidth = width - (margin * 2);
+      const firstColWidth = Math.min(availableWidth * 0.4, 300);
+      const otherColWidth = maxCol > 1 ? (availableWidth - firstColWidth) / (maxCol - 1) : 0;
       const rowHeight = 22;
 
-      // Draw Grid Header Background for the first row
-      page.drawRectangle({ x: margin, y: y - rowHeight, width: width - (margin * 2), height: rowHeight, color: rgb(0.95, 0.95, 0.95) });
+      // Draw Grid Header Background
+      page.drawRectangle({ x: margin, y: y - rowHeight, width: availableWidth, height: rowHeight, color: rgb(0.95, 0.95, 0.95) });
 
       for (let r = 1; r <= maxRow; r++) {
         if (y < 60) break;
@@ -942,11 +951,12 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
         for (let c = 1; c <= maxCol; c++) {
           const cell = row.getCell(c);
           const val = getDeepCellValue(cell);
-          const drawVal = String(val).substring(0, 50);
+          const drawVal = String(val).substring(0, 60);
+          const currentWidth = c === 1 ? firstColWidth : otherColWidth;
 
           page.drawRectangle({
             x, y: y - rowHeight,
-            width: colWidth, height: rowHeight,
+            width: currentWidth, height: rowHeight,
             borderColor: rgb(0.8, 0.8, 0.8),
             borderWidth: 0.5
           });
@@ -962,7 +972,7 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
               });
             } catch(e) {}
           }
-          x += colWidth;
+          x += currentWidth;
         }
         y -= rowHeight;
       }
