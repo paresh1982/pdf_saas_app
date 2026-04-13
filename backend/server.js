@@ -47,7 +47,9 @@ app.use((req, res, next) => {
 // ─── PostgreSQL Setup (Supabase) ─────────────────────────
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('supabase') ? { rejectUnauthorized: false } : false,
+  ssl: {
+    rejectUnauthorized: false
+  },
   max: 10, // Maintain a safe number of connections for Supabase Free Tier
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
   connectionTimeoutMillis: 5000, // Return an error if a connection takes longer than 5 seconds
