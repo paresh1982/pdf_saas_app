@@ -190,22 +190,23 @@ async function getFileContext(file) {
     if (mimeType === 'text/csv') await workbook.csv.readFile(file.path);
     else await workbook.xlsx.readFile(file.path);
     
-    let excelText = `EXCEL CONTENT (File: ${file.originalname}):\n`;
+    let excelText = `[ATTACHMENT: ${file.originalname}]\n`;
     workbook.eachSheet(sheet => {
-      excelText += `Sheet: ${sheet.name}\n`;
-      sheet.eachRow(row => {
-        excelText += `| ${row.values.filter(v => v !== undefined).join(' | ')} |\n`;
+      excelText += `--- SHEET: ${sheet.name} ---\n`;
+      sheet.eachRow((row, rowNum) => {
+        const values = Array.isArray(row.values) ? row.values.slice(1) : Object.values(row.values);
+        excelText += `Row ${rowNum}: | ${values.filter(v => v !== undefined).join(' | ')} |\n`;
       });
+      excelText += `\n`;
     });
     return { text: excelText };
   } else if (isWord) {
-    // Gemini supports Word documents via specific MIME type or PDF fallback. 
-    // Using the official Word MIME type for better native support in 2.5 Pro.
     return {
       inlineData: {
         data: fs.readFileSync(file.path).toString('base64'),
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       },
+      text: `[ATTACHMENT: ${file.originalname}]`
     };
   }
   return null;
@@ -222,23 +223,32 @@ async function callGemini(contents, maxRetries = 3) {
   for (let attempt = 0; attempt < models.length; attempt++) {
     const modelName = models[attempt];
     try {
-      const response = await ai.models.generateContent({
+      const model = ai.getGenerativeModel({
         model: modelName,
-        contents,
-        config: {
-          systemInstruction: SYSTEM_PROMPT,
-          tools: [{ codeExecution: {} }],
-        }
+        systemInstruction: SYSTEM_PROMPT,
       });
+
+      const result = await model.generateContent({
+        contents,
+        generationConfig: {
+          maxOutputTokens: 8192,
+          temperature: 0.2,
+        },
+        tools: [{ codeExecution: {} }],
+      });
+
+      const aiText = result.response.text();
       console.log(`✅ Success via ${modelName} (Attempt ${attempt + 1})`);
-      return response.text;
+      return aiText;
     } catch (err) {
       const status = err?.status || err?.code;
-      const isRecoverable = status === 429 || status === 503 || status === 500;
+      // 404/400 usually means invalid model or prompt, 429/500/503 are retriable
+      const isRecoverable = [429, 500, 503].includes(status);
+      const isInvalid = [400, 404].includes(status);
       
-      if (isRecoverable && attempt < models.length - 1) {
+      if ((isRecoverable || isInvalid) && attempt < models.length - 1) {
         const cooldown = 500 + Math.random() * 500;
-        console.warn(`⚠️ ${modelName} failed (${status}). Failing over to ${models[attempt + 1]} in ${Math.round(cooldown)}ms...`);
+        console.warn(`⚠️ ${modelName} encountered error (${status}). Failing over to ${models[attempt + 1]}...`);
         await new Promise((r) => setTimeout(r, cooldown));
         continue;
       } else {
@@ -348,15 +358,22 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
     const dbMessages = historyResult.rows;
 
     const contents = [];
-    for (const msg of dbMessages) {
+    for (const [index, msg] of dbMessages.entries()) {
       const parts = [{ text: msg.content }];
+      const isLastMessage = index === dbMessages.length - 1;
       
       // ─── Restore Attachments for Context ───
-      // If the message has attachments, reload them from disk to feed Gemini's memory
-      if (msg.attachments && msg.attachments !== '[]') {
+      // For the last message, if we just uploaded files, use the in-memory context directly (faster/more reliable)
+      if (isLastMessage && fileContexts.length > 0) {
+        for (const ctx of fileContexts) {
+          if (ctx.text) parts.push({ text: ctx.text });
+          if (ctx.inlineData) parts.push({ inlineData: ctx.inlineData });
+        }
+      } 
+      // Otherwise, restore from disk (history mode)
+      else if (msg.attachments && msg.attachments !== '[]') {
         try {
           const fileNames = JSON.parse(msg.attachments);
-          // We need to find the actual filenames on disk from the 'documents' table
           const docsResult = await pool.query(
             'SELECT filename, original_name FROM documents WHERE conversation_id = $1 AND original_name = ANY($2)',
             [convId, fileNames]
@@ -366,7 +383,6 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
           for (const doc of docs) {
             const filePath = path.join(UPLOAD_DIR, doc.filename);
             if (fs.existsSync(filePath)) {
-              // ─── Precise Mime-Type Mapping ───
               const ext = doc.filename.toLowerCase().split('.').pop();
               let mime = 'text/plain';
               if (ext === 'pdf') mime = 'application/pdf';
