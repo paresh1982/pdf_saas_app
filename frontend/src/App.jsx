@@ -84,7 +84,7 @@ function ToolModal({ tool, onClose }) {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', response.headers['content-disposition']?.split('filename=')[1]?.replace(/"/g, '') || `OneStopDoc_${tool.id}.pdf`);
+      link.setAttribute('download', response.headers['content-disposition']?.split('filename=')[1]?.replace(/"/g, '') || `NexGen_${tool.id}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -652,7 +652,7 @@ export default function App() {
                 <div className="w-8 h-8 bg-gradient-to-br from-primary to-sky-500 rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
                   <Zap size={18} className="text-white fill-white" />
                 </div>
-                <h1 className="text-lg font-bold tracking-tight">OneStopDoc</h1>
+                <h1 className="text-lg font-bold tracking-tight">NexGen AI</h1>
               </div>
               <button 
                 onClick={toggleTheme}
@@ -955,7 +955,7 @@ export default function App() {
             </div>
 
             <p className="text-[10px] text-muted/60 text-center mt-3">
-              OneStopDoc can make mistakes. Verify important data.
+              NexGen AI can make mistakes. Verify important data.
             </p>
           </div>
         </div>

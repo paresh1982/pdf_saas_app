@@ -89,7 +89,7 @@ const initDB = async () => {
   }
 };
 
-initDB();
+// initDB() used to be here, moved to startup section below for better sync
 
 // ─── Multer Storage ──────────────────────────────────────
 const storage = multer.diskStorage({
@@ -1454,9 +1454,23 @@ if (fs.existsSync(FRONTEND_DIR)) {
 }
 
 // ─── Start Server ────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`🚀 NexGen AI v3.0 running on http://localhost:${PORT}`);
-  console.log(`🧠 AI Engine: Ready`);
-  console.log(`📡 Database: PostgreSQL (Supabase Connected)`);
-  console.log(`📁 uploads: ${UPLOAD_DIR} (Ephemeral)`);
-});
+const startServer = async () => {
+  try {
+    // Ensure DB is ready before starting
+    await initDB();
+    
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`\n🚀 NexGen AI v3.0 - Ready for Business`);
+      console.log(`🌐 URL: http://0.0.0.0:${PORT}`);
+      console.log(`📡 Database: PostgreSQL (Supabase Connected)`);
+      console.log(`📂 Storage: Local FileSystem (Ephemeral: /uploads)`);
+      console.log(`🧠 AI Models: gemini-2.5-pro ready\n`);
+    });
+  } catch (err) {
+    console.error('💥 FATAL ERROR: Deployment failed due to database connection issues.');
+    console.error(err);
+    process.exit(1);
+  }
+};
+
+startServer();
