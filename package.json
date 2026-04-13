@@ -1,14 +1,17 @@
 {
   "name": "onestopdoc",
   "version": "3.0.0",
-  "description": "Universal Document Intelligence SaaS",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
     "start": "node backend/server.js",
-    "build": "npm run build:frontend && npm run build:backend",
-    "build:frontend": "cd frontend && npm install && npm run build",
-    "build:backend": "cd backend && npm install"
+    "build": "npm run build -w frontend",
+    "dev": "npm run dev -w backend"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }
