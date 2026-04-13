@@ -15,7 +15,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { GoogleGenAI } = require('@google/genai');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const ExcelJS = require('exceljs');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, VerticalAlign } = require('docx');
 const pdflib = require('pdf-lib');
@@ -44,54 +44,52 @@ app.use((req, res, next) => {
   next();
 });
 
-// ─── SQLite Setup ────────────────────────────────────────
-const db = new sqlite3.Database(path.join(__dirname, 'onestopdoc.db'));
-
-db.serialize(() => {
-  // Conversations table
-  db.run(`CREATE TABLE IF NOT EXISTS conversations (
-    id TEXT PRIMARY KEY,
-    user_id TEXT,
-    title TEXT DEFAULT 'New Chat',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  // Messages table (chat history)
-  db.run(`CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    conversation_id TEXT NOT NULL,
-    role TEXT NOT NULL,
-    content TEXT NOT NULL,
-    attachments TEXT DEFAULT '[]',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (conversation_id) REFERENCES conversations(id)
-  )`);
-
-  // Documents table (uploaded files)
-  db.run(`CREATE TABLE IF NOT EXISTS documents (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    conversation_id TEXT,
-    user_id TEXT,
-    filename TEXT NOT NULL,
-    original_name TEXT NOT NULL,
-    file_size INTEGER DEFAULT 0,
-    extracted_text TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  // ─── Migration: Add user_id column if missing ────────────
-  db.all("PRAGMA table_info(conversations)", (err, rows) => {
-    if (rows && !rows.find(r => r.name === 'user_id')) {
-      db.run("ALTER TABLE conversations ADD COLUMN user_id TEXT");
-    }
-  });
-  db.all("PRAGMA table_info(documents)", (err, rows) => {
-    if (rows && !rows.find(r => r.name === 'user_id')) {
-      db.run("ALTER TABLE documents ADD COLUMN user_id TEXT");
-    }
-  });
+// ─── PostgreSQL Setup (Supabase) ─────────────────────────
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('supabase') ? { rejectUnauthorized: false } : false
 });
+
+const initDB = async () => {
+  try {
+    // Conversations table
+    await pool.query(`CREATE TABLE IF NOT EXISTS conversations (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      title TEXT DEFAULT 'New Chat',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // Messages table
+    await pool.query(`CREATE TABLE IF NOT EXISTS messages (
+      id SERIAL PRIMARY KEY,
+      conversation_id TEXT NOT NULL REFERENCES conversations(id),
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      attachments TEXT DEFAULT '[]',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // Documents table
+    await pool.query(`CREATE TABLE IF NOT EXISTS documents (
+      id SERIAL PRIMARY KEY,
+      conversation_id TEXT NOT NULL REFERENCES conversations(id),
+      user_id TEXT,
+      filename TEXT NOT NULL,
+      original_name TEXT NOT NULL,
+      file_size INTEGER DEFAULT 0,
+      extracted_text TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    console.log('🐘 PostgreSQL (Supabase) Schema Verified.');
+  } catch (err) {
+    console.error('❌ Database Initialization Failed:', err);
+  }
+};
+
+initDB();
 
 // ─── Multer Storage ──────────────────────────────────────
 const storage = multer.diskStorage({
@@ -127,22 +125,43 @@ const SYSTEM_PROMPT = `You are NexGen AI — a universal document intelligence a
 You can analyze ANY type of PDF document: invoices, contracts, white papers, 
 technical manuals, lab reports, resumes, cheat sheets, academic papers, and more.
 
-RULES:
-1. Respond conversationally. Be helpful, precise, and concise.
-2. When analyzing a document, adapt your response to the document type:
-   - For TABULAR data (invoices, spreadsheets): Return a JSON block with structured data.
-   - For NARRATIVE documents (papers, manuals): Return a clear summary with key points.
-   - For MIXED documents: Return both structured data AND a summary.
-3. When returning structured/tabular data, wrap it in a \`\`\`json code block.
-   - CRITICAL SYSTEM RULE: YOU MUST NEVER USE MARKDOWN TABLES (e.g. | Column |). 
-   - IF THE USER ASKS FOR A "TABLE" OR "TABULAR FORMAT", YOU MUST STILL RETURN A \`\`\`json ARRAY INSTEAD. The frontend will automatically convert the JSON block into an interactive Datatable. Markdown tables will break the web application.
-4. When the user asks you to "extract" or "build a table", always return data as a JSON array of objects.
-   - CRITICAL RULE: Ensure the JSON objects for tabular data are completely FLAT. Do NOT use nested objects or arrays inside the rows.
-   - For example, instead of returning \`"tax": {"cgst": 9, "sgst": 9}\`, use separate flat columns: \`"cgst_tax": 9, "sgst_tax": 9\`.
-   - STANDARDIZE DATES: Whenever you extract a date, convert it strictly to the "YYYY-MM-DD" format (e.g., "2024-11-02").
-5. If the user asks a follow-up question about a previously uploaded document, use your memory of the conversation.
-6. Always be ready to export data. If asked, format it as CSV-ready or JSON.
-7. Never refuse to analyze a document. Adapt to whatever the user needs.`;
+### TABULAR EXTRACTION PROTOCOL (CRITICAL)
+When the user asks to "build a table", "extract data", or "analyze items":
+
+1. **PERSISTENCE GUARANTEE**: If a value (like "Date", "Invoice #", or "Vendor") appears only once at the top of a page but applies to a table below it, YOU MUST REPEAT that value for every row in the JSON. 
+   - **ZERO BLANK POLICY**: No row should have an empty "Date" if a date is detectable on the page.
+
+2. **GOLDEN EXAMPLE (Persistence)**:
+   Source Visual:
+   Date: 2024-11-20
+   | Item | Qty |
+   |------|-----|
+   | Pen  | 10  |
+   | Ink  | 2   |
+
+   Correct Output:
+   \`\`\`json
+   [
+     { "Date": "2024-11-20", "Item": "Pen", "Qty": 10 },
+     { "Date": "2024-11-20", "Item": "Ink", "Qty": 2 }
+   ]
+   \`\`\`
+
+3. **MANDATORY COLUMNS**: Always include "Date", "Description", "Amount", and "Quantity" if they are present or can be inferred.
+
+4. **STANDARDIZE DATES**: Strictly convert all dates to "YYYY-MM-DD" format.
+
+5. **NO MARKDOWN TABLES**: Never return data as | Column | format. Always use \`\`\`json blocks.
+
+6. **FLATTENED STRUCTURE**: Use simple key-value pairs. No nested objects.
+
+7. **TOTALS**: Include "Total" or "Subtotal" rows as the final items in the JSON array.
+
+### CONVERSATIONAL RULES
+- Respond helpfully and concisely.
+- If asked for a summary, provide a bulleted list of key takeaways.
+- If mixed content, provide both JSON and a short summary.
+- Never refuse to analyze a document.`;
 
 async function getFileContext(file) {
   const mimeType = file.mimetype;
@@ -232,36 +251,45 @@ app.get('/api/health', (req, res) => {
 });
 
 // ─── GET Conversations ───────────────────────────────────
-app.get('/api/conversations', (req, res) => {
-  db.all('SELECT * FROM conversations WHERE user_id = ? ORDER BY updated_at DESC LIMIT 100', [req.userId], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+app.get('/api/conversations', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM conversations WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 100',
+      [req.userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Get messages for a conversation
-app.get('/api/conversations/:id/messages', (req, res) => {
-  db.all(
-    'SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC',
-    [req.params.id],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
-    }
-  );
+app.get('/api/conversations/:id/messages', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Delete a conversation
-app.delete('/api/conversations/:id', (req, res) => {
-  // First verify ownership
-  db.get('SELECT id FROM conversations WHERE id = ? AND user_id = ?', [req.params.id, req.userId], (err, row) => {
-    if (err || !row) return res.status(403).json({ error: 'Unauthorized to delete this chat.' });
+app.delete('/api/conversations/:id', async (req, res) => {
+  try {
+    // First verify ownership
+    const check = await pool.query('SELECT id FROM conversations WHERE id = $1 AND user_id = $2', [req.params.id, req.userId]);
+    if (check.rows.length === 0) return res.status(403).json({ error: 'Unauthorized to delete this chat.' });
     
-    db.run('DELETE FROM messages WHERE conversation_id = ?', [req.params.id]);
-    db.run('DELETE FROM documents WHERE conversation_id = ?', [req.params.id]);
-    db.run('DELETE FROM conversations WHERE id = ?', [req.params.id]);
+    await pool.query('DELETE FROM messages WHERE conversation_id = $1', [req.params.id]);
+    await pool.query('DELETE FROM documents WHERE conversation_id = $1', [req.params.id]);
+    await pool.query('DELETE FROM conversations WHERE id = $1', [req.params.id]);
     res.json({ success: true });
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── CHAT ENDPOINT (The Core) ────────────────────────────
@@ -274,11 +302,10 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
     if (!convId) {
       convId = 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
       const title = message?.substring(0, 60) || 'New Chat';
-      await new Promise((resolve, reject) => {
-        db.run('INSERT INTO conversations (id, user_id, title) VALUES (?, ?, ?)', [convId, req.userId, title], (err) => {
-          if (err) reject(err); else resolve();
-        });
-      });
+      await pool.query(
+        'INSERT INTO conversations (id, user_id, title) VALUES ($1, $2, $3)',
+        [convId, req.userId, title]
+      );
     }
 
     // Process files for AI context
@@ -290,35 +317,27 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
         if (context) fileContexts.push(context);
         
         // Save to DB
-        await new Promise((resolve, reject) => {
-          db.run(
-            'INSERT INTO documents (conversation_id, user_id, filename, original_name, file_size) VALUES (?, ?, ?, ?, ?)',
-            [convId, req.userId, file.filename, file.originalname, file.size],
-            (err) => { if (err) reject(err); else resolve(); }
-          );
-        });
+        await pool.query(
+          'INSERT INTO documents (conversation_id, user_id, filename, original_name, file_size) VALUES ($1, $2, $3, $4, $5)',
+          [convId, req.userId, file.filename, file.originalname, file.size]
+        );
         uploadedDocs.push({ filename: file.filename, original_name: file.originalname });
       }
     }
 
     // Save user message
     const attachmentNames = uploadedDocs.map(d => d.original_name);
-    await new Promise((resolve, reject) => {
-      db.run(
-        'INSERT INTO messages (conversation_id, role, content, attachments) VALUES (?, ?, ?, ?)',
-        [convId, 'user', message || '', JSON.stringify(attachmentNames)],
-        (err) => { if (err) reject(err); else resolve(); }
-      );
-    });
+    await pool.query(
+      'INSERT INTO messages (conversation_id, role, content, attachments) VALUES ($1, $2, $3, $4)',
+      [convId, 'user', message || '', JSON.stringify(attachmentNames)]
+    );
 
     // Load history
-    const dbMessages = await new Promise((resolve, reject) => {
-      db.all(
-        'SELECT role, content, attachments FROM messages WHERE conversation_id = ? ORDER BY created_at ASC',
-        [convId],
-        (err, rows) => { if (err) reject(err); else resolve(rows); }
-      );
-    });
+    const historyResult = await pool.query(
+      'SELECT role, content, attachments FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+      [convId]
+    );
+    const dbMessages = historyResult.rows;
 
     const contents = [];
     for (const msg of dbMessages) {
@@ -330,11 +349,11 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
         try {
           const fileNames = JSON.parse(msg.attachments);
           // We need to find the actual filenames on disk from the 'documents' table
-          const docs = await new Promise((resolve) => {
-            db.all('SELECT filename, original_name FROM documents WHERE conversation_id = ? AND original_name IN (' + fileNames.map(() => '?').join(',') + ')', [convId, ...fileNames], (err, rows) => {
-              resolve(rows || []);
-            });
-          });
+          const docsResult = await pool.query(
+            'SELECT filename, original_name FROM documents WHERE conversation_id = $1 AND original_name = ANY($2)',
+            [convId, fileNames]
+          );
+          const docs = docsResult.rows;
 
           for (const doc of docs) {
             const filePath = path.join(UPLOAD_DIR, doc.filename);
@@ -372,16 +391,13 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
     const aiResponse = await callGemini(contents);
 
     // Save AI response
-    await new Promise((resolve, reject) => {
-      db.run(
-        'INSERT INTO messages (conversation_id, role, content) VALUES (?, ?, ?)',
-        [convId, 'model', aiResponse],
-        (err) => { if (err) reject(err); else resolve(); }
-      );
-    });
+    await pool.query(
+      'INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)',
+      [convId, 'model', aiResponse]
+    );
 
-    // Update conversation timestamp & title
-    db.run('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [convId]);
+    // Update conversation timestamp
+    await pool.query('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1', [convId]);
 
     res.json({
       conversation_id: convId,
@@ -917,16 +933,32 @@ const extractCleanJson = (raw) => {
 const getDeepCellValue = (cell) => {
   if (!cell || cell.value === null || cell.value === undefined) return '';
   
-  // Handle Objects (Formulas, Shared Strings, RichText)
-  if (typeof cell.value === 'object') {
-    if (cell.value.result !== undefined) return String(cell.value.result);
-    if (cell.value.text !== undefined) return String(cell.value.text);
-    if (Array.isArray(cell.value.richText)) return cell.value.richText.map(rt => rt.text).join('');
-    if (cell.value.formula) return String(cell.value.result || '');
-    return ''; // Do NOT stringify the object, it causes [object Object]
+  let val = cell.value;
+
+  // 1. Resolve Formula Results or Complex Objects
+  if (typeof val === 'object' && val !== null) {
+    if (val.result !== undefined) val = val.result;
+    else if (val.text !== undefined) val = val.text;
+    else if (Array.isArray(val.richText)) return val.richText.map(rt => rt.text).join('');
+    else if (val.formula) return ''; // Formula with no cached result
   }
-  
-  return String(cell.value);
+
+  // 2. Final Value Check (could be the result of step 1)
+  if (!val && val !== 0 && val !== false) return '';
+
+  // 3. Robust Date Detection (Native or ISO-like)
+  if (val instanceof Date || (typeof val === 'object' && val.toISOString)) {
+    try {
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        return d.toISOString().split('T')[0]; // YYYY-MM-DD
+      }
+    } catch (e) {}
+  }
+
+  // 4. Default Stringification
+  if (typeof val === 'object') return ''; // Avoid [object Object]
+  return String(val);
 };
 
 // ─── PDF TOOL: PDF to Excel (High Fidelity) ────────────
@@ -1002,7 +1034,11 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Please upload an Excel file.' });
 
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(req.file.path);
+    if (req.file.originalname.toLowerCase().endsWith('.csv') || req.file.mimetype === 'text/csv') {
+      await workbook.csv.readFile(req.file.path);
+    } else {
+      await workbook.xlsx.readFile(req.file.path);
+    }
     
     const targetNames = sheets ? sheets.split(',').map(s => s.trim().toLowerCase()) : [];
     const pdfDoc = await PDFDocument.create();
@@ -1012,10 +1048,9 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
     for (const worksheet of workbook.worksheets) {
       if (targetNames.length > 0 && !targetNames.includes(worksheet.name.trim().toLowerCase())) continue;
 
-      // ─── 1. Density-Based Column & Row Trimming ───
+      // 1. Column & Row Density Check
       let usedCols = new Set();
       let maxRow = 0;
-      
       worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
         let rowHasContent = false;
         row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
@@ -1031,27 +1066,21 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
       const activeCols = Array.from(usedCols).sort((a, b) => a - b);
       if (maxRow === 0 || activeCols.length === 0) continue; 
 
-      const page = pdfDoc.addPage([1190, 842]); 
+      let page = pdfDoc.addPage([1190, 842]);
       const { width, height } = page.getSize();
-      let y = height - 40; // Start higher since header is gone
-
+      let y = height - 40;
       const margin = 40;
       const availableWidth = width - (margin * 2);
-      
-      // Auto-stretch active columns to fill width
       const colWidth = availableWidth / activeCols.length;
       const rowHeight = 22;
 
-      // Draw Grid Header Background
-      page.drawRectangle({ x: margin, y: y - rowHeight, width: availableWidth, height: rowHeight, color: rgb(0.95, 0.95, 0.95) });
-
-      for (let r = 1; r <= maxRow; r++) {
-        if (y < 60) break;
-        const row = worksheet.getRow(r);
+      const drawRow = (rowObj, isHeader = false) => {
         let x = margin;
-
+        if (isHeader) {
+          page.drawRectangle({ x, y: y - rowHeight, width: availableWidth, height: rowHeight, color: rgb(0.95, 0.95, 0.95) });
+        }
         for (const c of activeCols) {
-          const cell = row.getCell(c);
+          const cell = rowObj.getCell(c);
           const val = getDeepCellValue(cell);
           const drawVal = String(val).substring(0, 60);
 
@@ -1068,7 +1097,7 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
                 x: x + 5,
                 y: y - (rowHeight / 1.5),
                 size: 8,
-                font: r === 1 ? fontBold : font,
+                font: isHeader ? fontBold : font,
                 color: rgb(0.1, 0.1, 0.1)
               });
             } catch(e) {}
@@ -1076,6 +1105,19 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
           x += colWidth;
         }
         y -= rowHeight;
+      };
+
+      // Header row
+      drawRow(worksheet.getRow(1), true);
+
+      // Data rows (starting from row 2)
+      for (let r = 2; r <= maxRow; r++) {
+        if (y < 60) {
+          page = pdfDoc.addPage([1190, 842]);
+          y = height - 40;
+          drawRow(worksheet.getRow(1), true); // Repeat header
+        }
+        drawRow(worksheet.getRow(r));
       }
     }
 
@@ -1247,106 +1289,158 @@ app.post('/api/tools/word-to-pdf', upload.single('file'), async (req, res) => {
 
 // ─── Export conversation data as CSV ─────────────────────
 app.get('/api/conversations/:id/export', async (req, res) => {
-  const { format } = req.query;
-  
-  db.all(
-    'SELECT role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at ASC',
-    [req.params.id],
-    async (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
+  try {
+    const { format } = req.query;
+    const result = await pool.query(
+      'SELECT role, content, created_at FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+      [req.params.id]
+    );
+    const rows = result.rows;
 
-      const jsonBlocks = [];
-      for (const row of rows) {
-        if (row.role === 'model') {
-          const matches = row.content.match(/```json\n([\s\S]*?)```/g);
-          if (matches) {
-            for (const match of matches) {
-              try {
-                const clean = match.replace(/```json\n?/g, '').replace(/```/g, '').trim();
-                const parsed = JSON.parse(clean);
-                if (Array.isArray(parsed)) jsonBlocks.push(...parsed);
-                else jsonBlocks.push(parsed);
-              } catch (e) { }
-            }
+    const jsonBlocks = [];
+    for (const row of rows) {
+      if (row.role === 'model') {
+        const matches = row.content.match(/```json\n([\s\S]*?)```/g);
+        if (matches) {
+          for (const match of matches) {
+            try {
+              const clean = match.replace(/```json\n?/g, '').replace(/```/g, '').trim();
+              const parsed = JSON.parse(clean);
+              if (Array.isArray(parsed)) jsonBlocks.push(...parsed);
+              else jsonBlocks.push(parsed);
+            } catch (e) { }
           }
         }
       }
-
-      // ─── Export: Excel (.xlsx) ───
-      if (format === 'xlsx' && jsonBlocks.length > 0) {
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet('OneStopDoc Extraction');
-        
-        const headers = Object.keys(jsonBlocks[0]);
-        sheet.columns = headers.map(h => ({ header: h.toUpperCase(), key: h }));
-        
-        // Style headers
-        sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-        sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8B5CF6' } }; // Brand Primary
-        
-        sheet.addRows(jsonBlocks);
-        
-        // Auto-width adjustment
-        sheet.columns.forEach(column => {
-          let maxLen = column.header.length;
-          column.eachCell({ includeEmpty: true }, (cell) => {
-            const len = cell.value ? cell.value.toString().length : 0;
-            if (len > maxLen) maxLen = len;
-          });
-          column.width = Math.min(maxLen + 2, 50);
-        });
-
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename=OneStopDoc_Export_${Date.now()}.xlsx`);
-        return workbook.xlsx.write(res).then(() => res.end());
-      }
-
-      // ─── Export: Word (.docx) ───
-      if (format === 'docx') {
-        const doc = new Document({
-          sections: [{
-            properties: {},
-            children: [
-              new Paragraph({ text: "OneStopDoc Intelligence Report", heading: HeadingLevel.TITLE }),
-              new Paragraph({ text: `Generated: ${new Date().toLocaleString()}`, spacing: { after: 400 } }),
-              ...rows.map(msg => [
-                new Paragraph({
-                  children: [
-                    new TextRun({ text: msg.role === 'user' ? "YOU: " : "AI: ", bold: true, color: msg.role === 'user' ? "8B5CF6" : "0EA5E9" }),
-                    new TextRun({ text: msg.content.replace(/```json[\s\S]*?```/g, '[Structured Data Table Attached]') })
-                  ],
-                  spacing: { before: 200 }
-                })
-              ]).flat()
-            ]
-          }]
-        });
-
-        const buffer = await Packer.toBuffer(doc);
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        res.setHeader('Content-Disposition', `attachment; filename=OneStopDoc_Report_${Date.now()}.docx`);
-        return res.send(buffer);
-      }
-
-      // Default: Metadata JSON
-      res.json({ messages: rows, structured_data: jsonBlocks });
     }
-  );
+
+    console.log(`[EXPORT DEBUG] Format: ${format}, JSON Blocks Found: ${jsonBlocks.length}`);
+
+    // ─── Export: Excel (.xlsx) ───
+    if (format === 'xlsx' && jsonBlocks.length > 0) {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('OneStopDoc Extraction');
+      const headers = Object.keys(jsonBlocks[0]);
+      sheet.columns = headers.map(h => ({ header: h.toUpperCase(), key: h }));
+      sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8B5CF6' } };
+      sheet.addRows(jsonBlocks);
+      sheet.columns.forEach(column => {
+        let maxLen = column.header.length;
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const len = cell.value ? cell.value.toString().length : 0;
+          if (len > maxLen) maxLen = len;
+        });
+        column.width = Math.min(maxLen + 2, 50);
+      });
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=OneStopDoc_Export_${Date.now()}.xlsx`);
+      return workbook.xlsx.write(res).then(() => res.end());
+    }
+
+    // ─── Export: Word (.docx) ───
+    if (format === 'docx') {
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({ text: "OneStopDoc Intelligence Report", heading: HeadingLevel.TITLE }),
+            new Paragraph({ text: `Generated: ${new Date().toLocaleString()}`, spacing: { after: 400 } }),
+            ...rows.map(msg => [
+              new Paragraph({
+                children: [
+                  new TextRun({ text: msg.role === 'user' ? "YOU: " : "AI: ", bold: true, color: msg.role === 'user' ? "8B5CF6" : "0EA5E9" }),
+                  new TextRun({ text: msg.content.replace(/```json[\s\S]*?```/g, '[Structured Data Table Attached]') })
+                ],
+                spacing: { before: 200 }
+              })
+            ]).flat()
+          ]
+        }]
+      });
+      const buffer = await Packer.toBuffer(doc);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename=OneStopDoc_Report_${Date.now()}.docx`);
+      return res.send(buffer);
+    }
+
+    // ─── Export: PDF (.pdf) ───
+    if (format === 'pdf' && jsonBlocks.length > 0) {
+      const pdfDoc = await PDFDocument.create();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      
+      let page = pdfDoc.addPage([1190, 842]); // A4 Landscape
+      const { width, height } = page.getSize();
+      let y = height - 60;
+      const margin = 40;
+      const availableWidth = width - (margin * 2);
+      
+      const headers = Object.keys(jsonBlocks[0]);
+      const colWidth = availableWidth / headers.length;
+      const rowHeight = 22;
+
+      const drawRow = (data, isHeader = false) => {
+        let x = margin;
+        if (isHeader) {
+          page.drawRectangle({ x, y: y - rowHeight, width: availableWidth, height: rowHeight, color: rgb(0.95, 0.95, 0.95) });
+        }
+        headers.forEach(h => {
+          const val = isHeader ? h.toUpperCase() : String(data[h] || '');
+          const drawVal = val.substring(0, 50);
+          page.drawRectangle({
+            x, y: y - rowHeight, width: colWidth, height: rowHeight,
+            borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 0.5
+          });
+          page.drawText(drawVal, {
+            x: x + 5, y: y - (rowHeight / 1.5), size: 8,
+            font: isHeader ? fontBold : font, color: rgb(0.1, 0.1, 0.1)
+          });
+          x += colWidth;
+        });
+        y -= rowHeight;
+      };
+
+      drawRow({}, true);
+      for (const block of jsonBlocks) {
+        if (y < 60) {
+          page = pdfDoc.addPage([1190, 842]);
+          y = height - 60;
+          drawRow({}, true);
+        }
+        drawRow(block);
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=OneStopDoc_Export_${Date.now()}.pdf`);
+      return res.send(Buffer.from(pdfBytes));
+    }
+
+    // Default fallback
+    res.json({ messages: rows, structured_data: jsonBlocks });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── Dashboard stats ─────────────────────────────────────
-app.get('/api/stats', (req, res) => {
-  const stats = {};
-  db.get('SELECT COUNT(*) as count FROM conversations', (err, row) => {
-    stats.total_conversations = row?.count || 0;
-    db.get('SELECT COUNT(*) as count FROM documents', (err2, row2) => {
-      stats.total_documents = row2?.count || 0;
-      db.get('SELECT COUNT(*) as count FROM messages', (err3, row3) => {
-        stats.total_messages = row3?.count || 0;
-        res.json(stats);
-      });
+app.get('/api/stats', async (req, res) => {
+  try {
+    const q1 = pool.query('SELECT COUNT(*) as count FROM conversations');
+    const q2 = pool.query('SELECT COUNT(*) as count FROM documents');
+    const q3 = pool.query('SELECT COUNT(*) as count FROM messages');
+    
+    const [c1, c2, c3] = await Promise.all([q1, q2, q3]);
+    
+    res.json({
+      total_conversations: parseInt(c1.rows[0].count),
+      total_documents: parseInt(c2.rows[0].count),
+      total_messages: parseInt(c3.rows[0].count)
     });
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── Serve React Frontend (Production) ───────────────────
@@ -1361,8 +1455,8 @@ if (fs.existsSync(FRONTEND_DIR)) {
 
 // ─── Start Server ────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 OneStopDoc v3.0 running on http://localhost:${PORT}`);
-  console.log(`🧠 Engine: Gemini 2.5 Pro | Mode: Universal Chat`);
-  console.log(`📊 Database: onestopdoc.db`);
-  console.log(`📁 Uploads: ${UPLOAD_DIR}`);
+  console.log(`🚀 NexGen AI v3.0 running on http://localhost:${PORT}`);
+  console.log(`🧠 AI Engine: Ready`);
+  console.log(`📡 Database: PostgreSQL (Supabase Connected)`);
+  console.log(`📁 uploads: ${UPLOAD_DIR} (Ephemeral)`);
 });

@@ -296,7 +296,7 @@ function ToolModal({ tool, onClose }) {
 }
 
 // ─── Markdown-lite renderer ──────────────────────────────
-function renderContent(text) {
+function renderContent(text, convId) {
   if (!text) return null;
   const parts = text.split(/(```[\s\S]*?```)/g);
 
@@ -312,7 +312,7 @@ function renderContent(text) {
           const parsed = JSON.parse(code);
           const arr = Array.isArray(parsed) ? parsed : [parsed];
           if (arr.length > 0 && typeof arr[0] === 'object') {
-            return <DynamicTable key={i} data={arr} raw={code} />;
+            return <DynamicTable key={i} data={arr} raw={code} convId={convId} />;
           }
         } catch (e) { /* fall through to code block */ }
       }
@@ -343,9 +343,8 @@ function renderContent(text) {
 }
 
 // ─── Dynamic Table (renders ANY JSON array) ──────────────
-function DynamicTable({ data, raw }) {
+function DynamicTable({ data, raw, convId }) {
   const [copied, setCopied] = useState(false);
-  const activeConvId = ''; // Assuming context provides this or it's global
   if (!data || data.length === 0) return null;
 
   const headers = Object.keys(data[0]);
@@ -386,10 +385,13 @@ function DynamicTable({ data, raw }) {
           <button onClick={copyJSON} className="view-btn">
             {copied ? <Check size={10} /> : <Copy size={10} />} {copied ? 'Copied' : 'JSON'}
           </button>
-          <button onClick={() => window.open(`${API}/conversations/${activeConvId}/export?format=xlsx`, '_blank')} className="view-btn text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10">
+          <button onClick={() => window.open(`${API}/conversations/${convId}/export?format=xlsx`, '_blank')} className="view-btn text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10">
             <FileSpreadsheet size={10} /> Excel (.xlsx)
           </button>
-          <button onClick={() => window.open(`${API}/conversations/${activeConvId}/export?format=docx`, '_blank')} className="view-btn text-blue-400 border-blue-500/20 hover:bg-blue-500/10">
+          <button onClick={() => window.open(`${API}/conversations/${convId}/export?format=pdf`, '_blank')} className="view-btn text-red-400 border-red-500/20 hover:bg-red-500/10">
+            <FileType size={10} /> PDF (.pdf)
+          </button>
+          <button onClick={() => window.open(`${API}/conversations/${convId}/export?format=docx`, '_blank')} className="view-btn text-blue-400 border-blue-500/20 hover:bg-blue-500/10">
             <FileType size={10} /> Word (.docx)
           </button>
           <button onClick={downloadCSV} className="view-btn">
@@ -457,7 +459,7 @@ function ChatMessage({ msg }) {
           {isUser ? (
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
           ) : (
-            <div>{renderContent(msg.content)}</div>
+            <div>{renderContent(msg.content, msg.conversation_id)}</div>
           )}
         </div>
         <p className="text-[10px] text-muted/40 mt-1.5 px-2">

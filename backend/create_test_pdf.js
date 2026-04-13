@@ -16,6 +16,14 @@ async function createPdf() {
     color: rgb(0, 0.53, 0.71),
   });
 
+  page.drawText('Date: 2024-12-05', {
+    x: 50,
+    y: height - 5 * fontSize,
+    size: 14,
+    font: timesRomanFont,
+    color: rgb(0, 0, 0),
+  });
+
   page.drawText('Item: Cloud Storage - $50\nItem: API Integration - $250', {
     x: 50,
     y: height - 8 * fontSize,
