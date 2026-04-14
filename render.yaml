@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: onestopdoc
+    name: pdf-saas-app
     env: node
     plan: free
-    buildCommand: npm run build
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: GEMINI_API_KEY
