@@ -687,7 +687,7 @@ export default function App() {
               exit={{ x: -300 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className={`
-                ${isMobile ? 'fixed inset-y-0 left-0 z-[60] w-72' : 'relative w-72 shrink-0'} 
+                ${isMobile ? 'fixed inset-y-0 left-0 z-[60] w-64' : 'relative w-64 shrink-0'} 
                 flex flex-col glass-panel border-r border-white/5 h-full overflow-hidden
               `}
             >
@@ -710,19 +710,19 @@ export default function App() {
                       <button
                         key={conv.id}
                         onClick={() => handleAction(() => setActiveConvId(conv.id))}
-                        className={`w-full text-left px-4 py-3 rounded-xl flex items-center justify-between group transition-all ${
+                        className={`w-full text-left px-3 py-2 rounded-xl flex items-center justify-between group transition-all ${
                           activeConvId === conv.id ? 'bg-white/5 text-primary border border-white/5' : 'text-foreground/60 hover:bg-white/5 hover:text-white'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <MessageSquarePlus size={14} className="shrink-0" />
-                          <span className="text-xs font-medium truncate">{conv.title}</span>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <MessageSquarePlus size={13} className="shrink-0" />
+                          <span className="text-[11px] font-medium truncate">{conv.title}</span>
                         </div>
                         <button
                           onClick={(e) => deleteConv(conv.id, e)}
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all"
+                          className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded transition-all"
                         >
-                          <Trash2 size={12} className="text-red-400" />
+                          <Trash2 size={10} className="text-red-400" />
                         </button>
                       </button>
                     ))}
@@ -763,17 +763,17 @@ export default function App() {
                     ]
                   }
                 ].map(category => category.tools.length > 0 && (
-                  <div key={category.title} className="mb-8">
-                    <p className="px-3 text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-4">{category.title}</p>
-                    <div className="grid grid-cols-2 gap-2.5">
+                  <div key={category.title} className="mb-6">
+                    <p className="px-3 text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-2">{category.title}</p>
+                    <div className="grid grid-cols-2 gap-2">
                       {category.tools.map(tool => (
                         <button
                           key={tool.id}
-                          className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/2 hover:bg-white/5 border border-white/5 hover:border-secondary/20 transition-all group gap-2.5"
+                          className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/2 hover:bg-white/5 border border-white/5 hover:border-secondary/20 transition-all group gap-2"
                           onClick={() => tool.action ? tool.action() : handleAction(() => setActiveTool(tool))}
                         >
-                          <div className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${tool.id === 'new' ? 'red-gradient text-white shadow-lg shadow-primary/20' : 'bg-surface/50 text-foreground/30 group-hover:text-secondary group-hover:bg-secondary/10 border border-white/5'}`}>
-                            <tool.icon size={20} />
+                          <div className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${tool.id === 'new' ? 'red-gradient text-white shadow-lg shadow-primary/20' : 'bg-surface/50 text-foreground/30 group-hover:text-secondary group-hover:bg-secondary/10 border border-white/5'}`}>
+                            <tool.icon size={16} />
                           </div>
                           <span className="text-[9px] font-black uppercase tracking-tight text-center leading-tight text-foreground/40 group-hover:text-white transition-colors px-1">
                             {tool.label}
@@ -862,7 +862,7 @@ export default function App() {
                   </motion.div>
                 </div>
               ) : (
-                <div className="max-w-7xl mx-auto p-6 space-y-8">
+                <div className="max-w-4xl mx-auto p-4 space-y-4 py-8">
                   {messages.map((msg, i) => (
                     <ChatMessage key={i} msg={msg} />
                   ))}
