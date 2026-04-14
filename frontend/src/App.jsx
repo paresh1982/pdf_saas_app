@@ -125,35 +125,38 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
 // ─── Site Footer ──────────────────────────────────────────
 function SiteFooter() {
   return (
-    <footer className="glass-panel border-t border-white/5 py-6 px-6 w-full relative overflow-hidden flex items-center justify-center min-h-[160px]">
-      {/* Background Hero Text */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-        <h2 className="text-[16vw] font-black text-white/5 tracking-[-0.05em] leading-none whitespace-nowrap px-8 text-center w-full uppercase">
-          DOCJOCKEY.
-        </h2>
+    <footer className="glass-panel border-t border-white/5 h-16 px-6 w-full relative overflow-hidden flex flex-col justify-center gap-1">
+      {/* Row 1: Footer Menu */}
+      <div className="flex justify-center gap-x-12">
+        {[
+          { label: 'ABOUT US', href: '#' },
+          { label: 'PRIVACY POLICY', href: '#' },
+          { label: 'DISCLAIMER', href: '#' },
+          { label: 'CONTACT', href: '#' }
+        ].map(link => (
+          <a key={link.label} href={link.href} className="text-[9px] font-black text-foreground/40 hover:text-secondary uppercase tracking-[0.3em] transition-all hover:scale-105">
+            {link.label}
+          </a>
+        ))}
       </div>
 
-      <div className="relative z-10 w-full flex flex-col items-center gap-6">
-        <div className="flex flex-wrap justify-center gap-x-12 gap-y-2">
-          {[
-            { label: 'ABOUT US', href: '#' },
-            { label: 'PRIVACY POLICY', href: '#' },
-            { label: 'DISCLAIMER', href: '#' },
-            { label: 'CONTACT', href: '#' }
-          ].map(link => (
-            <a key={link.label} href={link.href} className="text-[11px] font-black text-foreground/40 hover:text-secondary uppercase tracking-[0.4em] transition-all hover:scale-110">
-              {link.label}
-            </a>
-          ))}
+      {/* Row 2: Email | Logo | Copyright */}
+      <div className="flex items-center justify-between w-full">
+        <div className="flex-1 text-left">
+          <a href="mailto:connect@docjockey.com" className="text-[9px] font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.2em] transition-colors">
+            CONNECT@DOCJOCKEY.COM
+          </a>
+        </div>
+        
+        <div className="flex-none flex justify-center">
+          <LogoDJ size={14} />
         </div>
 
-        <a href="mailto:connect@docjockey.com" className="text-xs font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.3em] transition-colors">
-          CONNECT@DOCJOCKEY.COM
-        </a>
-
-        <span className="text-[10px] font-black text-foreground/10 uppercase tracking-[0.5em]">
-          © 2026 DOCJOCKEY. ALL RIGHTS RESERVED.
-        </span>
+        <div className="flex-1 text-right">
+          <span className="text-[8px] font-black text-foreground/10 uppercase tracking-[0.3em]">
+            © 2026 DOCJOCKEY. ALL RIGHTS RESERVED.
+          </span>
+        </div>
       </div>
     </footer>
   );
