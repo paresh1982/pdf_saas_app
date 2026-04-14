@@ -125,7 +125,7 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
 // ─── Site Footer ──────────────────────────────────────────
 function SiteFooter() {
   return (
-    <footer className="glass-panel border-t border-white/5 h-16 px-6 w-full relative overflow-hidden flex flex-col justify-center gap-1.5">
+    <footer className="glass-panel border-t border-white/5 h-[88px] px-6 w-full relative overflow-hidden flex flex-col justify-center gap-4">
       {/* Row 1: Footer Menu */}
       <div className="flex justify-center gap-x-12">
         {[
