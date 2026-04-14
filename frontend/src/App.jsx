@@ -97,10 +97,10 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
 // ─── Site Footer ──────────────────────────────────────────
 function SiteFooter() {
   return (
-    <footer className="bg-background shrink-0 border-t border-white/5 py-24 px-6 mt-12 w-full relative overflow-hidden">
+    <footer className="bg-background shrink-0 border-t border-white/5 py-32 px-6 mt-24 w-full relative overflow-hidden">
       {/* Background Hero Text */}
-      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center pointer-events-none select-none overflow-hidden h-full items-center">
-        <h2 className="text-[12rem] md:text-[20rem] font-black text-white/5 tracking-tighter leading-none">
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+        <h2 className="text-[18vw] font-black text-white/5 tracking-tighter leading-none whitespace-nowrap px-8 text-center w-full">
           DOCJOCKEY.
         </h2>
       </div>
@@ -691,11 +691,20 @@ export default function App() {
                 flex flex-col glass-panel border-r border-white/5 h-full overflow-hidden
               `}
             >
+              {/* Sidebar Header (Internal) - New Chat Button */}
+              <div className="p-4 shrink-0 border-b border-white/5">
+                <button
+                  onClick={() => handleAction(newChat)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-4 red-gradient rounded-2xl text-[10px] font-black text-white shadow-xl shadow-primary/20 hover:brightness-110 transition-all uppercase tracking-[0.2em]"
+                >
+                  <Plus size={16} /> New Chat
+                </button>
+              </div>
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-6 py-2 border-t border-white/5 mt-4">
+              <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-6 py-4">
                 {/* --- Intelligence --- */}
                 <div>
-                  <p className="px-3 text-[10px] font-bold text-foreground/20 uppercase tracking-widest mb-2 mt-2 font-black tracking-[0.2em]">Intelligence</p>
+                  <p className="px-3 text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-4 mt-2">Intelligence</p>
                   <div className="space-y-1">
                     {conversations.map(conv => (
                       <button
