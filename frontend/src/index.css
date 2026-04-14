@@ -5,12 +5,13 @@
 @tailwind utilities;
 
 :root {
-  --background: 28 21 23;     /* RGB components of #1c1517 */
-  --surface: 36 28 30;        /* RGB components of #241c1e */
-  --surface-alt: 45 35 37;    /* RGB components of #2d2325 */
-  --muted: 107 99 101;        /* RGB components of #6b6365 */
-  --foreground: 226 232 235;  /* RGB components of #e2e8eb */
-  --primary: 230 54 57;       /* RGB components of #e63639 */
+  --background: 28 21 23;     /* #1c1517 */
+  --surface: 36 28 30;        /* #241c1e */
+  --surface-alt: 45 35 37;    /* #2d2325 */
+  --muted: 107 99 101;        /* #6b6365 */
+  --foreground: 226 232 235;  /* #e2e8eb */
+  --primary: 230 54 57;       /* #e63639 (Doc Red) */
+  --secondary: 29 165 162;    /* #1da5a2 (Jockey Teal-Blue) */
   --primary-glow: rgba(230, 54, 57, 0.15);
   --border: rgba(226, 232, 235, 0.05);
   --success: #10b981;
@@ -67,6 +68,10 @@ body {
   
   .red-gradient {
     background: linear-gradient(135deg, #e63639 0%, #a82527 100%);
+  }
+
+  .teal-gradient {
+    background: linear-gradient(135deg, #1da5a2 0%, #157a78 100%);
   }
 
   .tool-btn {

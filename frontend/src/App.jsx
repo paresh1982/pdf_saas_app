@@ -50,6 +50,82 @@ const UID = (() => {
 // Set global axios default
 axios.defaults.headers.common['X-User-ID'] = UID;
 
+// ─── Site Header ──────────────────────────────────────────
+function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitle }) {
+  return (
+    <header className="h-16 shrink-0 z-50 glass-panel border-b border-white/5 px-6 flex items-center justify-between sticky top-0">
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2 group cursor-pointer">
+          <div className="w-9 h-9 red-gradient rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:rotate-6 transition-transform">
+            <Zap size={20} className="text-white fill-white" />
+          </div>
+          <div className="text-xl font-black tracking-tighter uppercase flex">
+            <span className="text-primary">DOC</span>
+            <span className="text-secondary">JOCKEY</span>
+          </div>
+        </div>
+
+        <nav className="hidden lg:flex items-center gap-6 ml-8">
+          {['Solutions', 'Features', 'Pricing', 'API Docs'].map(link => (
+            <a key={link} href="#" className="text-xs font-bold text-foreground/40 hover:text-white uppercase tracking-widest transition-colors">{link}</a>
+          ))}
+        </nav>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary hover:text-white transition-all">
+          Upgrade Pro
+        </button>
+        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold">
+          JD
+        </div>
+        {isMobile && (
+          <button onClick={onMenuClick} className="p-2 text-foreground/60">
+            <Menu size={20} />
+          </button>
+        )}
+      </div>
+    </header>
+  );
+}
+
+// ─── Site Footer ──────────────────────────────────────────
+function SiteFooter() {
+  const sections = [
+    { title: 'Connect', links: ['Support', 'Sales', 'Status'] },
+    { title: 'Learn', links: ['Docs', 'Features', 'Blog'] },
+    { title: 'Legal', links: ['Privacy', 'Terms', 'GDPR'] },
+    { title: 'Company', links: ['About Us', 'Careers'] }
+  ];
+
+  return (
+    <footer className="bg-background shrink-0 border-t border-white/5 pt-12 pb-8 px-6 mt-12">
+      <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-12">
+        {sections.map(section => (
+          <div key={section.title}>
+            <h4 className="text-[10px] font-black text-foreground/20 uppercase tracking-[0.2em] mb-4">{section.title}</h4>
+            <ul className="space-y-2">
+              {section.links.map(link => (
+                <li key={section.title + link}>
+                  <a href="#" className="text-xs text-foreground/50 hover:text-primary transition-colors">{link}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-foreground/20 font-bold uppercase tracking-widest">
+        <span>© 2026 DOCJOCKEY AI • Agentic Parsing Engine</span>
+        <div className="flex gap-6">
+          <a href="#" className="hover:text-white">Twitter</a>
+          <a href="#" className="hover:text-white">Github</a>
+          <a href="#" className="hover:text-white">LinkedIn</a>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 // ─── Tool Modal (Merge, Split, etc.) ───────────────────────
 function ToolModal({ tool, onClose }) {
   const [files, setFiles] = useState([]);
@@ -385,15 +461,6 @@ function DynamicTable({ data, raw, convId }) {
           <button onClick={copyJSON} className="view-btn">
             {copied ? <Check size={10} /> : <Copy size={10} />} {copied ? 'Copied' : 'JSON'}
           </button>
-          <button onClick={() => window.open(`${API}/conversations/${convId}/export?format=xlsx`, '_blank')} className="view-btn text-primary border-primary/20 hover:bg-primary/10">
-            <FileSpreadsheet size={10} /> Excel (.xlsx)
-          </button>
-          <button onClick={() => window.open(`${API}/conversations/${convId}/export?format=pdf`, '_blank')} className="view-btn text-primary border-primary/20 hover:bg-primary/10">
-            <FileType size={10} /> PDF (.pdf)
-          </button>
-          <button onClick={() => window.open(`${API}/conversations/${convId}/export?format=docx`, '_blank')} className="view-btn text-primary border-primary/20 hover:bg-primary/10">
-            <FileType size={10} /> Word (.docx)
-          </button>
           <button onClick={downloadCSV} className="view-btn">
             <Download size={10} /> CSV
           </button>
@@ -622,341 +689,218 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen bg-background text-foreground font-sans selection:bg-primary/30">
-      {/* ─── Sidebar ─── */}
-      <AnimatePresence>
-        {isMobile && sidebarOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
-          />
-        )}
-      </AnimatePresence>
+    <div className="flex flex-col min-h-screen bg-background text-foreground font-sans selection:bg-primary/30">
+      <SiteHeader 
+        onMenuClick={() => setSidebarOpen(!sidebarOpen)} 
+        sidebarOpen={sidebarOpen}
+        isMobile={isMobile}
+        activeConvId={activeConvId}
+        convTitle={activeConvId ? conversations.find(c => c.id === activeConvId)?.title : ''}
+      />
 
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.aside
-            initial={{ x: isMobile ? -280 : 0, width: isMobile ? 280 : 0, opacity: 0 }}
-            animate={{ x: 0, width: 280, opacity: 1 }}
-            exit={{ x: isMobile ? -280 : 0, width: 0, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className={`${isMobile ? 'fixed inset-y-0 left-0 z-[70]' : 'relative hidden lg:flex'} border-r border-border flex flex-col bg-surface/90 backdrop-blur-2xl shrink-0 overflow-hidden shadow-2xl md:shadow-none`}
-          >
-            <div className="p-5 flex items-center justify-between border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 red-gradient rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
-                  <Zap size={18} className="text-white fill-white" />
-                </div>
-                <h1 className="text-lg font-bold tracking-tight text-foreground uppercase">NexGen AI</h1>
-              </div>
-              <button 
-                onClick={toggleTheme}
-                className="p-2 hover:bg-surface rounded-lg text-muted transition-all"
-                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-            </div>
+      <div className="flex flex-1 overflow-hidden relative">
 
-            <div className="p-3">
-              <button
-                onClick={() => handleAction(newChat)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 red-gradient rounded-xl text-xs font-bold text-white shadow-lg shadow-primary/10 hover:brightness-110 transition-all uppercase tracking-widest"
-              >
-                <Plus size={16} /> New Chat
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-6 py-2">
-              {/* --- Intelligence --- */}
-              <div>
-                <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">Intelligence</p>
-                <div className="space-y-1">
-                  {conversations.map(conv => (
-                    <button
-                      key={conv.id}
-                      onClick={() => handleAction(() => setActiveConvId(conv.id))}
-                      className={`w-full text-left px-4 py-3 rounded-xl flex items-center justify-between group transition-all ${
-                        activeConvId === conv.id ? 'bg-white/5 text-primary border border-white/5' : 'text-foreground/60 hover:bg-white/5 hover:text-white'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <MessageSquarePlus size={14} className="shrink-0" />
-                        <span className="text-xs font-medium truncate">{conv.title}</span>
-                      </div>
-                      <button
-                        onClick={(e) => deleteConv(conv.id, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all"
-                      >
-                        <Trash2 size={12} className="text-red-400" />
-                      </button>
-                    </button>
-                  ))}
-                  {conversations.length === 0 && (
-                    <p className="px-4 py-2 text-[10px] text-muted/30 italic">No recent chats</p>
-                  )}
-                </div>
-              </div>
-
-              {/* --- File Manipulation --- */}
-              <div>
-                <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">File Manipulation</p>
-                <div className="space-y-1">
-                  {[
-                    { id: 'merge', icon: Combine, label: 'Merge PDF' },
-                    { id: 'split', icon: Scissors, label: 'Split PDF' },
-                    { id: 'compress', icon: Minimize2, label: 'Compress PDF' },
-                    { id: 'repair', icon: Eraser, label: 'Repair PDF' },
-                  ].map(tool => (
-                    <button key={tool.label} className="tool-btn" onClick={() => handleAction(() => setActiveTool(tool))}>
-                      <tool.icon size={14} /> {tool.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* --- Conversion --- */}
-              <div>
-                <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">Conversion</p>
-                <div className="space-y-1">
-                  {[
-                    { id: 'pdf-to-word', icon: FileType, label: 'PDF to Word' },
-                    { id: 'pdf-to-excel', icon: FileSpreadsheet, label: 'PDF to Excel' },
-                    { id: 'excel-to-pdf', icon: ArrowRightLeft, label: 'Excel to PDF' },
-                    { id: 'word-to-pdf', icon: FileText, label: 'Word to PDF' },
-                  ].map(tool => (
-                    <button key={tool.id} className="tool-btn" onClick={() => handleAction(() => setActiveTool(tool))}>
-                      <tool.icon size={14} /> {tool.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* --- Core Editing --- */}
-              <div>
-                <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">Core Editing</p>
-                <div className="space-y-1">
-                  {[
-                    { id: 'edit', icon: Type, label: 'A.I. Smart Redraft' },
-                  ].map(tool => (
-                    <button key={tool.id} className="tool-btn" onClick={() => handleAction(() => setActiveTool(tool))}>
-                      <tool.icon size={14} /> {tool.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* --- Page Organization --- */}
-              <div>
-                <p className="px-3 text-[10px] font-bold text-muted/50 uppercase tracking-widest mb-2">Page Organization</p>
-                <div className="space-y-1">
-                  {[
-                    { id: 'rotate', icon: RotateCw, label: 'Rotate Pages' },
-                    { id: 'reorder', icon: Layout, label: 'Organize Pages' },
-                  ].map(tool => (
-                    <button key={tool.id} className="tool-btn" onClick={() => handleAction(() => setActiveTool(tool))}>
-                      <tool.icon size={14} /> {tool.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 border-t border-white/5">
-              <div className="bg-gradient-to-br from-primary/10 to-sky-500/10 p-4 rounded-2xl border border-white/5">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">Free Trial</p>
-                <p className="text-[10px] text-muted">3 free chats remaining</p>
-                <div className="w-full h-1 bg-surface rounded-full mt-2 overflow-hidden">
-                  <div className="h-full bg-primary w-[100%] rounded-full" />
-                </div>
-              </div>
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
-
-      {/* ─── Main Chat Area ─── */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Chat Header */}
-        <header className="h-14 border-b border-white/5 px-4 md:px-6 flex items-center justify-between bg-background/80 backdrop-blur-md shrink-0">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 -ml-1 lg:ml-0 hover:bg-surface rounded-lg transition-colors text-muted hover:text-white">
-              {isMobile ? <Menu size={20} /> : <ChevronDown size={16} className={`transform transition-transform ${sidebarOpen ? '-rotate-90' : 'rotate-90'}`} />}
-            </button>
-            <span className="text-xs md:text-sm font-medium text-muted truncate max-w-[200px] lg:max-w-none">
-              {activeConvId ? conversations.find(c => c.id === activeConvId)?.title || 'Chat' : 'New Chat'}
-            </span>
-          </div>
-            <span className="text-[10px] text-muted/50 font-mono uppercase tracking-widest hidden xl:block">Gemini 2.5 Pro</span>
-        </header>
-
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {messages.length === 0 ? (
-            /* Empty State / Welcome */
-            <div className="h-full flex flex-col items-center justify-center p-8">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center max-w-lg"
-              >
-                <div className="w-16 h-16 red-gradient rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/20">
-                  <Zap size={32} className="text-white fill-white" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2">What do you need from your documents?</h2>
-                <p className="text-muted text-sm mb-8 leading-relaxed">
-                  Analyze documents, extract tabular data, or convert files with NexGen Intelligence.
-                </p>
-
-                {/* --- Upload Tabs --- */}
-                <div className="flex bg-surface/50 p-1 rounded-2xl border border-white/5 mb-6">
-                  <button 
-                    onClick={() => { setUploadMode('single'); setAttachedFiles([]); }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-muted hover:text-white'}`}
-                  >
-                    <FileText size={14} /> Single Document
-                  </button>
-                  <button 
-                    onClick={() => { setUploadMode('multiple'); setAttachedFiles([]); }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${uploadMode === 'multiple' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-muted hover:text-white'}`}
-                  >
-                    <Layout size={14} /> Batch Processor
-                  </button>
-                </div>
-
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
-                  onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
-                    const dropped = Array.from(e.dataTransfer.files).filter(f => {
-                      const ext = f.name.toLowerCase().split('.').pop();
-                      return ['pdf', 'xlsx', 'xls', 'csv', 'docx', 'doc', 'png', 'jpg', 'jpeg'].includes(ext);
-                    });
-                    
-                    if (uploadMode === 'single') {
-                      if (dropped.length > 0) setAttachedFiles([dropped[0]]);
-                    } else {
-                      setAttachedFiles(prev => [...prev, ...dropped]);
-                    }
-                  }}
-                  className="w-full max-w-md border-2 border-dashed border-white/10 hover:border-primary/40 rounded-3xl p-12 cursor-pointer transition-all duration-300 group bg-surface/20"
+        {/* ─── Sidebar Layer ─── */}
+        <AnimatePresence mode="wait">
+          {(sidebarOpen || !isMobile) && (
+            <motion.aside
+              initial={isMobile ? { x: -300 } : false}
+              animate={{ x: 0 }}
+              exit={{ x: -300 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className={`
+                ${isMobile ? 'fixed inset-y-0 left-0 z-[60] w-72' : 'relative w-64'} 
+                flex flex-col glass-panel border-r border-white/5
+              `}
+            >
+              {/* Sidebar Header (Internal) - New Chat Button */}
+              <div className="p-3 mt-4">
+                <button
+                  onClick={() => handleAction(newChat)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 red-gradient rounded-xl text-xs font-bold text-white shadow-lg shadow-primary/10 hover:brightness-110 transition-all uppercase tracking-widest"
                 >
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                      {uploadMode === 'single' ? <Paperclip size={32} /> : <Combine size={32} />}
-                    </div>
-                    <div>
-                      <p className="text-base font-bold text-white mb-1">
-                        {uploadMode === 'single' ? 'Drop your file here' : 'Drop multiple files here'}
-                      </p>
-                      <p className="text-[11px] text-muted/60">
-                        {uploadMode === 'single' ? 'Supports PDF, Word, Excel, or Images' : 'Process up to 10 documents at once'}
-                      </p>
-                    </div>
-                    {attachedFiles.length > 0 && (
-                      <div className="mt-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20">
-                        <p className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                          {attachedFiles.length} file{attachedFiles.length > 1 ? 's' : ''} staged for analysis
+                  <Plus size={16} /> New Chat
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-6 py-2 border-t border-white/5 mt-4">
+                {/* --- Intelligence --- */}
+                <div>
+                  <p className="px-3 text-[10px] font-bold text-foreground/20 uppercase tracking-widest mb-2 mt-2">Intelligence</p>
+                  <div className="space-y-1">
+                    {conversations.map(conv => (
+                      <button
+                        key={conv.id}
+                        onClick={() => handleAction(() => setActiveConvId(conv.id))}
+                        className={`w-full text-left px-4 py-3 rounded-xl flex items-center justify-between group transition-all ${
+                          activeConvId === conv.id ? 'bg-white/5 text-primary border border-white/5' : 'text-foreground/60 hover:bg-white/5 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <MessageSquarePlus size={14} className="shrink-0" />
+                          <span className="text-xs font-medium truncate">{conv.title}</span>
+                        </div>
+                        <button
+                          onClick={(e) => deleteConv(conv.id, e)}
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all"
+                        >
+                          <Trash2 size={12} className="text-red-400" />
+                        </button>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* --- Tools --- */}
+                <div>
+                  <p className="px-3 text-[10px] font-bold text-foreground/20 uppercase tracking-widest mb-2">Tools</p>
+                  <div className="space-y-1">
+                    {[
+                      { id: 'pdf-to-excel', icon: FileSpreadsheet, label: 'PDF to Excel' },
+                      { id: 'word-to-pdf', icon: FileText, label: 'Word to PDF' },
+                      { id: 'edit', icon: Type, label: 'A.I. Smart Redraft' },
+                    ].map(tool => (
+                      <button key={tool.id} className="tool-btn" onClick={() => handleAction(() => setActiveTool(tool))}>
+                        <tool.icon size={14} /> {tool.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
+
+      {/* ─── Main Content Area ─── */}
+      <main className="flex-1 flex flex-col min-w-0 bg-background relative">
+        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+          <div className="flex-1">
+            {messages.length === 0 ? (
+              /* Empty State / Welcome */
+              <div className="h-full flex flex-col items-center justify-center p-8 min-h-[500px]">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center max-w-lg"
+                >
+                  <div className="w-16 h-16 red-gradient rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/20 border border-white/5">
+                    <Zap size={32} className="text-white fill-white" />
+                  </div>
+                  <h2 className="text-2xl font-black mb-2 tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
+                  <p className="text-foreground/60 text-sm mb-8 leading-relaxed max-w-sm mx-auto font-medium">
+                    Ride through your document workflows with agentic speed. Analyze, extract, and convert with ease.
+                  </p>
+
+                  {/* --- Upload Tabs --- */}
+                  <div className="flex bg-surface/50 p-1.5 rounded-2xl border border-white/5 mb-8">
+                    <button 
+                      onClick={() => { setUploadMode('single'); setAttachedFiles([]); }}
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
+                    >
+                      <FileText size={14} /> Single document
+                    </button>
+                    <button 
+                      onClick={() => { setUploadMode('multiple'); setAttachedFiles([]); }}
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'multiple' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
+                    >
+                      <Layout size={14} /> Batch processor
+                    </button>
+                  </div>
+
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full max-w-md border-2 border-dashed border-white/5 hover:border-primary/20 rounded-3xl p-14 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20"
+                  >
+                    <div className="flex flex-col items-center gap-5">
+                      <div className="w-20 h-20 bg-primary/5 text-primary rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-inner">
+                        {uploadMode === 'single' ? <Paperclip size={40} /> : <Combine size={40} />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-white mb-1 uppercase tracking-[0.2em]">
+                          {uploadMode === 'single' ? 'Drop document' : 'Drop batch'}
+                        </p>
+                        <p className="text-[10px] text-foreground/20 font-black uppercase tracking-[0.3em]">
+                          Ready for DocJockey Speed
                         </p>
                       </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          ) : (
-            <div className="max-w-full mx-auto p-6 space-y-6">
-              {messages.map((msg, i) => (
-                <ChatMessage key={i} msg={msg} />
-              ))}
-              {isLoading && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-surface border border-white/10 flex items-center justify-center shrink-0">
-                    <Bot size={16} />
-                  </div>
-                  <div className="bg-surface/50 border border-white/5 rounded-2xl px-5 py-4">
-                    <div className="flex items-center gap-3 text-sm text-foreground/80">
-                      <Loader2 size={16} className="animate-spin text-primary" />
-                      <span className="font-medium">Synthesizing document data...</span>
                     </div>
                   </div>
                 </motion.div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
+              </div>
+            ) : (
+              <div className="max-w-5xl mx-auto p-6 space-y-10">
+                {messages.map((msg, i) => (
+                  <ChatMessage key={i} msg={msg} />
+                ))}
+                {isLoading && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-5">
+                    <div className="w-10 h-10 rounded-xl bg-surface border border-white/10 flex items-center justify-center shrink-0">
+                      <Loader2 size={18} className="animate-spin text-primary" />
+                    </div>
+                    <div className="bg-surface/30 border border-white/5 rounded-2xl px-6 py-5">
+                      <span className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] animate-pulse">Running DocJockey Engine...</span>
+                    </div>
+                  </motion.div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+          <SiteFooter />
         </div>
 
-        {/* Input Area */}
-        <div className="border-t border-white/5 p-4 bg-background/80 backdrop-blur-md shrink-0">
-          <div className="max-w-full mx-auto">
-            {/* Attached Files Preview */}
+        {/* Floating Input Area */}
+        <div className="sticky bottom-0 p-8 shrink-0 bg-background/80 backdrop-blur-xl border-t border-white/5 z-40">
+          <div className="max-w-4xl mx-auto">
             {attachedFiles.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
+              <div className="flex flex-wrap gap-2 mb-6">
                 {attachedFiles.map((file, i) => (
-                  <span key={i} className="flex items-center gap-2 text-xs bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-lg">
-                    <FileText size={12} />
+                  <span key={i} className="flex items-center gap-3 text-[10px] font-black uppercase leading-none bg-primary/10 text-primary border border-primary/20 px-4 py-2.5 rounded-xl shadow-lg">
+                    <FileText size={14} />
                     {file.name}
-                    <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} className="hover:text-white">
-                      <X size={10} />
+                    <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} className="hover:text-white ml-2 transition-colors">
+                      <X size={14} />
                     </button>
                   </span>
                 ))}
               </div>
             )}
 
-            <div className="flex items-end gap-3">
-              {/* File Upload Button */}
+            <div className="flex items-end gap-4">
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="p-3 text-muted hover:text-primary hover:bg-primary/10 rounded-xl transition-all shrink-0"
+                className="p-4 text-foreground/30 hover:text-white hover:bg-white/5 rounded-2xl transition-all shrink-0 border border-white/5 shadow-lg"
               >
-                <Paperclip size={20} />
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  id="file-input"
-                  multiple
-                  className="hidden"
-                  accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.png,.jpg,.jpeg"
-                  onChange={handleFileSelect}
-                />
+                <Paperclip size={24} />
+                <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} />
               </button>
 
-              {/* Text Input */}
-              <div className="flex-1 bg-surface/50 border border-white/10 rounded-2xl focus-within:border-primary/50 transition-all overflow-hidden">
+              <div className="flex-1 bg-surface/50 border border-white/10 rounded-[2.5rem] focus-within:border-primary/40 transition-all overflow-hidden shadow-2xl">
                 <textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask anything about your documents..."
+                  placeholder="Tell DocJockey what to extract..."
                   rows={1}
-                  className="w-full bg-transparent px-5 py-3.5 text-sm outline-none resize-none placeholder:text-muted/70 max-h-32"
-                  style={{ minHeight: '48px' }}
+                  className="w-full bg-transparent px-8 py-5 text-sm outline-none resize-none placeholder:text-foreground/20 max-h-56 leading-relaxed"
+                  style={{ minHeight: '64px' }}
                 />
               </div>
 
-              {/* Send Button */}
               <button
                 onClick={sendMessage}
                 disabled={isLoading || (!inputText.trim() && attachedFiles.length === 0)}
-                className="p-3 red-gradient text-white rounded-xl hover:brightness-110 transition-all disabled:opacity-20 disabled:cursor-not-allowed shrink-0 shadow-lg shadow-primary/20"
+                className="p-5 red-gradient text-white rounded-3xl hover:brightness-125 transition-all disabled:opacity-20 disabled:grayscale disabled:cursor-not-allowed shrink-0 shadow-2xl shadow-primary/30 border border-white/10"
               >
-                <div className="flex items-center gap-2">
-                  <Send size={18} />
-                </div>
+                <Send size={24} />
               </button>
             </div>
 
-            <p className="text-[10px] text-muted/60 text-center mt-3">
-              NexGen AI can make mistakes. Verify important data.
-            </p>
+            <div className="flex justify-center mt-6">
+              <span className="text-[11px] text-foreground/10 font-black uppercase tracking-[0.5em] select-none">
+                DocJockey Pro • Agentic Extraction • 2026
+              </span>
+            </div>
           </div>
         </div>
       </main>
