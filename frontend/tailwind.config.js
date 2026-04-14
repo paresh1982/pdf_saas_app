@@ -8,12 +8,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: 'var(--background)',
-        surface: 'var(--surface)',
-        primary: 'var(--primary)',
-        secondary: 'var(--secondary)',
-        muted: 'var(--muted)',
-        foreground: 'var(--foreground)',
+        background: 'rgb(var(--background) / <alpha-value>)',
+        surface: 'rgb(var(--surface) / <alpha-value>)',
+        primary: 'rgb(var(--primary) / <alpha-value>)',
+        secondary: 'rgb(var(--secondary) / <alpha-value>)',
+        muted: 'rgb(var(--muted) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
         success: '#10b981',
         warning: '#f59e0b',
         error: '#ef4444',

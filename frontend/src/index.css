@@ -5,12 +5,12 @@
 @tailwind utilities;
 
 :root {
-  --background: #1c1517;       /* Slightly deeper than user code for layering */
-  --surface: #241c1e;          /* User's base obsidian */
-  --surface-alt: #2d2325;      /* Elevated surface */
-  --muted: #6b6365;
-  --foreground: #e2e8eb;       /* User's Steel Gray */
-  --primary: #e63639;          /* User's Racing Red */
+  --background: 28 21 23;     /* RGB components of #1c1517 */
+  --surface: 36 28 30;        /* RGB components of #241c1e */
+  --surface-alt: 45 35 37;    /* RGB components of #2d2325 */
+  --muted: 107 99 101;        /* RGB components of #6b6365 */
+  --foreground: 226 232 235;  /* RGB components of #e2e8eb */
+  --primary: 230 54 57;       /* RGB components of #e63639 */
   --primary-glow: rgba(230, 54, 57, 0.15);
   --border: rgba(226, 232, 235, 0.05);
   --success: #10b981;
@@ -24,6 +24,12 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   overflow-x: hidden;
+}
+
+/* Fallback for components that might not use the rgb() wrapper */
+body {
+  background-color: #1c1517; 
+  color: #e2e8eb;
 }
 
 /* ─── Premium Scrollbar ─── */
@@ -64,7 +70,7 @@ body {
   }
 
   .tool-btn {
-    @apply w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-medium text-foreground/60 hover:bg-white/5 hover:text-white transition-all text-left border border-transparent hover:border-white/5;
+    @apply w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-medium text-foreground hover:bg-white/5 hover:text-white transition-all text-left border border-transparent hover:border-white/5 opacity-60 hover:opacity-100;
   }
   
   .tool-btn-active {
@@ -72,11 +78,12 @@ body {
   }
 
   .view-btn {
-    @apply text-[10px] text-foreground/70 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/5 hover:bg-white/5 transition-all font-semibold uppercase tracking-wider;
+    @apply text-[10px] text-foreground hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/5 hover:bg-white/5 transition-all font-semibold uppercase tracking-wider opacity-70 hover:opacity-100;
   }
 
   .ai-bubble {
-    @apply bg-surface border-l-2 border-primary/40 rounded-2xl px-5 py-4 shadow-xl;
+    @apply bg-surface border-l-2 border-primary rounded-2xl px-5 py-4 shadow-xl;
+    border-color: rgba(230, 54, 57, 0.4);
   }
 
   .user-bubble {
