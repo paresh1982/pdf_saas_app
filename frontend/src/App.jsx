@@ -687,7 +687,7 @@ export default function App() {
               exit={{ x: -300 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className={`
-                ${isMobile ? 'fixed inset-y-0 left-0 z-[60] w-96' : 'relative w-96 shrink-0'} 
+                ${isMobile ? 'fixed inset-y-0 left-0 z-[60] w-72' : 'relative w-72 shrink-0'} 
                 flex flex-col glass-panel border-r border-white/5 h-full overflow-hidden
               `}
             >
