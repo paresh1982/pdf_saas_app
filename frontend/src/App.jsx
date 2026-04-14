@@ -904,6 +904,7 @@ export default function App() {
           </div>
         </div>
       </main>
+      </div>
 
       {activeTool && <ToolModal tool={activeTool} onClose={() => setActiveTool(null)} />}
     </div>

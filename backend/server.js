@@ -1472,7 +1472,7 @@ app.get('/api/conversations/:id/export', async (req, res) => {
 
       const pdfBytes = await pdfDoc.save();
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename=NexGen_Export_${Date.now()}.pdf`);
+      res.setHeader('Content-Disposition', `attachment; filename=DocJockey_Export_${Date.now()}.pdf`);
       return res.send(Buffer.from(pdfBytes));
     }
 
@@ -1519,7 +1519,7 @@ const startServer = async () => {
     await initDB();
     
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`\n🚀 NexGen AI v3.0 - Ready for Business`);
+      console.log(`\n🚀 DocJockey AI v1.0 - Ready for Business`);
       console.log(`🌐 URL: http://0.0.0.0:${PORT}`);
       console.log(`📡 Database: PostgreSQL (Supabase Connected)`);
       console.log(`📂 Storage: Local FileSystem (Ephemeral: /uploads)`);
