@@ -125,16 +125,16 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
 // ─── Site Footer ──────────────────────────────────────────
 function SiteFooter() {
   return (
-    <footer className="bg-background shrink-0 border-t border-white/5 py-10 px-6 w-full relative overflow-hidden">
+    <footer className="glass-panel border-t border-white/5 py-6 px-6 w-full relative overflow-hidden flex items-center justify-center min-h-[160px]">
       {/* Background Hero Text */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-        <h2 className="text-[13vw] font-black text-white/5 tracking-tighter leading-none whitespace-nowrap px-8 text-center w-full uppercase">
+        <h2 className="text-[16vw] font-black text-white/5 tracking-[-0.05em] leading-none whitespace-nowrap px-8 text-center w-full uppercase">
           DOCJOCKEY.
         </h2>
       </div>
 
-      <div className="relative z-10 w-full flex flex-col items-center gap-8">
-        <div className="flex flex-wrap justify-center gap-x-12 gap-y-4">
+      <div className="relative z-10 w-full flex flex-col items-center gap-6">
+        <div className="flex flex-wrap justify-center gap-x-12 gap-y-2">
           {[
             { label: 'ABOUT US', href: '#' },
             { label: 'PRIVACY POLICY', href: '#' },
