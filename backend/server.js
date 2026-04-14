@@ -173,24 +173,28 @@ When the user asks to "build a table", "extract data", or "analyze items":
 
 async function getFileContext(file) {
   const mimeType = file.mimetype;
-  const isImage = mimeType.startsWith('image/');
-  const isPdf = mimeType === 'application/pdf';
-  const isWord = mimeType.includes('word') || file.originalname.endsWith('.docx') || file.originalname.endsWith('.doc');
-  const isExcel = mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType.includes('csv');
+  const originalName = file.originalname?.toLowerCase() || "";
+  
+  const isImage = mimeType.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/.test(originalName);
+  const isPdf = mimeType === 'application/pdf' || originalName.endsWith('.pdf');
+  const isWord = mimeType.includes('word') || originalName.endsWith('.docx') || originalName.endsWith('.doc');
+  const isExcel = mimeType.includes('spreadsheet') || mimeType.includes('excel') || originalName.endsWith('.xlsx') || originalName.endsWith('.xls') || originalName.endsWith('.csv');
+
+  console.log(`[DEBUG] Processing: ${file.originalname} | MIME: ${mimeType} | Detection: ${isExcel ? 'Excel' : isPdf ? 'PDF' : isWord ? 'Word' : isImage ? 'Image' : 'Other'}`);
 
   if (isPdf || isImage) {
     return {
       inlineData: {
         data: fs.readFileSync(file.path).toString('base64'),
-        mimeType: isPdf ? 'application/pdf' : mimeType,
+        mimeType: isPdf ? 'application/pdf' : (mimeType.startsWith('image/') ? mimeType : 'image/jpeg'),
       },
     };
   } else if (isExcel) {
     const workbook = new ExcelJS.Workbook();
-    if (mimeType === 'text/csv') await workbook.csv.readFile(file.path);
+    if (mimeType === 'text/csv' || originalName.endsWith('.csv')) await workbook.csv.readFile(file.path);
     else await workbook.xlsx.readFile(file.path);
     
-    let excelText = `[ATTACHMENT: ${file.originalname}]\n`;
+    let excelText = `[DOCUMENT ATTACHMENT: ${file.originalname}]\n`;
     workbook.eachSheet(sheet => {
       excelText += `--- SHEET: ${sheet.name} ---\n`;
       sheet.eachRow((row, rowNum) => {
@@ -206,7 +210,7 @@ async function getFileContext(file) {
         data: fs.readFileSync(file.path).toString('base64'),
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       },
-      text: `[ATTACHMENT: ${file.originalname}]`
+      text: `[DOCUMENT ATTACHMENT: ${file.originalname}]`
     };
   }
   return null;
@@ -359,54 +363,47 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
 
     const contents = [];
     for (const [index, msg] of dbMessages.entries()) {
-      const parts = [{ text: msg.content }];
       const isLastMessage = index === dbMessages.length - 1;
-      
-      // ─── Restore Attachments for Context ───
-      // For the last message, if we just uploaded files, use the in-memory context directly (faster/more reliable)
+      let combinedText = msg.content;
+      const inlineDataParts = [];
+
+      // ─── Document Data Recovery ───
       if (isLastMessage && fileContexts.length > 0) {
+        // Current turn: Use freshly extracted memory contexts
         for (const ctx of fileContexts) {
-          if (ctx.text) parts.push({ text: ctx.text });
-          if (ctx.inlineData) parts.push({ inlineData: ctx.inlineData });
+          if (ctx.text) combinedText += `\n\n--- DOCUMENT DATA ---\n${ctx.text}`;
+          if (ctx.inlineData) inlineDataParts.push({ inlineData: ctx.inlineData });
         }
-      } 
-      // Otherwise, restore from disk (history mode)
-      else if (msg.attachments && msg.attachments !== '[]') {
+      } else if (msg.attachments && msg.attachments !== '[]') {
+        // Historical turns: Restore from disk
         try {
           const fileNames = JSON.parse(msg.attachments);
           const docsResult = await pool.query(
             'SELECT filename, original_name FROM documents WHERE conversation_id = $1 AND original_name = ANY($2)',
             [convId, fileNames]
           );
-          const docs = docsResult.rows;
-
-          for (const doc of docs) {
+          
+          for (const doc of docsResult.rows) {
             const filePath = path.join(UPLOAD_DIR, doc.filename);
             if (fs.existsSync(filePath)) {
-              const ext = doc.filename.toLowerCase().split('.').pop();
-              let mime = 'text/plain';
-              if (ext === 'pdf') mime = 'application/pdf';
-              else if (ext === 'xlsx' || ext === 'xls') mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-              else if (ext === 'docx' || ext === 'doc') mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-              else if (['jpg', 'jpeg'].includes(ext)) mime = 'image/jpeg';
-              else if (ext === 'png') mime = 'image/png';
-
               const fileContext = await getFileContext({ 
                 path: filePath, 
-                mimetype: mime,
+                mimetype: 'application/octet-stream', // Let fallback extension detection handle it
                 originalname: doc.original_name
               });
               if (fileContext) {
-                if (fileContext.text) parts.push({ text: fileContext.text });
-                if (fileContext.inlineData) parts.push({ inlineData: fileContext.inlineData });
+                if (fileContext.text) combinedText += `\n\n--- DOCUMENT DATA ---\n${fileContext.text}`;
+                if (fileContext.inlineData) inlineDataParts.push({ inlineData: fileContext.inlineData });
               }
             }
           }
         } catch (e) {
-          console.error("Failed to restore attachment context:", e);
+          console.error("Context recovery failed:", e);
         }
       }
-      
+
+      // ─── Build final parts for this turn ───
+      const parts = [{ text: combinedText }, ...inlineDataParts];
       contents.push({ role: msg.role, parts });
     }
 
