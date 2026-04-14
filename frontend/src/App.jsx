@@ -125,15 +125,15 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
 // ─── Site Footer ──────────────────────────────────────────
 function SiteFooter() {
   return (
-    <footer className="bg-background shrink-0 border-t border-white/5 py-16 px-6 mt-12 w-full relative overflow-hidden">
+    <footer className="bg-background shrink-0 border-t border-white/5 py-10 px-6 w-full relative overflow-hidden">
       {/* Background Hero Text */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-        <h2 className="text-[18vw] font-black text-white/5 tracking-tighter leading-none whitespace-nowrap px-8 text-center w-full">
+        <h2 className="text-[13vw] font-black text-white/5 tracking-tighter leading-none whitespace-nowrap px-8 text-center w-full uppercase">
           DOCJOCKEY.
         </h2>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-center gap-12">
+      <div className="relative z-10 w-full flex flex-col items-center gap-8">
         <div className="flex flex-wrap justify-center gap-x-12 gap-y-4">
           {[
             { label: 'ABOUT US', href: '#' },
@@ -147,14 +147,13 @@ function SiteFooter() {
           ))}
         </div>
 
-        <div className="flex flex-col items-center gap-4">
-          <a href="mailto:connect@docjockey.com" className="text-xs font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.3em] transition-colors">
-            CONNECT@DOCJOCKEY.COM
-          </a>
-          <span className="text-[10px] font-black text-foreground/10 uppercase tracking-[0.5em]">
-            © 2026 DOCJOCKEY. ALL RIGHTS RESERVED.
-          </span>
-        </div>
+        <a href="mailto:connect@docjockey.com" className="text-xs font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.3em] transition-colors">
+          CONNECT@DOCJOCKEY.COM
+        </a>
+
+        <span className="text-[10px] font-black text-foreground/10 uppercase tracking-[0.5em]">
+          © 2026 DOCJOCKEY. ALL RIGHTS RESERVED.
+        </span>
       </div>
     </footer>
   );
@@ -908,7 +907,6 @@ export default function App() {
                 </div>
               )}
             </div>
-            <SiteFooter />
           </div>
 
           {/* Floating Input Area (Sticky Overlay - only when chat is active) */}
@@ -938,6 +936,8 @@ export default function App() {
           </AnimatePresence>
         </main>
       </div>
+
+      <SiteFooter />
 
       {activeTool && <ToolModal tool={activeTool} onClose={() => setActiveTool(null)} />}
     </div>
