@@ -92,8 +92,10 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
             <span className="text-secondary">JOCKEY</span>
           </div>
         </div>
+      </div>
 
-        <nav className="hidden lg:flex items-center gap-6 ml-8">
+      <div className="flex items-center gap-10">
+        <nav className="hidden lg:flex items-center gap-8">
           {[
             { label: 'Home', href: '#' },
             { label: 'Pricing', href: '#' },
@@ -103,20 +105,20 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
             <a key={link.label} href={link.href} className="text-xs font-black text-foreground/40 hover:text-white uppercase tracking-widest transition-colors">{link.label}</a>
           ))}
         </nav>
-      </div>
 
-      <div className="flex items-center gap-4">
-        <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary hover:text-white transition-all">
-          Upgrade Pro
-        </button>
-        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold">
-          JD
-        </div>
-        {isMobile && (
-          <button onClick={onMenuClick} className="p-2 text-foreground/60">
-            <Menu size={20} />
+        <div className="flex items-center gap-4">
+          <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary hover:text-white transition-all">
+            Upgrade Pro
           </button>
-        )}
+          <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold">
+            JD
+          </div>
+          {isMobile && (
+            <button onClick={onMenuClick} className="p-2 text-foreground/60">
+              <Menu size={20} />
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );
