@@ -216,28 +216,29 @@ async function getFileContext(file) {
   return null;
 }
 
-async function callGemini(contents, maxRetries = 3) {
+async function callGemini(contents, customSystemPrompt = null) {
+  // --- COST-OPTIMIZER QUEUE: Ascending Price/Intelligence ---
   const models = [
-    'gemini-3.1-pro-preview',
+    'gemini-2.5-flash',
     'gemini-3-flash-preview',
     'gemini-2.5-pro',
-    'gemini-2.5-flash'
+    'gemini-3.1-pro-preview'
   ];
+
+  const systemInstruction = customSystemPrompt || SYSTEM_PROMPT;
 
   for (let attempt = 0; attempt < models.length; attempt++) {
     const modelName = models[attempt];
     try {
-      // Compatibility check: handle both different SDK versions
       let result;
       if (typeof ai.getGenerativeModel === 'function') {
-        const model = ai.getGenerativeModel({ model: modelName, systemInstruction: SYSTEM_PROMPT });
-        result = await model.generateContent({ contents, generationConfig: { maxOutputTokens: 8192, temperature: 0.2 } });
+        const model = ai.getGenerativeModel({ model: modelName, systemInstruction });
+        result = await model.generateContent({ contents, generationConfig: { maxOutputTokens: 8192, temperature: 0.1 } });
       } else {
-        // Fallback for older versions or specific shims
         result = await ai.models.generateContent({
           model: modelName,
           contents,
-          config: { systemInstruction: SYSTEM_PROMPT, maxOutputTokens: 8192 }
+          config: { systemInstruction, maxOutputTokens: 8192 }
         });
       }
 
@@ -254,23 +255,19 @@ async function callGemini(contents, maxRetries = 3) {
           aiText = result.candidates[0].content.parts[0].text;
         }
       } catch (e) {
-        console.warn(`[DEBUG] Primary extraction failed for ${modelName}, checking raw candidates...`);
         aiText = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
       }
 
-      if (!aiText) {
-        console.error(`❌ ${modelName} returned no text. result keys:`, Object.keys(result));
-        throw new Error("Empty AI response (Possible safety block or SDK mismatch)");
-      }
+      if (!aiText) throw new Error("Empty AI response");
       
-      console.log(`✅ Success via ${modelName} (Attempt ${attempt + 1})`);
+      console.log(`✅ [${modelName}] Success (Attempt ${attempt + 1})`);
       return aiText;
     } catch (err) {
       const status = err?.status || err?.code;
-      const isRecoverable = [429, 500, 503].includes(status) || err.message.includes('undefined') || err.message.includes('not a function');
+      const isRecoverable = [429, 500, 503].includes(status) || err.message.includes('not a function') || err.message.includes('undefined');
       
       if (isRecoverable && attempt < models.length - 1) {
-        console.warn(`⚠️ ${modelName} structural error or throttle (${status}). Trying ${models[attempt + 1]}...`);
+        console.warn(`⚠️ [${modelName}] Busy/Error (${status}). Trying ${models[attempt + 1]}...`);
         await new Promise((r) => setTimeout(r, 1000));
         continue;
       } else {
@@ -1018,12 +1015,12 @@ app.post('/api/tools/pdf-to-excel', upload.single('file'), async (req, res) => {
     
     CRITICAL: Capture every single field. NO CONVERSATIONAL TEXT. ONLY RAW JSON.`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
-      contents: [{ role: 'user', parts: [{ text: prompt }, inputData] }]
-    });
+    const aiText = await callGemini(
+      [{ role: 'user', parts: [{ text: "Extract structured data from the attached file." }, inputData] }],
+      prompt
+    );
 
-    const data = extractCleanJson(response.text);
+    const data = extractCleanJson(aiText);
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('NexGen_Structural_Export');
     
@@ -1212,12 +1209,12 @@ app.post('/api/tools/word-to-pdf', upload.single('file'), async (req, res) => {
     
     CRITICAL: NO CONVERSATIONAL TEXT. ONLY RAW JSON.`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
-      contents: [{ role: 'user', parts: [{ text: prompt }] }]
-    });
+    const aiText = await callGemini(
+      [{ role: 'user', parts: [{ text: "Analyze and reconstruct Word structure." }] }],
+      prompt
+    );
 
-    const blocks = extractCleanJson(response.text);
+    const blocks = extractCleanJson(aiText);
 
     const pdfDoc = await PDFDocument.create();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
