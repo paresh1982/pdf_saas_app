@@ -96,33 +96,36 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
 
 // ─── Site Footer ──────────────────────────────────────────
 function SiteFooter() {
-  const sections = [
-    { title: 'Connect', links: ['Support', 'Sales', 'Status'] },
-    { title: 'Learn', links: ['Docs', 'Features', 'Blog'] },
-    { title: 'Legal', links: ['Privacy', 'Terms', 'GDPR'] },
-    { title: 'Company', links: ['About Us', 'Careers'] }
-  ];
-
   return (
-    <footer className="bg-background shrink-0 border-t border-white/5 pt-12 pb-8 px-6 mt-12 w-full">
-      <div className="max-w-7xl mx-auto flex flex-wrap justify-center gap-x-12 gap-y-4">
-        {[
-          { label: 'About Us', href: '#' },
-          { label: 'Contact', href: '#' },
-          { label: 'Privacy Policy', href: '#' },
-          { label: 'Disclaimer', href: '#' }
-        ].map(link => (
-          <a key={link.label} href={link.href} className="text-[10px] font-black text-foreground/40 hover:text-secondary uppercase tracking-[0.2em] transition-colors">
-            {link.label}
-          </a>
-        ))}
+    <footer className="bg-background shrink-0 border-t border-white/5 py-24 px-6 mt-12 w-full relative overflow-hidden">
+      {/* Background Hero Text */}
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center pointer-events-none select-none overflow-hidden h-full items-center">
+        <h2 className="text-[12rem] md:text-[20rem] font-black text-white/5 tracking-tighter leading-none">
+          DOCJOCKEY.
+        </h2>
       </div>
-      <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-secondary font-black uppercase tracking-[0.5em]">
-        <span>© 2026 DOCJOCKEY AI • Agentic Parsing Engine</span>
-        <div className="flex gap-6">
-          <a href="#" className="hover:text-white">Twitter</a>
-          <a href="#" className="hover:text-white">Github</a>
-          <a href="#" className="hover:text-white">LinkedIn</a>
+
+      <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-center gap-12">
+        <div className="flex flex-wrap justify-center gap-x-12 gap-y-4">
+          {[
+            { label: 'ABOUT', href: '#' },
+            { label: 'PRIVACY', href: '#' },
+            { label: 'TERMS', href: '#' },
+            { label: 'CONTACT', href: '#' }
+          ].map(link => (
+            <a key={link.label} href={link.href} className="text-[11px] font-black text-foreground/40 hover:text-secondary uppercase tracking-[0.4em] transition-all hover:scale-110">
+              {link.label}
+            </a>
+          ))}
+        </div>
+
+        <div className="flex flex-col items-center gap-4">
+          <a href="mailto:connect@docjockey.com" className="text-xs font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.3em] transition-colors">
+            CONNECT@DOCJOCKEY.COM
+          </a>
+          <span className="text-[10px] font-black text-foreground/10 uppercase tracking-[0.5em]">
+            © 2026 DOCJOCKEY. ALL RIGHTS RESERVED.
+          </span>
         </div>
       </div>
     </footer>
@@ -664,16 +667,16 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground font-sans selection:bg-primary/30">
+    <div className="h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 overflow-hidden">
       <SiteHeader 
         onMenuClick={() => setSidebarOpen(!sidebarOpen)} 
-        sidebarOpen={sidebarOpen}
+        sidebarOpen={sidebarOpen} 
         isMobile={isMobile}
         activeConvId={activeConvId}
-        convTitle={activeConvId ? conversations.find(c => c.id === activeConvId)?.title : ''}
+        convTitle={messages.length > 0 ? (conversations.find(c => c.id === activeConvId)?.title || 'Chat') : 'New Session'}
       />
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex-1 flex overflow-hidden relative">
 
         {/* ─── Sidebar Layer ─── */}
         <AnimatePresence mode="wait">
@@ -684,19 +687,10 @@ export default function App() {
               exit={{ x: -300 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className={`
-                ${isMobile ? 'fixed inset-y-0 left-0 z-[60] w-72' : 'relative w-64'} 
-                flex flex-col glass-panel border-r border-white/5
+                ${isMobile ? 'fixed inset-y-0 left-0 z-[60] w-96' : 'relative w-96 shrink-0'} 
+                flex flex-col glass-panel border-r border-white/5 h-full overflow-hidden
               `}
             >
-              {/* Sidebar Header (Internal) - New Chat Button */}
-              <div className="p-3 mt-4">
-                <button
-                  onClick={() => handleAction(newChat)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 red-gradient rounded-xl text-xs font-bold text-white shadow-lg shadow-primary/10 hover:brightness-110 transition-all uppercase tracking-widest"
-                >
-                  <Plus size={16} /> New Chat
-                </button>
-              </div>
 
               <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-6 py-2 border-t border-white/5 mt-4">
                 {/* --- Intelligence --- */}
@@ -728,12 +722,6 @@ export default function App() {
 
                 {/* --- Tools by Category --- */}
                 {[
-                  {
-                    title: 'Intelligence',
-                    tools: conversations.length > 0 ? [
-                      { id: 'new', icon: Plus, label: 'New Chat', action: () => handleAction(newChat) }
-                    ] : []
-                  },
                   {
                     title: 'File Manipulation',
                     tools: [
@@ -797,13 +785,13 @@ export default function App() {
             <div className="flex-1">
               {messages.length === 0 ? (
                 /* Empty State / Welcome */
-                <div className="h-full flex flex-col items-center justify-center p-8 min-h-[700px]">
+                <div className="h-full flex flex-col items-center justify-center p-8 py-24 min-h-screen">
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="text-center w-full max-w-2xl px-4"
+                    className="text-center w-full max-w-4xl px-4"
                   >
-                    <div className="w-16 h-16 red-gradient rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/20 border border-white/5">
+                    <div className="w-20 h-20 red-gradient rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/30 border border-white/10">
                       <Zap size={32} className="text-white fill-white" />
                     </div>
                     <h2 className="text-2xl font-black mb-2 tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
@@ -829,17 +817,17 @@ export default function App() {
 
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full max-w-md border-2 border-dashed border-white/5 hover:border-primary/20 rounded-3xl p-14 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-8"
+                      className="w-full max-w-2xl border-2 border-dashed border-white/5 hover:border-primary/20 rounded-[3rem] p-20 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-12"
                     >
-                      <div className="flex flex-col items-center gap-5">
-                        <div className="w-20 h-20 bg-primary/5 text-primary rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-inner">
-                          {uploadMode === 'single' ? <Paperclip size={40} /> : <Combine size={40} />}
+                      <div className="flex flex-col items-center gap-8">
+                        <div className="w-24 h-24 bg-primary/5 text-primary rounded-[2.5rem] flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-inner">
+                          {uploadMode === 'single' ? <Paperclip size={48} /> : <Combine size={48} />}
                         </div>
                         <div>
-                          <p className="text-sm font-black text-white mb-1 uppercase tracking-[0.2em]">
+                          <p className="text-lg font-black text-white mb-2 uppercase tracking-[0.3em]">
                             {uploadMode === 'single' ? 'Drop document' : 'Drop batch'}
                           </p>
-                          <p className="text-[10px] text-secondary font-black uppercase tracking-[0.3em]">
+                          <p className="text-xs text-secondary font-black uppercase tracking-[0.4em]">
                             Ready for DocJockey Speed
                           </p>
                         </div>
@@ -847,7 +835,7 @@ export default function App() {
                     </div>
 
                     {/* --- Welcome State Dialogue Box (Embedded) --- */}
-                    <div className="max-w-xl mx-auto mb-12">
+                    <div className="max-w-2xl mx-auto mb-24">
                        {/* Reusable Input Block */}
                        <ChatInputArea 
                           inputText={inputText}
@@ -865,7 +853,7 @@ export default function App() {
                   </motion.div>
                 </div>
               ) : (
-                <div className="max-w-5xl mx-auto p-6 space-y-10">
+                <div className="max-w-7xl mx-auto p-6 space-y-8">
                   {messages.map((msg, i) => (
                     <ChatMessage key={i} msg={msg} />
                   ))}
@@ -895,7 +883,7 @@ export default function App() {
                 exit={{ y: 100 }}
                 className="sticky bottom-0 p-6 md:p-8 shrink-0 bg-background/80 backdrop-blur-xl border-t border-white/5 z-40"
               >
-                <div className="max-w-4xl mx-auto">
+                <div className="max-w-5xl mx-auto">
                    <ChatInputArea 
                       inputText={inputText}
                       setInputText={setInputText}
