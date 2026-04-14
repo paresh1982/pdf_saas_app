@@ -798,7 +798,7 @@ export default function App() {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="text-center w-full max-w-4xl px-4"
+                    className="text-center w-full max-w-6xl px-4"
                   >
                     <div className="w-20 h-20 red-gradient rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-primary/30 border border-white/10">
                       <Zap size={32} className="text-white fill-white" />
@@ -826,7 +826,7 @@ export default function App() {
 
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full max-w-2xl border-2 border-dashed border-white/5 hover:border-primary/20 rounded-[3rem] p-12 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-8"
+                      className="w-full max-w-4xl border-2 border-dashed border-white/5 hover:border-primary/20 rounded-[3rem] p-12 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-8"
                     >
                       <div className="flex flex-col items-center gap-4">
                         <div className="w-20 h-20 bg-primary/5 text-primary rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-inner">
@@ -844,7 +844,7 @@ export default function App() {
                     </div>
 
                     {/* --- Welcome State Dialogue Box (Embedded) --- */}
-                    <div className="max-w-2xl mx-auto mb-8">
+                    <div className="max-w-4xl mx-auto mb-8">
                        {/* Reusable Input Block */}
                        <ChatInputArea 
                           inputText={inputText}
@@ -862,7 +862,7 @@ export default function App() {
                   </motion.div>
                 </div>
               ) : (
-                <div className="max-w-4xl mx-auto p-4 space-y-4 py-8">
+                <div className="max-w-7xl mx-auto p-4 space-y-4 py-8">
                   {messages.map((msg, i) => (
                     <ChatMessage key={i} msg={msg} />
                   ))}
@@ -892,7 +892,7 @@ export default function App() {
                 exit={{ y: 100 }}
                 className="sticky bottom-0 p-6 md:p-8 shrink-0 bg-background/80 backdrop-blur-xl border-t border-white/5 z-40"
               >
-                <div className="max-w-5xl mx-auto">
+                <div className="max-w-6xl mx-auto">
                    <ChatInputArea 
                       inputText={inputText}
                       setInputText={setInputText}
