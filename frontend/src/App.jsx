@@ -148,12 +148,14 @@ function SiteFooter() {
           </a>
         </div>
         
-        <div className="flex-none flex items-center gap-2">
-          <LogoDJ size={16} />
-          <div className="text-sm font-black tracking-tighter uppercase flex">
-            <span className="text-primary">DOC</span>
-            <span className="text-secondary">JOCKEY</span>
-          </div>
+        <div className="flex-none flex justify-center">
+          <a href="#" className="flex items-center gap-2.5 group cursor-pointer transition-transform hover:scale-105 active:scale-95">
+            <LogoDJ size={18} className="group-hover:rotate-3 transition-transform" />
+            <div className="text-base font-black tracking-tighter uppercase flex">
+              <span className="text-primary">DOC</span>
+              <span className="text-secondary">JOCKEY</span>
+            </div>
+          </a>
         </div>
 
         <div className="flex-1 text-right">
