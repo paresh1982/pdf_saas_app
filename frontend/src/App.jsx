@@ -59,17 +59,18 @@ function LogoDJ({ size = 20, className = "" }) {
         {/* Document Background */}
         <path 
           d="M10 4 H25 L34 13 V34 C34 35.1 33.1 36 32 36 H10 C8.9 36 8 35.1 8 34 V6 C8 4.9 8.9 4 10 4 Z" 
-          className="fill-white/10 stroke-white/20" 
-          strokeWidth="1.5"
+          fill="#cfc9c9"
+          stroke="#241c1e"
+          strokeWidth="2"
         />
-        <path d="M25 4 V13 H34" className="fill-white/5 stroke-white/20" strokeWidth="1.5" />
+        <path d="M25 4 V13 H34" fill="#cfc9c9" stroke="#241c1e" strokeWidth="2" />
         {/* DJ Text */}
         <text 
           x="21" 
-          y="27" 
+          y="28" 
           textAnchor="middle" 
           className="font-black" 
-          style={{ fontSize: '14px', letterSpacing: '-1px' }}
+          style={{ fontSize: '17px', letterSpacing: '-1.5px' }}
         >
           <tspan fill="#e63639">D</tspan>
           <tspan fill="#1da5a2">J</tspan>
