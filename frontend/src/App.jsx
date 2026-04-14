@@ -125,7 +125,7 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
 // ─── Site Footer ──────────────────────────────────────────
 function SiteFooter() {
   return (
-    <footer className="glass-panel border-t border-white/5 h-16 px-6 w-full relative overflow-hidden flex flex-col justify-center gap-1">
+    <footer className="glass-panel border-t border-white/5 h-16 px-6 w-full relative overflow-hidden flex flex-col justify-center gap-1.5">
       {/* Row 1: Footer Menu */}
       <div className="flex justify-center gap-x-12">
         {[
@@ -134,26 +134,30 @@ function SiteFooter() {
           { label: 'DISCLAIMER', href: '#' },
           { label: 'CONTACT', href: '#' }
         ].map(link => (
-          <a key={link.label} href={link.href} className="text-[9px] font-black text-foreground/40 hover:text-secondary uppercase tracking-[0.3em] transition-all hover:scale-105">
+          <a key={link.label} href={link.href} className="text-[11px] font-black text-foreground/40 hover:text-secondary uppercase tracking-[0.3em] transition-all hover:scale-105">
             {link.label}
           </a>
         ))}
       </div>
 
-      {/* Row 2: Email | Logo | Copyright */}
+      {/* Row 2: Email | Logo + Text | Copyright */}
       <div className="flex items-center justify-between w-full">
         <div className="flex-1 text-left">
-          <a href="mailto:connect@docjockey.com" className="text-[9px] font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.2em] transition-colors">
+          <a href="mailto:connect@docjockey.com" className="text-[11px] font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.2em] transition-colors">
             CONNECT@DOCJOCKEY.COM
           </a>
         </div>
         
-        <div className="flex-none flex justify-center">
-          <LogoDJ size={14} />
+        <div className="flex-none flex items-center gap-2">
+          <LogoDJ size={16} />
+          <div className="text-sm font-black tracking-tighter uppercase flex">
+            <span className="text-primary">DOC</span>
+            <span className="text-secondary">JOCKEY</span>
+          </div>
         </div>
 
         <div className="flex-1 text-right">
-          <span className="text-[8px] font-black text-foreground/10 uppercase tracking-[0.3em]">
+          <span className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em]">
             © 2026 DOCJOCKEY. ALL RIGHTS RESERVED.
           </span>
         </div>
