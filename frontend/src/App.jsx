@@ -66,8 +66,13 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
         </div>
 
         <nav className="hidden lg:flex items-center gap-6 ml-8">
-          {['Solutions', 'Features', 'Pricing', 'API Docs'].map(link => (
-            <a key={link} href="#" className="text-xs font-bold text-foreground/40 hover:text-white uppercase tracking-widest transition-colors">{link}</a>
+          {[
+            { label: 'Home', href: '#' },
+            { label: 'Pricing', href: '#' },
+            { label: 'About', href: '#' },
+            { label: 'Contact', href: '#' }
+          ].map(link => (
+            <a key={link.label} href={link.href} className="text-xs font-black text-foreground/40 hover:text-white uppercase tracking-widest transition-colors">{link.label}</a>
           ))}
         </nav>
       </div>
@@ -100,21 +105,19 @@ function SiteFooter() {
 
   return (
     <footer className="bg-background shrink-0 border-t border-white/5 pt-12 pb-8 px-6 mt-12 w-full">
-      <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-12">
-        {sections.map(section => (
-          <div key={section.title}>
-            <h4 className="text-[10px] font-black text-foreground/20 uppercase tracking-[0.2em] mb-4">{section.title}</h4>
-            <ul className="space-y-2">
-              {section.links.map(link => (
-                <li key={section.title + link}>
-                  <a href="#" className="text-xs text-foreground/50 hover:text-primary transition-colors">{link}</a>
-                </li>
-              ))}
-            </ul>
-          </div>
+      <div className="max-w-7xl mx-auto flex flex-wrap justify-center gap-x-12 gap-y-4">
+        {[
+          { label: 'About Us', href: '#' },
+          { label: 'Contact', href: '#' },
+          { label: 'Privacy Policy', href: '#' },
+          { label: 'Disclaimer', href: '#' }
+        ].map(link => (
+          <a key={link.label} href={link.href} className="text-[10px] font-black text-foreground/40 hover:text-secondary uppercase tracking-[0.2em] transition-colors">
+            {link.label}
+          </a>
         ))}
       </div>
-      <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-foreground/20 font-bold uppercase tracking-widest">
+      <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-secondary font-black uppercase tracking-[0.5em]">
         <span>© 2026 DOCJOCKEY AI • Agentic Parsing Engine</span>
         <div className="flex gap-6">
           <a href="#" className="hover:text-white">Twitter</a>
@@ -726,6 +729,12 @@ export default function App() {
                 {/* --- Tools by Category --- */}
                 {[
                   {
+                    title: 'Intelligence',
+                    tools: conversations.length > 0 ? [
+                      { id: 'new', icon: Plus, label: 'New Chat', action: () => handleAction(newChat) }
+                    ] : []
+                  },
+                  {
                     title: 'File Manipulation',
                     tools: [
                       { id: 'merge', icon: Combine, label: 'Merge PDF' },
@@ -756,16 +765,22 @@ export default function App() {
                       { id: 'reorder', icon: Layout, label: 'Organize Pages' },
                     ]
                   }
-                ].map(category => (
-                  <div key={category.title} className="mb-6">
-                    <p className="px-3 text-[10px] font-black text-foreground/20 uppercase tracking-[0.2em] mb-3">{category.title}</p>
-                    <div className="space-y-1.5">
+                ].map(category => category.tools.length > 0 && (
+                  <div key={category.title} className="mb-8">
+                    <p className="px-3 text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-4">{category.title}</p>
+                    <div className="grid grid-cols-2 gap-2.5">
                       {category.tools.map(tool => (
-                        <button key={tool.id} className="tool-btn group" onClick={() => handleAction(() => setActiveTool(tool))}>
-                          <div className="w-6 h-6 flex items-center justify-center rounded-lg bg-surface/50 text-foreground/40 group-hover:text-primary transition-colors border border-white/5">
-                            <tool.icon size={12} />
+                        <button
+                          key={tool.id}
+                          className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/2 hover:bg-white/5 border border-white/5 hover:border-secondary/20 transition-all group gap-2.5"
+                          onClick={() => tool.action ? tool.action() : handleAction(() => setActiveTool(tool))}
+                        >
+                          <div className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${tool.id === 'new' ? 'red-gradient text-white shadow-lg shadow-primary/20' : 'bg-surface/50 text-foreground/30 group-hover:text-secondary group-hover:bg-secondary/10 border border-white/5'}`}>
+                            <tool.icon size={20} />
                           </div>
-                          <span className="font-medium text-[11px] tracking-tight">{tool.label}</span>
+                          <span className="text-[9px] font-black uppercase tracking-tight text-center leading-tight text-foreground/40 group-hover:text-white transition-colors px-1">
+                            {tool.label}
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -782,22 +797,22 @@ export default function App() {
             <div className="flex-1">
               {messages.length === 0 ? (
                 /* Empty State / Welcome */
-                <div className="h-full flex flex-col items-center justify-center p-8 min-h-[600px]">
+                <div className="h-full flex flex-col items-center justify-center p-8 min-h-[700px]">
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="text-center max-w-lg"
+                    className="text-center w-full max-w-2xl px-4"
                   >
                     <div className="w-16 h-16 red-gradient rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/20 border border-white/5">
                       <Zap size={32} className="text-white fill-white" />
                     </div>
                     <h2 className="text-2xl font-black mb-2 tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
-                    <p className="text-foreground/60 text-sm mb-8 leading-relaxed max-w-sm mx-auto font-medium">
+                    <p className="text-foreground/60 text-sm mb-12 leading-relaxed max-w-sm mx-auto font-medium">
                       Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
                     </p>
 
                     {/* --- Upload Tabs --- */}
-                    <div className="flex bg-surface/50 p-1.5 rounded-2xl border border-white/5 mb-8">
+                    <div className="flex bg-surface/50 p-1.5 rounded-2xl border border-white/5 mb-8 max-w-md mx-auto">
                       <button 
                         onClick={() => { setUploadMode('single'); setAttachedFiles([]); }}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
@@ -814,7 +829,7 @@ export default function App() {
 
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full max-w-md border-2 border-dashed border-white/5 hover:border-primary/20 rounded-3xl p-14 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto"
+                      className="w-full max-w-md border-2 border-dashed border-white/5 hover:border-primary/20 rounded-3xl p-14 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-8"
                     >
                       <div className="flex flex-col items-center gap-5">
                         <div className="w-20 h-20 bg-primary/5 text-primary rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-inner">
@@ -824,11 +839,28 @@ export default function App() {
                           <p className="text-sm font-black text-white mb-1 uppercase tracking-[0.2em]">
                             {uploadMode === 'single' ? 'Drop document' : 'Drop batch'}
                           </p>
-                          <p className="text-[10px] text-foreground/20 font-black uppercase tracking-[0.3em]">
+                          <p className="text-[10px] text-secondary font-black uppercase tracking-[0.3em]">
                             Ready for DocJockey Speed
                           </p>
                         </div>
                       </div>
+                    </div>
+
+                    {/* --- Welcome State Dialogue Box (Embedded) --- */}
+                    <div className="max-w-xl mx-auto mb-12">
+                       {/* Reusable Input Block */}
+                       <ChatInputArea 
+                          inputText={inputText}
+                          setInputText={setInputText}
+                          sendMessage={sendMessage}
+                          handleKeyDown={handleKeyDown}
+                          handleFileSelect={handleFileSelect}
+                          fileInputRef={fileInputRef}
+                          attachedFiles={attachedFiles}
+                          setAttachedFiles={setAttachedFiles}
+                          isLoading={isLoading}
+                          isEmbedded={true}
+                       />
                     </div>
                   </motion.div>
                 </div>
@@ -843,7 +875,7 @@ export default function App() {
                         <Loader2 size={18} className="animate-spin text-primary" />
                       </div>
                       <div className="bg-surface/30 border border-white/5 rounded-2xl px-6 py-5 shadow-sm">
-                        <span className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] animate-pulse">Running DocJockey Engine...</span>
+                        <span className="text-[10px] font-black text-secondary uppercase tracking-[0.3em] animate-pulse">Running DocJockey Engine...</span>
                       </div>
                     </motion.div>
                   )}
@@ -854,64 +886,105 @@ export default function App() {
             <SiteFooter />
           </div>
 
-          {/* Floating Input Area */}
-          <div className="sticky bottom-0 p-6 md:p-8 shrink-0 bg-background/80 backdrop-blur-xl border-t border-white/5 z-40">
-            <div className="max-w-4xl mx-auto">
-              {attachedFiles.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {attachedFiles.map((file, i) => (
-                    <span key={i} className="flex items-center gap-3 text-[10px] font-black uppercase leading-none bg-primary/10 text-primary border border-primary/20 px-4 py-2.5 rounded-xl shadow-lg">
-                      <FileText size={14} />
-                      {file.name}
-                      <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} className="hover:text-white ml-2 transition-colors">
-                        <X size={14} />
-                      </button>
-                    </span>
-                  ))}
+          {/* Floating Input Area (Sticky Overlay - only when chat is active) */}
+          <AnimatePresence>
+            {messages.length > 0 && (
+              <motion.div 
+                initial={{ y: 100 }}
+                animate={{ y: 0 }}
+                exit={{ y: 100 }}
+                className="sticky bottom-0 p-6 md:p-8 shrink-0 bg-background/80 backdrop-blur-xl border-t border-white/5 z-40"
+              >
+                <div className="max-w-4xl mx-auto">
+                   <ChatInputArea 
+                      inputText={inputText}
+                      setInputText={setInputText}
+                      sendMessage={sendMessage}
+                      handleKeyDown={handleKeyDown}
+                      handleFileSelect={handleFileSelect}
+                      fileInputRef={fileInputRef}
+                      attachedFiles={attachedFiles}
+                      setAttachedFiles={setAttachedFiles}
+                      isLoading={isLoading}
+                   />
                 </div>
-              )}
-
-              <div className="flex items-end gap-3 md:gap-4">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="p-4 md:p-5 text-foreground/30 hover:text-white hover:bg-white/5 rounded-3xl transition-all shrink-0 border border-white/5 shadow-lg bg-surface/30"
-                >
-                  <Paperclip size={24} />
-                  <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} />
-                </button>
-
-                <div className="flex-1 bg-surface/50 border border-white/10 rounded-[2rem] focus-within:border-primary/40 transition-all overflow-hidden shadow-2xl">
-                  <textarea
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Ask DocJockey to analyze or extract..."
-                    rows={1}
-                    className="w-full bg-transparent px-6 py-5 text-sm outline-none resize-none placeholder:text-foreground/20 max-h-56 leading-relaxed font-medium"
-                    style={{ minHeight: '64px' }}
-                  />
-                </div>
-
-                <button
-                  onClick={sendMessage}
-                  disabled={isLoading || (!inputText.trim() && attachedFiles.length === 0)}
-                  className="p-5 md:p-6 red-gradient text-white rounded-[2rem] hover:brightness-110 transition-all disabled:opacity-20 disabled:grayscale disabled:cursor-not-allowed shrink-0 shadow-2xl shadow-primary/30 border border-white/10"
-                >
-                  <Send size={24} />
-                </button>
-              </div>
-
-              <div className="flex justify-center mt-6">
-                <span className="text-[10px] text-foreground/10 font-black uppercase tracking-[0.5em] select-none">
-                  DocJockey Pro • Agentic Extraction • 2026
-                </span>
-              </div>
-            </div>
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </main>
       </div>
 
       {activeTool && <ToolModal tool={activeTool} onClose={() => setActiveTool(null)} />}
+    </div>
+  );
+}
+
+// ─── Reusable Chat Input Component ────────────────────────
+function ChatInputArea({ 
+  inputText, 
+  setInputText, 
+  sendMessage, 
+  handleKeyDown, 
+  handleFileSelect, 
+  fileInputRef, 
+  attachedFiles, 
+  setAttachedFiles,
+  isLoading,
+  isEmbedded = false
+}) {
+  return (
+    <div className="w-full">
+      {attachedFiles.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {attachedFiles.map((file, i) => (
+            <span key={i} className="flex items-center gap-3 text-[10px] font-black uppercase leading-none bg-primary/10 text-primary border border-primary/20 px-4 py-2.5 rounded-xl shadow-lg">
+              <FileText size={14} />
+              {file.name}
+              <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} className="hover:text-white ml-2 transition-colors">
+                <X size={14} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-end gap-3 md:gap-4">
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="p-4 md:p-5 text-foreground/30 hover:text-white hover:bg-white/5 rounded-3xl transition-all shrink-0 border border-white/5 shadow-lg bg-surface/30"
+        >
+          <Paperclip size={24} />
+          <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} />
+        </button>
+
+        <div className="flex-1 bg-surface/50 border border-white/10 rounded-[2rem] focus-within:border-primary/40 transition-all overflow-hidden shadow-2xl">
+          <textarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={isEmbedded ? "Ask DocJockey to analyze or extract..." : "Send a message..."}
+            rows={1}
+            className="w-full bg-transparent px-6 py-5 text-sm outline-none resize-none placeholder:text-foreground/20 max-h-56 leading-relaxed font-medium"
+            style={{ minHeight: '64px' }}
+          />
+        </div>
+
+        <button
+          onClick={sendMessage}
+          disabled={isLoading || (!inputText.trim() && attachedFiles.length === 0)}
+          className="p-5 md:p-6 red-gradient text-white rounded-[2rem] hover:brightness-110 transition-all disabled:opacity-20 disabled:grayscale disabled:cursor-not-allowed shrink-0 shadow-2xl shadow-primary/30 border border-white/10"
+        >
+          <Send size={24} />
+        </button>
+      </div>
+
+      {!isEmbedded && (
+        <div className="flex justify-center mt-6">
+          <span className="text-[10px] text-foreground/10 font-black uppercase tracking-[0.5em] select-none">
+            DocJockey Pro • Agentic Extraction • 2026
+          </span>
+        </div>
+      )}
     </div>
   );
 }
