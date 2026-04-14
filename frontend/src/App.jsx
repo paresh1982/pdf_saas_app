@@ -51,14 +51,41 @@ const UID = (() => {
 axios.defaults.headers.common['X-User-ID'] = UID;
 
 // ─── Site Header ──────────────────────────────────────────
+// ─── DJ Document Logo Component ──────────────────────────
+function LogoDJ({ size = 20, className = "" }) {
+  return (
+    <div className={`relative flex items-center justify-center ${className}`} style={{ width: size * 1.8, height: size * 1.8 }}>
+      <svg viewBox="0 0 40 40" className="w-full h-full drop-shadow-2xl">
+        {/* Document Background */}
+        <path 
+          d="M10 4 H25 L34 13 V34 C34 35.1 33.1 36 32 36 H10 C8.9 36 8 35.1 8 34 V6 C8 4.9 8.9 4 10 4 Z" 
+          className="fill-white/10 stroke-white/20" 
+          strokeWidth="1.5"
+        />
+        <path d="M25 4 V13 H34" className="fill-white/5 stroke-white/20" strokeWidth="1.5" />
+        {/* DJ Text */}
+        <text 
+          x="21" 
+          y="27" 
+          textAnchor="middle" 
+          className="font-black" 
+          style={{ fontSize: '14px', letterSpacing: '-1px' }}
+        >
+          <tspan fill="#e63639">D</tspan>
+          <tspan fill="#1da5a2">J</tspan>
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+// ─── Site Header ──────────────────────────────────────────
 function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitle }) {
   return (
     <header className="h-16 shrink-0 z-50 glass-panel border-b border-white/5 px-6 flex items-center justify-between sticky top-0">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2 group cursor-pointer">
-          <div className="w-9 h-9 red-gradient rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:rotate-6 transition-transform">
-            <Zap size={20} className="text-white fill-white" />
-          </div>
+          <LogoDJ size={22} className="group-hover:rotate-6 transition-transform" />
           <div className="text-xl font-black tracking-tighter uppercase flex">
             <span className="text-primary">DOC</span>
             <span className="text-secondary">JOCKEY</span>
@@ -800,8 +827,8 @@ export default function App() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="text-center w-full max-w-screen-2xl px-4"
                   >
-                    <div className="w-20 h-20 red-gradient rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-primary/30 border border-white/10">
-                      <Zap size={32} className="text-white fill-white" />
+                    <div className="w-24 h-24 mb-6 shadow-2xl shadow-primary/10 flex items-center justify-center mx-auto transition-transform hover:scale-110 duration-500">
+                      <LogoDJ size={52} />
                     </div>
                     <h2 className="text-2xl font-black mb-2 tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
                     <p className="text-foreground/60 text-sm mb-8 leading-relaxed max-w-sm mx-auto font-medium">
