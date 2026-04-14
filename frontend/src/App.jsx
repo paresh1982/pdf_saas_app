@@ -108,9 +108,9 @@ function SiteFooter() {
       <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-center gap-12">
         <div className="flex flex-wrap justify-center gap-x-12 gap-y-4">
           {[
-            { label: 'ABOUT', href: '#' },
-            { label: 'PRIVACY', href: '#' },
-            { label: 'TERMS', href: '#' },
+            { label: 'ABOUT US', href: '#' },
+            { label: 'PRIVACY POLICY', href: '#' },
+            { label: 'DISCLAIMER', href: '#' },
             { label: 'CONTACT', href: '#' }
           ].map(link => (
             <a key={link.label} href={link.href} className="text-[11px] font-black text-foreground/40 hover:text-secondary uppercase tracking-[0.4em] transition-all hover:scale-110">
