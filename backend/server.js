@@ -241,20 +241,36 @@ async function callGemini(contents, maxRetries = 3) {
         });
       }
 
-      // Handle response extraction carefully
-      const response = result.response;
-      const aiText = typeof response.text === 'function' ? response.text() : response.text;
-      
-      if (!aiText) throw new Error("Empty AI response received.");
+      // --- INDESTRUCTIBLE EXTRACTION ---
+      let aiText = "";
+      try {
+        if (result.response) {
+          if (typeof result.response.text === 'function') aiText = result.response.text();
+          else aiText = result.response.text;
+        } else if (result.text) {
+          if (typeof result.text === 'function') aiText = result.text();
+          else aiText = result.text;
+        } else if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+          aiText = result.candidates[0].content.parts[0].text;
+        }
+      } catch (e) {
+        console.warn(`[DEBUG] Primary extraction failed for ${modelName}, checking raw candidates...`);
+        aiText = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      }
+
+      if (!aiText) {
+        console.error(`❌ ${modelName} returned no text. result keys:`, Object.keys(result));
+        throw new Error("Empty AI response (Possible safety block or SDK mismatch)");
+      }
       
       console.log(`✅ Success via ${modelName} (Attempt ${attempt + 1})`);
       return aiText;
     } catch (err) {
       const status = err?.status || err?.code;
-      const isRecoverable = [429, 500, 503].includes(status) || err.message.includes('not a function');
+      const isRecoverable = [429, 500, 503].includes(status) || err.message.includes('undefined') || err.message.includes('not a function');
       
       if (isRecoverable && attempt < models.length - 1) {
-        console.warn(`⚠️ ${modelName} logic error or throttle (${status}). Trying next model...`);
+        console.warn(`⚠️ ${modelName} structural error or throttle (${status}). Trying ${models[attempt + 1]}...`);
         await new Promise((r) => setTimeout(r, 1000));
         continue;
       } else {
