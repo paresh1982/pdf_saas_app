@@ -33,7 +33,7 @@ const PORT = process.env.PORT || 5000;
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'MISSING_KEY' });
+const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
 if (!process.env.GEMINI_API_KEY) {
   console.warn('⚠️ WARNING: GEMINI_API_KEY is not set in environment variables.');
 }
@@ -227,36 +227,37 @@ async function callGemini(contents, maxRetries = 3) {
   for (let attempt = 0; attempt < models.length; attempt++) {
     const modelName = models[attempt];
     try {
-      const model = ai.getGenerativeModel({
-        model: modelName,
-        systemInstruction: SYSTEM_PROMPT,
-      });
+      // Compatibility check: handle both different SDK versions
+      let result;
+      if (typeof ai.getGenerativeModel === 'function') {
+        const model = ai.getGenerativeModel({ model: modelName, systemInstruction: SYSTEM_PROMPT });
+        result = await model.generateContent({ contents, generationConfig: { maxOutputTokens: 8192, temperature: 0.2 } });
+      } else {
+        // Fallback for older versions or specific shims
+        result = await ai.models.generateContent({
+          model: modelName,
+          contents,
+          config: { systemInstruction: SYSTEM_PROMPT, maxOutputTokens: 8192 }
+        });
+      }
 
-      const result = await model.generateContent({
-        contents,
-        generationConfig: {
-          maxOutputTokens: 8192,
-          temperature: 0.2,
-        },
-        tools: [{ codeExecution: {} }],
-      });
-
-      const aiText = result.response.text();
+      // Handle response extraction carefully
+      const response = result.response;
+      const aiText = typeof response.text === 'function' ? response.text() : response.text;
+      
+      if (!aiText) throw new Error("Empty AI response received.");
+      
       console.log(`✅ Success via ${modelName} (Attempt ${attempt + 1})`);
       return aiText;
     } catch (err) {
       const status = err?.status || err?.code;
-      // 404/400 usually means invalid model or prompt, 429/500/503 are retriable
-      const isRecoverable = [429, 500, 503].includes(status);
-      const isInvalid = [400, 404].includes(status);
+      const isRecoverable = [429, 500, 503].includes(status) || err.message.includes('not a function');
       
-      if ((isRecoverable || isInvalid) && attempt < models.length - 1) {
-        const cooldown = 500 + Math.random() * 500;
-        console.warn(`⚠️ ${modelName} encountered error (${status}). Failing over to ${models[attempt + 1]}...`);
-        await new Promise((r) => setTimeout(r, cooldown));
+      if (isRecoverable && attempt < models.length - 1) {
+        console.warn(`⚠️ ${modelName} logic error or throttle (${status}). Trying next model...`);
+        await new Promise((r) => setTimeout(r, 1000));
         continue;
       } else {
-        console.error(`❌ All models failed or unrecoverable error:`, err.message);
         throw err;
       }
     }
