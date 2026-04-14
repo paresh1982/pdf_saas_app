@@ -97,7 +97,7 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
 // ─── Site Footer ──────────────────────────────────────────
 function SiteFooter() {
   return (
-    <footer className="bg-background shrink-0 border-t border-white/5 py-32 px-6 mt-24 w-full relative overflow-hidden">
+    <footer className="bg-background shrink-0 border-t border-white/5 py-16 px-6 mt-12 w-full relative overflow-hidden">
       {/* Background Hero Text */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
         <h2 className="text-[18vw] font-black text-white/5 tracking-tighter leading-none whitespace-nowrap px-8 text-center w-full">
@@ -794,17 +794,17 @@ export default function App() {
             <div className="flex-1">
               {messages.length === 0 ? (
                 /* Empty State / Welcome */
-                <div className="h-full flex flex-col items-center justify-center p-8 py-24 min-h-screen">
+                <div className="h-full flex flex-col items-center justify-center p-8 pt-8 pb-12 min-h-screen">
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="text-center w-full max-w-4xl px-4"
                   >
-                    <div className="w-20 h-20 red-gradient rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/30 border border-white/10">
+                    <div className="w-20 h-20 red-gradient rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-primary/30 border border-white/10">
                       <Zap size={32} className="text-white fill-white" />
                     </div>
                     <h2 className="text-2xl font-black mb-2 tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
-                    <p className="text-foreground/60 text-sm mb-12 leading-relaxed max-w-sm mx-auto font-medium">
+                    <p className="text-foreground/60 text-sm mb-8 leading-relaxed max-w-sm mx-auto font-medium">
                       Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
                     </p>
 
@@ -826,14 +826,14 @@ export default function App() {
 
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full max-w-2xl border-2 border-dashed border-white/5 hover:border-primary/20 rounded-[3rem] p-20 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-12"
+                      className="w-full max-w-2xl border-2 border-dashed border-white/5 hover:border-primary/20 rounded-[3rem] p-12 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-8"
                     >
-                      <div className="flex flex-col items-center gap-8">
-                        <div className="w-24 h-24 bg-primary/5 text-primary rounded-[2.5rem] flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-inner">
-                          {uploadMode === 'single' ? <Paperclip size={48} /> : <Combine size={48} />}
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-20 h-20 bg-primary/5 text-primary rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-inner">
+                          {uploadMode === 'single' ? <Paperclip size={36} /> : <Combine size={36} />}
                         </div>
                         <div>
-                          <p className="text-lg font-black text-white mb-2 uppercase tracking-[0.3em]">
+                          <p className="text-lg font-black text-white mb-1 uppercase tracking-[0.3em]">
                             {uploadMode === 'single' ? 'Drop document' : 'Drop batch'}
                           </p>
                           <p className="text-xs text-secondary font-black uppercase tracking-[0.4em]">
@@ -844,7 +844,7 @@ export default function App() {
                     </div>
 
                     {/* --- Welcome State Dialogue Box (Embedded) --- */}
-                    <div className="max-w-2xl mx-auto mb-24">
+                    <div className="max-w-2xl mx-auto mb-8">
                        {/* Reusable Input Block */}
                        <ChatInputArea 
                           inputText={inputText}
