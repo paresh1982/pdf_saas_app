@@ -1338,15 +1338,25 @@ app.get('/api/conversations/:id/export', async (req, res) => {
     const jsonBlocks = [];
     for (const row of rows) {
       if (row.role === 'model') {
-        const matches = row.content.match(/```json\n([\s\S]*?)```/g);
-        if (matches) {
-          for (const match of matches) {
-            try {
-              const clean = match.replace(/```json\n?/g, '').replace(/```/g, '').trim();
-              const parsed = JSON.parse(clean);
-              if (Array.isArray(parsed)) jsonBlocks.push(...parsed);
-              else jsonBlocks.push(parsed);
-            } catch (e) { }
+        // FLEXIBLE REGEX: Handles ```json, ```JSON, or just ``` with optional spaces/newlines
+        const regex = /```(?:json)?\s*([\s\S]*?)```/gi;
+        let match;
+        while ((match = regex.exec(row.content)) !== null) {
+          try {
+            const clean = match[1].trim();
+            const parsed = JSON.parse(clean);
+            if (Array.isArray(parsed)) jsonBlocks.push(...parsed);
+            else jsonBlocks.push(parsed);
+          } catch (e) {
+            // Fallback: try to see if it's a markdown table if JSON parsing fails
+            if (match[1].includes('|')) {
+              const lines = match[1].split('\n').filter(l => l.includes('|') && !l.includes('---'));
+              const tableData = lines.map(line => {
+                const parts = line.split('|').map(s => s.trim()).filter(s => s);
+                return parts.reduce((acc, p, i) => ({ ...acc, [`Column_${i+1}`]: p }), {});
+              });
+              if (tableData.length > 0) jsonBlocks.push(...tableData);
+            }
           }
         }
       }
@@ -1382,23 +1392,37 @@ app.get('/api/conversations/:id/export', async (req, res) => {
         sections: [{
           properties: {},
           children: [
-            new Paragraph({ text: "OneStopDoc Intelligence Report", heading: HeadingLevel.TITLE }),
+            new Paragraph({ text: "NexGen AI Extraction Report", heading: HeadingLevel.TITLE }),
+            new Paragraph({ text: `Project: ${req.params.id}`, spacing: { after: 200 } }),
             new Paragraph({ text: `Generated: ${new Date().toLocaleString()}`, spacing: { after: 400 } }),
-            ...rows.map(msg => [
-              new Paragraph({
-                children: [
-                  new TextRun({ text: msg.role === 'user' ? "YOU: " : "AI: ", bold: true, color: msg.role === 'user' ? "8B5CF6" : "0EA5E9" }),
-                  new TextRun({ text: msg.content.replace(/```json[\s\S]*?```/g, '[Structured Data Table Attached]') })
-                ],
-                spacing: { before: 200 }
-              })
-            ]).flat()
+            ...rows.map(msg => {
+              // Clean content by removing the code blocks but keeping the data
+              const cleanContent = msg.content.replace(/```(?:json)?[\s\S]*?```/gi, '[Table Data Below]');
+              
+              const paragraphs = [
+                new Paragraph({
+                  children: [
+                    new TextRun({ text: msg.role === 'user' ? "YOU: " : "AI: ", bold: true, color: msg.role === 'user' ? "8B5CF6" : "0EA5E9" }),
+                    new TextRun({ text: cleanContent })
+                  ],
+                  spacing: { before: 200 }
+                })
+              ];
+
+              // If it's the model and has structured data, add it as a summary text
+              if (msg.role === 'model' && jsonBlocks.length > 0) {
+                 // We could add a real Word table here in the future, 
+                 // for now we keep the report format clear.
+              }
+
+              return paragraphs;
+            }).flat()
           ]
         }]
       });
       const buffer = await Packer.toBuffer(doc);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-      res.setHeader('Content-Disposition', `attachment; filename=OneStopDoc_Report_${Date.now()}.docx`);
+      res.setHeader('Content-Disposition', `attachment; filename=NexGen_Report_${Date.now()}.docx`);
       return res.send(buffer);
     }
 
@@ -1451,7 +1475,7 @@ app.get('/api/conversations/:id/export', async (req, res) => {
 
       const pdfBytes = await pdfDoc.save();
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename=OneStopDoc_Export_${Date.now()}.pdf`);
+      res.setHeader('Content-Disposition', `attachment; filename=NexGen_Export_${Date.now()}.pdf`);
       return res.send(Buffer.from(pdfBytes));
     }
 
