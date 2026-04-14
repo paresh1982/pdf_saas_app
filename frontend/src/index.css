@@ -1,56 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #f8fafc;
-  --surface: #ffffff;
-  --muted: #64748b;
-  --foreground: #0f172a;
-  --primary: #8b5cf6;
-  --secondary: #0ea5e9;
-  --border: rgba(0,0,0,0.05);
-}
-
-.dark {
-  --background: #0a0a0a;
-  --surface: #1a1a1a;
-  --muted: #94a3b8;
-  --foreground: #cbd5e1; /* Even softer foreground (gray-300) */
-  --primary: #a78bfa;    /* Softer violet */
-  --secondary: #38bdf8;  /* Softer sky blue */
-  --border: rgba(255,255,255,0.05);
+  --background: #1c1517;       /* Slightly deeper than user code for layering */
+  --surface: #241c1e;          /* User's base obsidian */
+  --surface-alt: #2d2325;      /* Elevated surface */
+  --muted: #6b6365;
+  --foreground: #e2e8eb;       /* User's Steel Gray */
+  --primary: #e63639;          /* User's Racing Red */
+  --primary-glow: rgba(230, 54, 57, 0.15);
+  --border: rgba(226, 232, 235, 0.05);
+  --success: #10b981;
 }
 
 body {
   margin: 0;
+  font-family: 'Outfit', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--background);
   color: var(--foreground);
+  overflow-x: hidden;
 }
 
+/* ─── Premium Scrollbar ─── */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 5px;
+  height: 5px;
 }
-
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--background);
 }
-
 ::-webkit-scrollbar-thumb {
-  background: rgba(128, 128, 128, 0.2);
-  border-radius: 99px;
+  background: var(--surface-alt);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(128, 128, 128, 0.4);
+/* ─── Global Animations ─── */
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(230, 54, 57, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(230, 54, 57, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(230, 54, 57, 0); }
 }
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
 @layer components {
-  .tool-btn {
-    @apply w-full flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-medium text-muted hover:bg-surface hover:text-white transition-all text-left;
+  .glass-panel {
+    @apply bg-surface/80 backdrop-blur-xl border border-white/5;
   }
+  
+  .red-gradient {
+    background: linear-gradient(135deg, #e63639 0%, #a82527 100%);
+  }
+
+  .tool-btn {
+    @apply w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-medium text-foreground/60 hover:bg-white/5 hover:text-white transition-all text-left border border-transparent hover:border-white/5;
+  }
+  
+  .tool-btn-active {
+    @apply bg-primary/10 text-primary border-primary/20;
+  }
+
   .view-btn {
-    @apply text-[10px] text-muted hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-white/5 hover:bg-white/5 transition-all font-medium;
+    @apply text-[10px] text-foreground/70 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/5 hover:bg-white/5 transition-all font-semibold uppercase tracking-wider;
+  }
+
+  .ai-bubble {
+    @apply bg-surface border-l-2 border-primary/40 rounded-2xl px-5 py-4 shadow-xl;
+  }
+
+  .user-bubble {
+    @apply red-gradient text-white rounded-2xl px-5 py-4 shadow-lg shadow-primary/10;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
   }
 }

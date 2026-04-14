@@ -379,19 +379,19 @@ function DynamicTable({ data, raw, convId }) {
     <div className="my-4 bg-surface border border-border rounded-2xl overflow-hidden shadow-sm">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-4 py-3 md:py-2 border-b border-border bg-background/50 gap-3">
         <span className="text-[10px] text-primary font-bold uppercase tracking-widest flex items-center gap-2">
-          <Sparkles size={12} /> Structured Data • {data.length} rows
+          <Zap size={12} className="fill-primary/20" /> Structured Data • {data.length} rows
         </span>
         <div className="flex gap-2">
           <button onClick={copyJSON} className="view-btn">
             {copied ? <Check size={10} /> : <Copy size={10} />} {copied ? 'Copied' : 'JSON'}
           </button>
-          <button onClick={() => window.open(`${API}/conversations/${convId}/export?format=xlsx`, '_blank')} className="view-btn text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10">
+          <button onClick={() => window.open(`${API}/conversations/${convId}/export?format=xlsx`, '_blank')} className="view-btn text-primary border-primary/20 hover:bg-primary/10">
             <FileSpreadsheet size={10} /> Excel (.xlsx)
           </button>
-          <button onClick={() => window.open(`${API}/conversations/${convId}/export?format=pdf`, '_blank')} className="view-btn text-red-400 border-red-500/20 hover:bg-red-500/10">
+          <button onClick={() => window.open(`${API}/conversations/${convId}/export?format=pdf`, '_blank')} className="view-btn text-primary border-primary/20 hover:bg-primary/10">
             <FileType size={10} /> PDF (.pdf)
           </button>
-          <button onClick={() => window.open(`${API}/conversations/${convId}/export?format=docx`, '_blank')} className="view-btn text-blue-400 border-blue-500/20 hover:bg-blue-500/10">
+          <button onClick={() => window.open(`${API}/conversations/${convId}/export?format=docx`, '_blank')} className="view-btn text-primary border-primary/20 hover:bg-primary/10">
             <FileType size={10} /> Word (.docx)
           </button>
           <button onClick={downloadCSV} className="view-btn">
@@ -453,11 +453,9 @@ function ChatMessage({ msg }) {
             ))}
           </div>
         )}
-        <div className={`rounded-2xl px-5 py-4 ${
-          isUser ? 'bg-primary/15 border border-primary/20 text-foreground' : 'bg-surface border border-border text-foreground'
-        }`}>
+        <div className={isUser ? "user-bubble" : "ai-bubble"}>
           {isUser ? (
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{msg.content}</p>
           ) : (
             <div>{renderContent(msg.content, msg.conversation_id)}</div>
           )}
@@ -649,10 +647,10 @@ export default function App() {
           >
             <div className="p-5 flex items-center justify-between border-b border-border">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-sky-500 rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
+                <div className="w-8 h-8 red-gradient rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
                   <Zap size={18} className="text-white fill-white" />
                 </div>
-                <h1 className="text-lg font-bold tracking-tight">NexGen AI</h1>
+                <h1 className="text-lg font-bold tracking-tight text-foreground uppercase">NexGen AI</h1>
               </div>
               <button 
                 onClick={toggleTheme}
@@ -666,7 +664,7 @@ export default function App() {
             <div className="p-3">
               <button
                 onClick={() => handleAction(newChat)}
-                className="w-full flex items-center gap-2 px-4 py-3 bg-primary/10 border border-primary/20 rounded-xl text-sm font-bold text-primary hover:bg-primary hover:text-white transition-all"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 red-gradient rounded-xl text-xs font-bold text-white shadow-lg shadow-primary/10 hover:brightness-110 transition-all uppercase tracking-widest"
               >
                 <Plus size={16} /> New Chat
               </button>
@@ -681,8 +679,8 @@ export default function App() {
                     <button
                       key={conv.id}
                       onClick={() => handleAction(() => setActiveConvId(conv.id))}
-                      className={`w-full text-left px-4 py-2.5 rounded-xl flex items-center justify-between group transition-all ${
-                        activeConvId === conv.id ? 'bg-primary/15 text-white border border-primary/20' : 'text-muted hover:bg-surface hover:text-white'
+                      className={`w-full text-left px-4 py-3 rounded-xl flex items-center justify-between group transition-all ${
+                        activeConvId === conv.id ? 'bg-white/5 text-primary border border-white/5' : 'text-foreground/60 hover:bg-white/5 hover:text-white'
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -805,7 +803,7 @@ export default function App() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center max-w-lg"
               >
-                <div className="w-16 h-16 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/20">
+                <div className="w-16 h-16 red-gradient rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/20">
                   <Zap size={32} className="text-white fill-white" />
                 </div>
                 <h2 className="text-2xl font-bold mb-2">What do you need from your documents?</h2>
@@ -863,7 +861,7 @@ export default function App() {
                     </div>
                     {attachedFiles.length > 0 && (
                       <div className="mt-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20">
-                        <p className="text-[10px] font-bold text-primary italic">
+                        <p className="text-[10px] font-bold text-primary uppercase tracking-wider">
                           {attachedFiles.length} file{attachedFiles.length > 1 ? 's' : ''} staged for analysis
                         </p>
                       </div>
@@ -883,9 +881,9 @@ export default function App() {
                     <Bot size={16} />
                   </div>
                   <div className="bg-surface/50 border border-white/5 rounded-2xl px-5 py-4">
-                    <div className="flex items-center gap-2 text-sm text-muted">
-                      <Loader2 size={14} className="animate-spin text-primary" />
-                      Analyzing your document...
+                    <div className="flex items-center gap-3 text-sm text-foreground/80">
+                      <Loader2 size={16} className="animate-spin text-primary" />
+                      <span className="font-medium">Synthesizing document data...</span>
                     </div>
                   </div>
                 </motion.div>
@@ -948,9 +946,11 @@ export default function App() {
               <button
                 onClick={sendMessage}
                 disabled={isLoading || (!inputText.trim() && attachedFiles.length === 0)}
-                className="p-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed shrink-0 shadow-lg shadow-primary/20"
+                className="p-3 red-gradient text-white rounded-xl hover:brightness-110 transition-all disabled:opacity-20 disabled:cursor-not-allowed shrink-0 shadow-lg shadow-primary/20"
               >
-                <Send size={20} />
+                <div className="flex items-center gap-2">
+                  <Send size={18} />
+                </div>
               </button>
             </div>
 
