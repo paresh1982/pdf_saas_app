@@ -1,10 +1,9 @@
 import sys
 import os
 
-# Add local vendor directory to path
+# Add local vendor directory to path (Look for python_libs in root)
 script_dir = os.path.dirname(os.path.abspath(__file__))
-# Check for python_libs relative to scripts/ directory
-vendor_dir = os.path.join(script_dir, '..', 'python_libs')
+vendor_dir = os.path.abspath(os.path.join(script_dir, '..', '..', 'python_libs'))
 if os.path.exists(vendor_dir):
     sys.path.insert(0, vendor_dir)
 

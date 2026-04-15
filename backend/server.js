@@ -134,14 +134,14 @@ app.get('/api/admin/env', async (req, res) => {
     const { execSync } = require('child_process');
     const pythonVersion = execSync('python3 --version').toString().trim();
     const pipList = execSync('python3 -m pip list').toString().trim();
-    
-    // Check for local vendor libs
-    const vendorPath = path.join(__dirname, 'python_libs');
+    // Check for local vendor libs (Project Root)
+    const projectRoot = path.join(__dirname, '..');
+    const vendorPath = path.join(projectRoot, 'python_libs');
     const hasVendor = fs.existsSync(vendorPath);
     const vendorLibs = hasVendor ? fs.readdirSync(vendorPath).filter(f => !f.startsWith('.')) : [];
-
-    // Read build error log if it exists
-    const errorLogPath = path.join(__dirname, 'pip_error.log');
+    
+    // Read build error log (Project Root)
+    const errorLogPath = path.join(projectRoot, 'pip_error.log');
     const pipError = fs.existsSync(errorLogPath) ? fs.readFileSync(errorLogPath, 'utf8') : null;
 
     res.json({
