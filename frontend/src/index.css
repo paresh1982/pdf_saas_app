@@ -87,12 +87,11 @@ body {
   }
 
   .ai-bubble {
-    @apply bg-surface border-l-2 border-primary rounded-2xl px-5 py-4 shadow-xl;
-    border-color: rgba(230, 54, 57, 0.4);
+    @apply bg-surface/60 border border-secondary/40 rounded-2xl px-5 py-4 shadow-xl;
   }
 
   .user-bubble {
-    @apply red-gradient text-white rounded-2xl px-5 py-4 shadow-lg shadow-primary/10;
+    @apply bg-surface/60 border border-primary/50 text-foreground rounded-2xl px-5 py-4 shadow-lg;
   }
   
   .custom-scrollbar::-webkit-scrollbar {
