@@ -1308,8 +1308,8 @@ export default function App() {
                           <Shuffle size={24} />
                         </div>
                         <div className="text-center">
-                          <p className={`text-[10px] font-black uppercase tracking-tight leading-tight ${currentView === 'bulk-merger' ? 'text-white' : 'text-foreground/90'}`}>Bulk Merger</p>
-                          <p className={`text-[8px] font-black uppercase tracking-widest mt-2 ${currentView === 'bulk-merger' ? 'text-white/60' : 'text-primary'}`}>100k+ Rows</p>
+                          <p className={`text-[13px] font-black uppercase tracking-tight leading-tight ${currentView === 'bulk-merger' ? 'text-white' : 'text-foreground/90'}`}>Bulk Merger</p>
+                          <p className={`text-[10px] font-black uppercase tracking-widest mt-2 ${currentView === 'bulk-merger' ? 'text-white/60' : 'text-primary'}`}>Excel / CSV</p>
                         </div>
                       </button>
                     </div>
