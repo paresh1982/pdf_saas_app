@@ -26,6 +26,7 @@ const { PDFDocument, rgb, degrees, StandardFonts } = pdflib;
 const archiver = require('archiver');
 const mammoth = require('mammoth');
 const pdfParse = require('pdf-parse');
+const { spawn } = require('child_process');
 
 // ─── Config ──────────────────────────────────────────────
 const app = express();
@@ -931,6 +932,96 @@ app.post('/api/tools/reorder', upload.single('file'), async (req, res) => {
     fs.unlinkSync(req.file.path);
   } catch (err) {
     res.status(500).json({ error: 'Reordering failed', details: err.message });
+  }
+});
+
+// ─── POWER TOOL: Bulk File Analyze (Sniff Test) ────────
+app.post('/api/batch/analyze', upload.array('files', 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'No files uploaded' });
+
+    const results = [];
+    for (const file of req.files) {
+      const ext = path.extname(file.originalname).toLowerCase();
+      let columns = [];
+      let sheets = [];
+
+      if (ext === '.csv') {
+        const content = fs.readFileSync(file.path, 'utf8');
+        const firstLine = content.split('\n')[0];
+        columns = firstLine.split(',').map(c => c.trim().replace(/"/g, ''));
+      } else if (ext === '.xlsx' || ext === '.xls') {
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.readFile(file.path);
+        sheets = workbook.worksheets.map(s => s.name);
+        if (workbook.worksheets.length > 0) {
+          const firstSheet = workbook.worksheets[0];
+          const headerRow = firstSheet.getRow(1);
+          headerRow.eachCell(cell => {
+            columns.push(String(cell.value || ''));
+          });
+        }
+      }
+      results.push({ 
+        filename: file.originalname, 
+        path: file.path, 
+        columns, 
+        sheets 
+      });
+    }
+
+    res.json({ files: results });
+  } catch (err) {
+    console.error('Batch Analyze Error:', err);
+    res.status(500).json({ error: 'Analysis failed', details: err.message });
+  }
+});
+
+// ─── POWER TOOL: Bulk File Execute (Python Hand-off) ───
+app.post('/api/batch/execute', async (req, res) => {
+  try {
+    const { files, sheet_name, columns, output_format } = req.body;
+    if (!files || files.length === 0) return res.status(400).json({ error: 'No files to process' });
+
+    const config = {
+      files,
+      sheet_name: sheet_name || 0,
+      columns: columns || [],
+      output_format: output_format || 'xlsx',
+      output_filename: `Bulk_Merge_${Date.now()}`
+    };
+
+    const configPath = path.join(UPLOAD_DIR, `config_${Date.now()}.json`);
+    fs.writeFileSync(configPath, JSON.stringify(config));
+
+    const scriptPath = path.join(__dirname, 'scripts/batch_processor.py');
+    const pythonProcess = spawn('python', [scriptPath, configPath]);
+
+    let output = '';
+    let errorOutput = '';
+
+    pythonProcess.stdout.on('data', (data) => { output += data.toString(); });
+    pythonProcess.stderr.on('data', (data) => { errorOutput += data.toString(); });
+
+    pythonProcess.on('close', (code) => {
+      // Cleanup config file
+      if (fs.existsSync(configPath)) fs.unlinkSync(configPath);
+
+      if (code !== 0) {
+        return res.status(500).json({ error: 'Python processing failed', details: errorOutput });
+      }
+
+      const successMatch = output.match(/SUCCESS_PATH: (.*)/);
+      if (successMatch) {
+         res.json({ downloadUrl: `/${successMatch[1]}` });
+      } else {
+         res.status(500).json({ error: 'Unexpected Python output', details: output });
+      }
+    });
+
+  } catch (err) {
+    console.error('Batch Execute Error:', err);
+    res.status(500).json({ error: 'Execution failed', details: err.message });
   }
 });
 

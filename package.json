@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "start": "node backend/server.js",
-    "build": "npm run build -w frontend",
+    "build": "npm run build -w frontend && pip install pandas openpyxl",
     "dev": "npm run dev -w backend"
   },
   "dependencies": {

@@ -30,7 +30,9 @@ import {
   HelpCircle,
   Sun,
   Moon,
-  Menu
+  Menu,
+  Database,
+  Shuffle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -811,6 +813,272 @@ function ChatMessage({ msg }) {
   );
 }
 
+function BulkMergerView({ setView }) {
+  const [files, setFiles] = useState([]);
+  const [stage, setStage] = useState('selection'); // selection, analyzing, config, processing, result
+  const [analysis, setAnalysis] = useState(null);
+  const [config, setConfig] = useState({ sheet: '', columns: [] });
+  const [resultUrl, setResultUrl] = useState(null);
+  const [error, setError] = useState(null);
+
+  const handleFileDrop = (e) => {
+    const dropped = Array.from(e.target.files);
+    setFiles(prev => [...prev, ...dropped]);
+  };
+
+  const startAnalysis = async () => {
+    setStage('analyzing');
+    const formData = new FormData();
+    files.forEach(f => formData.append('files', f));
+    
+    try {
+      const { data } = await axios.post(`${API}/batch/analyze`, formData);
+      setAnalysis(data.files);
+      
+      // Auto-set default sheet if consistent across files
+      const sheets = data.files[0]?.sheets || [];
+      const commonColumns = data.files[0]?.columns || [];
+      
+      setConfig({ 
+        sheet: sheets[0] || 0, 
+        columns: commonColumns 
+      });
+      setStage('config');
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+      setStage('selection');
+    }
+  };
+
+  const runMerge = async () => {
+    setStage('processing');
+    try {
+      const { data } = await axios.post(`${API}/batch/execute`, {
+        files: analysis.map(f => f.path),
+        sheet_name: config.sheet,
+        columns: config.columns,
+        output_format: 'xlsx'
+      });
+      setResultUrl(data.downloadUrl);
+      setStage('result');
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+      setStage('config');
+    }
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-8 md:p-16 max-w-5xl mx-auto w-full min-h-screen"
+    >
+      <div className="mb-12">
+        <button onClick={() => setView('dashboard')} className="text-[10px] font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.3em] mb-6 flex items-center gap-2 transition-colors">
+          ← Back to Dashboard
+        </button>
+        <div className="flex items-center gap-4 mb-4">
+           <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary">
+              <Shuffle size={24} />
+           </div>
+           <div>
+              <h2 className="text-3xl font-black tracking-tight text-white uppercase italic">Bulk Excel/CSV Merger</h2>
+              <p className="text-foreground/40 text-[10px] font-black uppercase tracking-widest mt-1">Enterprise Power Engine • 100k+ Row Capacity</p>
+           </div>
+        </div>
+        <div className="w-20 h-1 bg-secondary rounded-full mb-8" />
+      </div>
+
+      <div className="glass-panel p-8 min-h-[400px] flex flex-col">
+        {stage === 'selection' && (
+          <div className="flex-1 flex flex-col">
+            <div className="mb-8 p-4 bg-secondary/5 border border-secondary/20 rounded-2xl flex items-start gap-4">
+               <Bot size={20} className="text-secondary shrink-0 mt-1" />
+               <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                 Welcome to the **Bulk Merger**. This tool is designed for massive datasets. You can upload up to 10 files (CSV or Excel) and I will merge them into a single high-performance output using my Python backend.
+               </p>
+            </div>
+
+            <div 
+              onClick={() => document.getElementById('bulk-file-input').click()}
+              className="flex-1 border-2 border-dashed border-white/10 hover:border-secondary/40 rounded-3xl p-12 cursor-pointer transition-all text-center group bg-white/2 flex flex-col items-center justify-center"
+            >
+              <input id="bulk-file-input" type="file" multiple accept=".csv, .xlsx, .xls" className="hidden" onChange={handleFileDrop} />
+              <div className="w-20 h-20 bg-secondary/10 text-secondary rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform mb-6">
+                <Plus size={40} />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Stage Your Files</h3>
+              <p className="text-sm text-foreground/40 font-medium">Drag & drop your spreadsheets here (Max 10 files)</p>
+            </div>
+
+            {files.length > 0 && (
+              <div className="mt-8 space-y-3">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[10px] font-black text-secondary uppercase tracking-widest">{files.length} Files Staged</p>
+                  <button onClick={() => setFiles([])} className="text-[10px] font-black text-red-500 uppercase tracking-widest">Clear All</button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {files.map((f, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 bg-white/5 border border-white/5 rounded-xl">
+                      <FileSpreadsheet size={16} className="text-secondary" />
+                      <span className="text-[11px] font-medium truncate flex-1">{f.name}</span>
+                      <span className="text-[9px] font-black text-foreground/20 uppercase">{(f.size / 1024).toFixed(0)} KB</span>
+                    </div>
+                  ))}
+                </div>
+                <button 
+                  onClick={startAnalysis}
+                  className="w-full mt-8 py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-secondary/20 hover:brightness-110 transition-all"
+                >
+                  Start AI Configuration →
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {stage === 'analyzing' && (
+          <div className="flex-1 flex flex-col items-center justify-center py-20">
+            <div className="w-16 h-16 relative mb-8">
+              <div className="absolute inset-0 rounded-full border-4 border-secondary/20 border-t-secondary animate-spin" />
+              <div className="absolute inset-4 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
+                <Sparkles size={16} />
+              </div>
+            </div>
+            <h3 className="text-xl font-black text-white uppercase italic tracking-tight mb-2">AI Sniff Test in Progress</h3>
+            <p className="text-sm text-foreground/40 font-medium italic">Analyzing headers, sheets, and data patterns...</p>
+          </div>
+        )}
+
+        {stage === 'config' && analysis && (
+          <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="mb-8 space-y-4">
+               <div className="p-4 bg-secondary/5 border border-secondary/20 rounded-2xl flex items-start gap-4">
+                  <Bot size={20} className="text-secondary shrink-0 mt-1" />
+                  <div className="space-y-3">
+                    <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                      I've analyzed your files. To ensure a perfect merge, please confirm the configuration:
+                    </p>
+                    
+                    {/* Sheet Selection (if Excel) */}
+                    {analysis.some(f => f.sheets.length > 0) && (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-secondary uppercase tracking-widest">Target Sheet Name</label>
+                        <div className="flex flex-wrap gap-2">
+                          {Array.from(new Set(analysis.flatMap(f => f.sheets))).map(s => (
+                            <button
+                              key={s}
+                              onClick={() => setConfig(prev => ({ ...prev, sheet: s }))}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all border ${
+                                config.sheet === s ? 'bg-secondary text-white border-secondary' : 'bg-white/5 border-white/5 text-foreground/40'
+                              }`}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Column Selection */}
+                    <div className="space-y-3 mt-4">
+                      <label className="text-[10px] font-black text-secondary uppercase tracking-widest">Columns to Merge</label>
+                      <div className="flex flex-wrap gap-2">
+                        {analysis[0]?.columns?.map(col => (
+                          <button
+                            key={col}
+                            onClick={() => {
+                              const exists = config.columns.includes(col);
+                              setConfig(prev => ({
+                                ...prev,
+                                columns: exists ? prev.columns.filter(c => c !== col) : [...prev.columns, col]
+                              }));
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all border ${
+                              config.columns.includes(col) ? 'bg-secondary text-white border-secondary' : 'bg-white/5 border-white/5 text-foreground/40 hover:border-white/20'
+                            }`}
+                          >
+                            {col}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[9px] text-foreground/30 italic">Click to toggle columns. Only selected columns will be present in the final merge.</p>
+                    </div>
+                  </div>
+               </div>
+            </div>
+
+            <div className="mt-auto pt-8 border-t border-white/5">
+              <button 
+                onClick={runMerge}
+                className="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-secondary/20 hover:brightness-110 transition-all flex items-center justify-center gap-3"
+              >
+                <Shuffle size={18} /> Execute Python Merge Engine
+              </button>
+            </div>
+          </div>
+        )}
+
+        {stage === 'processing' && (
+          <div className="flex-1 flex flex-col items-center justify-center py-20">
+            <div className="w-full max-w-sm">
+                <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Engaging Python Engine</span>
+                    <span className="text-[10px] font-black text-secondary animate-pulse uppercase tracking-[0.2em]">Processing...</span>
+                </div>
+                <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                    <motion.div 
+                        initial={{ width: "0%" }}
+                        animate={{ width: "95%" }}
+                        transition={{ duration: 15, ease: "linear" }}
+                        className="h-full bg-secondary"
+                    />
+                </div>
+                <p className="text-[10px] text-foreground/30 text-center mt-6 uppercase tracking-widest leading-relaxed">
+                    Merging dataframes • Optimizing memory • Finalizing workbook
+                </p>
+            </div>
+          </div>
+        )}
+
+        {stage === 'result' && (
+          <div className="flex-1 flex flex-col items-center justify-center py-20 animate-in zoom-in-95 duration-500">
+             <div className="w-24 h-24 bg-green-500/20 text-green-500 rounded-3xl flex items-center justify-center mb-8 border border-green-500/20">
+                <Check size={48} />
+             </div>
+             <h3 className="text-2xl font-black text-white uppercase italic tracking-tight mb-2">Merge Complete!</h3>
+             <p className="text-sm text-foreground/40 font-medium mb-12">Your enterprise-grade dataset is ready for download.</p>
+             
+             <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
+                <a 
+                  href={resultUrl}
+                  download
+                  className="flex-1 py-4 bg-green-600 text-white rounded-2xl font-black uppercase tracking-widest text-center shadow-xl shadow-green-500/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                >
+                  <Download size={18} /> Download (.xlsx)
+                </a>
+                <button 
+                  onClick={() => { setStage('selection'); setFiles([]); setResultUrl(null); }}
+                  className="px-8 py-4 bg-white/5 text-foreground/60 rounded-2xl font-black uppercase tracking-widest hover:bg-white/10 transition-all border border-white/5"
+                >
+                  Done
+                </button>
+             </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-4 text-red-500 animate-in slide-in-from-top-2">
+             <X size={20} className="shrink-0" />
+             <p className="text-xs font-bold uppercase tracking-tight flex-1">{error}</p>
+             <button onClick={() => setError(null)} className="text-[10px] font-black uppercase underline tracking-widest">Dismiss</button>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Main App ────────────────────────────────────────────
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -1021,6 +1289,36 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* --- Enterprise Bulk Suite --- */}
+                <div className="mb-6">
+                  <p className="px-3 text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-3 mt-2">Enterprise Bulk Suite</p>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => handleAction(() => setCurrentView('bulk-merger'))}
+                      className={`w-full group relative overflow-hidden flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                        currentView === 'bulk-merger' 
+                        ? 'bg-secondary text-white border-secondary shadow-lg shadow-secondary/20' 
+                        : 'bg-white/2 border-white/5 hover:border-secondary/30 hover:bg-white/5 text-foreground/60 hover:text-white'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                        currentView === 'bulk-merger' ? 'bg-white/20' : 'bg-secondary/10 text-secondary group-hover:bg-secondary/20'
+                      }`}>
+                        <Shuffle size={18} />
+                      </div>
+                      <div className="text-left">
+                        <p className={`text-[10px] font-black uppercase tracking-tight ${currentView === 'bulk-merger' ? 'text-white' : 'text-foreground/80'}`}>Bulk Excel/CSV Merger</p>
+                        <p className={`text-[8px] font-black uppercase tracking-widest ${currentView === 'bulk-merger' ? 'text-white/60' : 'text-secondary/60'}`}>100,000+ Rows • Python Powered</p>
+                      </div>
+                      {currentView !== 'bulk-merger' && (
+                        <div className="absolute top-0 right-0 p-1">
+                          <div className="bg-secondary/20 text-secondary text-[6px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter">Pro</div>
+                        </div>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
                 {/* --- Tools by Category --- */}
                 {[
                   {
@@ -1084,7 +1382,9 @@ export default function App() {
         <main className="flex-1 flex flex-col min-w-0 bg-background relative overflow-hidden">
           <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
             <div className="flex-1">
-              {currentView === 'dashboard' ? (
+              {currentView === 'bulk-merger' ? (
+                <BulkMergerView setView={setCurrentView} />
+              ) : currentView === 'dashboard' ? (
                 messages.length === 0 ? (
                   /* Empty State / Welcome */
                   <div className="h-full flex flex-col items-center justify-center p-8 pt-8 pb-12 min-h-screen">
