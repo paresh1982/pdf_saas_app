@@ -862,7 +862,12 @@ function BulkMergerView({ setView }) {
       setResultUrl(data.downloadUrl);
       setStage('result');
     } catch (err) {
-      setError(err.response?.data?.error || err.message);
+      console.error("Execution Error:", err.response?.data);
+      const errorData = err.response?.data;
+      setError({
+        message: errorData?.error || err.message,
+        details: errorData?.details || ''
+      });
       setStage('config');
     }
   };
@@ -1068,10 +1073,19 @@ function BulkMergerView({ setView }) {
         )}
 
         {error && (
-          <div className="mt-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-4 text-red-500 animate-in slide-in-from-top-2">
-             <X size={20} className="shrink-0" />
-             <p className="text-xs font-bold uppercase tracking-tight flex-1">{error}</p>
-             <button onClick={() => setError(null)} className="text-[10px] font-black uppercase underline tracking-widest">Dismiss</button>
+          <div className="mt-8 p-6 bg-red-500/10 border border-red-500/20 rounded-2xl animate-in slide-in-from-top-2">
+             <div className="flex items-center gap-4 text-red-500 mb-4">
+               <X size={20} className="shrink-0" />
+               <p className="text-sm font-bold uppercase tracking-tight flex-1">{error.message || error}</p>
+               <button onClick={() => setError(null)} className="text-[10px] font-black uppercase underline tracking-widest">Dismiss</button>
+             </div>
+             {error.details && (
+               <div className="bg-black/40 rounded-xl p-4 overflow-x-auto custom-scrollbar border border-white/5">
+                 <pre className="text-[10px] font-mono text-red-400/80 leading-relaxed">
+                   {error.details}
+                 </pre>
+               </div>
+             )}
           </div>
         )}
       </div>

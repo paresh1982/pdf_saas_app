@@ -16,6 +16,14 @@ def process_batch(config_path):
         
         dfs = []
         for file_path in file_paths:
+            # Resolve relative paths if necessary
+            if not os.path.isabs(file_path):
+                file_path = os.path.join(os.getcwd(), file_path)
+            
+            if not os.path.exists(file_path):
+                print(f"ERROR_FILE: Not Found - {file_path}", file=sys.stderr)
+                continue
+
             ext = os.path.splitext(file_path)[1].lower()
             
             try:
@@ -24,6 +32,7 @@ def process_batch(config_path):
                 elif ext in ['.xlsx', '.xls']:
                     df = pd.read_excel(file_path, sheet_name=sheet_name)
                 else:
+                    print(f"ERROR_FILE: Unsupported format - {file_path}", file=sys.stderr)
                     continue
                 
                 # Filter columns if specified
@@ -36,13 +45,18 @@ def process_batch(config_path):
                             final_cols.append(sc)
                         elif sc.lower() in existing_cols:
                             final_cols.append(existing_cols[sc.lower()])
+                        else:
+                            print(f"WARNING: Column '{sc}' not found in {os.path.basename(file_path)}", file=sys.stderr)
                     
                     if final_cols:
                         df = df[final_cols]
+                    else:
+                        print(f"ERROR_FILE: No matching columns found in {file_path}", file=sys.stderr)
+                        continue
                 
                 dfs.append(df)
             except Exception as e:
-                print(f"ERROR_FILE: {file_path} - {str(e)}", file=sys.stderr)
+                print(f"ERROR_FILE: Processing failed {file_path} - {str(e)}", file=sys.stderr)
         
         if not dfs:
             print("ERROR: No valid data frames created", file=sys.stderr)
