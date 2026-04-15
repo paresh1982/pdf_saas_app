@@ -87,11 +87,11 @@ body {
   }
 
   .ai-bubble {
-    @apply bg-surface/60 border border-secondary/40 rounded-2xl px-5 py-4 shadow-xl;
+    @apply bg-surface/60 border-2 border-secondary/40 rounded-2xl px-5 py-4 shadow-xl;
   }
 
   .user-bubble {
-    @apply bg-surface/60 border border-primary/50 text-foreground rounded-2xl px-5 py-4 shadow-lg;
+    @apply bg-surface/60 border-2 border-primary/60 text-foreground rounded-2xl px-5 py-4 shadow-lg;
   }
   
   .custom-scrollbar::-webkit-scrollbar {
