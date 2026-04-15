@@ -47,6 +47,117 @@ const UID = (() => {
   return id;
 })();
 
+function SectionTitle({ children, className = "" }) {
+  return (
+    <div className={`mb-8 ${className}`}>
+      <h2 className="text-3xl font-black tracking-tight text-white mb-2 uppercase italic">{children}</h2>
+      <div className="w-20 h-1 red-gradient rounded-full" />
+    </div>
+  );
+}
+
+function PageContainer({ title, children }) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-8 md:p-16 max-w-4xl mx-auto w-full min-h-[calc(100vh-160px)]"
+    >
+      <SectionTitle>{title}</SectionTitle>
+      <div className="space-y-6 text-foreground/70 text-sm leading-relaxed font-medium">
+        {children}
+      </div>
+    </motion.div>
+  );
+}
+
+function AboutView() {
+  return (
+    <PageContainer title="The NexGen Mission">
+      <p>DocJockey isn't just a reader; it's a high-performance document engine architected for the speed of modern enterprise. Born from the need to turn stagnant PDFs into active intelligence, NexGen leverages the world's most advanced multimodal AI models to bridge the gap between unstructured data and structured success.</p>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-12">
+        <div className="glass-panel p-6 border-white/10 group hover:border-primary/40 transition-all">
+          <Zap className="text-primary mb-4 group-hover:scale-110 transition-transform" size={32} />
+          <h3 className="text-lg font-black text-white mb-2 uppercase tracking-tight">Agentic Edge</h3>
+          <p className="text-xs text-foreground/50 leading-relaxed uppercase tracking-widest font-bold">Autonomous itemization and context-aware mapping that eliminates manual entry.</p>
+        </div>
+        <div className="glass-panel p-6 border-white/10 group hover:border-secondary/40 transition-all">
+          <Sparkles className="text-secondary mb-4 group-hover:scale-110 transition-transform" size={32} />
+          <h3 className="text-lg font-black text-white mb-2 uppercase tracking-tight">Zero-Blank Policy</h3>
+          <p className="text-xs text-foreground/50 leading-relaxed uppercase tracking-widest font-bold">Our persistence layer ensures every line item retains its parent metadata for perfect accounting.</p>
+        </div>
+      </div>
+
+      <p>By shifting the burden of extraction from human operators to agentic logic, DocJockey Pro empowers procurement, accounting, and legal teams to move at the speed of thought. We are redefining the document lifecycle—one extraction at a time.</p>
+    </PageContainer>
+  );
+}
+
+function PrivacyView() {
+  return (
+    <PageContainer title="Data Sovereignty">
+      <section>
+        <h3 className="text-white font-black uppercase tracking-[0.2em] mb-4 text-xs">1. Data Minimization</h3>
+        <p>NexGen AI operates on a strictly "need-to-process" basis. Your documents are ephemeral: they are processed in high-security memory buffers and are never used to train global AI models without explicit, enterprise-level consent.</p>
+      </section>
+      <section>
+        <h3 className="text-white font-black uppercase tracking-[0.2em] mb-4 text-xs">2. Encryption Protocol</h3>
+        <p>All data in transit is shielded via TLS 1.3, and data at rest (within our Supabase persistence layer) is encrypted using AES-256 standards. Your document intelligence is your unique competitive advantage; we ensure it stays that way.</p>
+      </section>
+      <section>
+        <h3 className="text-white font-black uppercase tracking-[0.2em] mb-4 text-xs">3. User Sovereignty</h3>
+        <p>You retain full ownership of all uploaded inputs and generated outputs. Our "Trash" protocols ensure that once a conversation is deleted, all associated document metadata is purged from our active processing cycles.</p>
+      </section>
+    </PageContainer>
+  );
+}
+
+function DisclaimerView() {
+  return (
+    <PageContainer title="AI Accuracy Notice">
+      <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl mb-8">
+        <p className="text-primary text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">
+          While DocJockey leverages state-of-the-art multimodal reasoning, AI-generated outputs should be treated as high-fidelity drafts that require professional oversight.
+        </p>
+      </div>
+      <section className="space-y-4">
+        <p>DocJockey (NexGen AI) is provided on an "as-is" and "as-available" basis. We utilize probabilistic models to interpret complex document layouts; therefore, 100% accuracy in extraction cannot be guaranteed across all legacy or low-resolution scan formats.</p>
+        <p>Liability for financial decisions, accounting entries, or legal interpretations made based on AI outputs remains solely with the human operator. We recommend manual verification of all extracted line items before committing to enterprise databases or financial filings.</p>
+      </section>
+    </PageContainer>
+  );
+}
+
+function ContactView() {
+  return (
+    <PageContainer title="Command Center">
+      <p className="mb-12">Need mission-critical support or custom API integration? Our team of document intelligence architects is ready to assist your enterprise transition.</p>
+      
+      <div className="space-y-4">
+        <div className="flex items-center gap-6 p-6 glass-panel border-white/10 hover:border-secondary/40 transition-all cursor-pointer group">
+          <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+            <Bot size={24} />
+          </div>
+          <div>
+            <h4 className="text-white font-black uppercase tracking-tight">Enterprise Success</h4>
+            <p className="text-[10px] text-foreground/40 font-black uppercase tracking-widest">success@docjockey.com</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-6 p-6 glass-panel border-white/10 hover:border-primary/40 transition-all cursor-pointer group">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+            <Settings size={24} />
+          </div>
+          <div>
+            <h4 className="text-white font-black uppercase tracking-tight">Technical Support</h4>
+            <p className="text-[10px] text-foreground/40 font-black uppercase tracking-widest">support@docjockey.com</p>
+          </div>
+        </div>
+      </div>
+    </PageContainer>
+  );
+}
+
 // Set global axios default
 axios.defaults.headers.common['X-User-ID'] = UID;
 
@@ -81,11 +192,11 @@ function LogoDJ({ size = 20, className = "" }) {
 }
 
 // ─── Site Header ──────────────────────────────────────────
-function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitle }) {
+function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitle, currentView, setView }) {
   return (
     <header className="h-16 shrink-0 z-50 glass-panel border-b border-white/5 px-6 flex items-center justify-between sticky top-0">
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2 group cursor-pointer">
+        <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setView('dashboard')}>
           <LogoDJ size={22} className="group-hover:rotate-6 transition-transform" />
           <div className="text-xl font-black tracking-tighter uppercase flex">
             <span className="text-primary">DOC</span>
@@ -97,12 +208,17 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
       <div className="flex items-center gap-10">
         <nav className="hidden lg:flex items-center gap-8">
           {[
-            { label: 'Home', href: '#' },
-            { label: 'Pricing', href: '#' },
-            { label: 'About', href: '#' },
-            { label: 'Contact', href: '#' }
+            { label: 'Home', id: 'dashboard' },
+            { label: 'About', id: 'about' },
+            { label: 'Contact', id: 'contact' }
           ].map(link => (
-            <a key={link.label} href={link.href} className="text-xs font-black text-foreground/40 hover:text-white uppercase tracking-widest transition-colors">{link.label}</a>
+            <button 
+              key={link.label} 
+              onClick={() => setView(link.id)}
+              className={`text-xs font-black uppercase tracking-widest transition-colors ${currentView === link.id ? 'text-secondary' : 'text-foreground/40 hover:text-white'}`}
+            >
+              {link.label}
+            </button>
           ))}
         </nav>
 
@@ -125,20 +241,24 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
 }
 
 // ─── Site Footer ──────────────────────────────────────────
-function SiteFooter() {
+function SiteFooter({ setView }) {
   return (
     <footer className="glass-panel border-t border-white/5 h-[88px] px-6 w-full relative overflow-hidden flex flex-col justify-center gap-4">
       {/* Row 1: Footer Menu */}
       <div className="flex justify-center gap-x-12">
         {[
-          { label: 'ABOUT US', href: '#' },
-          { label: 'PRIVACY POLICY', href: '#' },
-          { label: 'DISCLAIMER', href: '#' },
-          { label: 'CONTACT', href: '#' }
+          { label: 'ABOUT US', id: 'about' },
+          { label: 'PRIVACY POLICY', id: 'privacy' },
+          { label: 'DISCLAIMER', id: 'disclaimer' },
+          { label: 'CONTACT', id: 'contact' }
         ].map(link => (
-          <a key={link.label} href={link.href} className="text-[11px] font-black text-foreground/40 hover:text-secondary uppercase tracking-[0.3em] transition-all hover:scale-105">
+          <button 
+            key={link.label} 
+            onClick={() => setView(link.id)}
+            className="text-[11px] font-black text-foreground/40 hover:text-secondary uppercase tracking-[0.3em] transition-all hover:scale-105"
+          >
             {link.label}
-          </a>
+          </button>
         ))}
       </div>
 
@@ -151,13 +271,13 @@ function SiteFooter() {
         </div>
         
         <div className="flex-none flex justify-center">
-          <a href="#" className="flex items-center gap-2.5 group cursor-pointer transition-transform hover:scale-105 active:scale-95">
+          <button onClick={() => setView('dashboard')} className="flex items-center gap-2.5 group cursor-pointer transition-transform hover:scale-105 active:scale-95">
             <LogoDJ size={22} className="group-hover:rotate-3 transition-transform" />
             <div className="text-lg font-black tracking-tighter uppercase flex">
               <span className="text-primary">DOC</span>
               <span className="text-secondary">JOCKEY</span>
             </div>
-          </a>
+          </button>
         </div>
 
         <div className="flex-1 text-right">
@@ -569,6 +689,7 @@ function ChatMessage({ msg }) {
 
 // ─── Main App ────────────────────────────────────────────
 export default function App() {
+  const [currentView, setCurrentView] = useState('dashboard');
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -581,6 +702,13 @@ export default function App() {
   const [uploadMode, setUploadMode] = useState('single');
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Scroll to top on view change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const mainArea = document.querySelector('main');
+    if (mainArea) mainArea.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentView]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -712,13 +840,15 @@ export default function App() {
         isMobile={isMobile}
         activeConvId={activeConvId}
         convTitle={messages.length > 0 ? (conversations.find(c => c.id === activeConvId)?.title || 'Chat') : 'New Session'}
+        currentView={currentView}
+        setView={setCurrentView}
       />
 
       <div className="flex-1 flex overflow-hidden relative">
 
         {/* ─── Sidebar Layer ─── */}
         <AnimatePresence mode="wait">
-          {(sidebarOpen || !isMobile) && (
+          {currentView === 'dashboard' && (sidebarOpen || !isMobile) && (
             <motion.aside
               initial={isMobile ? { x: -300 } : false}
               animate={{ x: 0 }}
@@ -830,91 +960,100 @@ export default function App() {
         <main className="flex-1 flex flex-col min-w-0 bg-background relative overflow-hidden">
           <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
             <div className="flex-1">
-              {messages.length === 0 ? (
-                /* Empty State / Welcome */
-                <div className="h-full flex flex-col items-center justify-center p-8 pt-8 pb-12 min-h-screen">
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="text-center w-full max-w-screen-2xl px-4"
-                  >
-                    <div className="w-24 h-24 mb-6 shadow-2xl shadow-primary/10 flex items-center justify-center mx-auto transition-transform hover:scale-110 duration-500">
-                      <LogoDJ size={52} />
-                    </div>
-                    <h2 className="text-2xl font-black mb-2 tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
-                    <p className="text-foreground/60 text-sm mb-8 leading-relaxed max-w-sm mx-auto font-medium">
-                      Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
-                    </p>
-
-                    {/* --- Upload Tabs --- */}
-                    <div className="flex bg-surface/50 p-1.5 rounded-2xl border border-white/5 mb-8 max-w-md mx-auto">
-                      <button 
-                        onClick={() => { setUploadMode('single'); setAttachedFiles([]); }}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
-                      >
-                        <FileText size={14} /> Single document
-                      </button>
-                      <button 
-                        onClick={() => { setUploadMode('multiple'); setAttachedFiles([]); }}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'multiple' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
-                      >
-                        <Layout size={14} /> Batch processor
-                      </button>
-                    </div>
-
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full max-w-screen-xl border-2 border-dashed border-white/5 hover:border-primary/20 rounded-[3rem] p-12 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-8"
+              {currentView === 'dashboard' ? (
+                messages.length === 0 ? (
+                  /* Empty State / Welcome */
+                  <div className="h-full flex flex-col items-center justify-center p-8 pt-8 pb-12 min-h-screen">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-center w-full max-w-screen-2xl px-4"
                     >
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="w-20 h-20 bg-primary/5 text-primary rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-inner">
-                          {uploadMode === 'single' ? <Paperclip size={36} /> : <Combine size={36} />}
-                        </div>
-                        <div>
-                          <p className="text-lg font-black text-white mb-1 uppercase tracking-[0.3em]">
-                            {uploadMode === 'single' ? 'Drop document' : 'Drop batch'}
-                          </p>
-                          <p className="text-xs text-secondary font-black uppercase tracking-[0.4em]">
-                            Ready for DocJockey Speed
-                          </p>
-                        </div>
+                      <div className="w-24 h-24 mb-6 shadow-2xl shadow-primary/10 flex items-center justify-center mx-auto transition-transform hover:scale-110 duration-500">
+                        <LogoDJ size={52} />
                       </div>
-                    </div>
+                      <h2 className="text-2xl font-black mb-2 tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
+                      <p className="text-foreground/60 text-sm mb-8 leading-relaxed max-w-sm mx-auto font-medium">
+                        Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
+                      </p>
 
-                    {/* --- Welcome State Dialogue Box (Embedded) --- */}
-                    <div className="max-w-screen-xl mx-auto mb-8">
-                       {/* Reusable Input Block */}
-                       <ChatInputArea 
-                          inputText={inputText}
-                          setInputText={setInputText}
-                          sendMessage={sendMessage}
-                          handleKeyDown={handleKeyDown}
-                          handleFileSelect={handleFileSelect}
-                          fileInputRef={fileInputRef}
-                          attachedFiles={attachedFiles}
-                          setAttachedFiles={setAttachedFiles}
-                          isLoading={isLoading}
-                          isEmbedded={true}
-                       />
-                    </div>
-                  </motion.div>
-                </div>
-              ) : (
-                <div className="max-w-screen-2xl mx-auto p-4 space-y-4 py-8">
-                  {messages.map((msg, i) => (
-                    <ChatMessage key={i} msg={msg} />
-                  ))}
-                  {isLoading && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4">
-                      <div className="w-10 h-10 rounded-2xl bg-surface border border-white/10 flex items-center justify-center shrink-0 shadow-lg">
-                        <Loader2 size={18} className="animate-spin text-primary" />
+                      {/* --- Upload Tabs --- */}
+                      <div className="flex bg-surface/50 p-1.5 rounded-2xl border border-white/5 mb-8 max-w-md mx-auto">
+                        <button 
+                          onClick={() => { setUploadMode('single'); setAttachedFiles([]); }}
+                          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
+                        >
+                          <FileText size={14} /> Single document
+                        </button>
+                        <button 
+                          onClick={() => { setUploadMode('multiple'); setAttachedFiles([]); }}
+                          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'multiple' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
+                        >
+                          <Layout size={14} /> Batch processor
+                        </button>
                       </div>
-                      <div className="bg-surface/30 border border-white/5 rounded-2xl px-6 py-5 shadow-sm">
-                        <span className="text-[10px] font-black text-secondary uppercase tracking-[0.3em] animate-pulse">Running DocJockey Engine...</span>
+
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full max-w-screen-xl border-2 border-dashed border-white/5 hover:border-primary/20 rounded-[3rem] p-12 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-8"
+                      >
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-20 h-20 bg-primary/5 text-primary rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-inner">
+                            {uploadMode === 'single' ? <Paperclip size={36} /> : <Combine size={36} />}
+                          </div>
+                          <div>
+                            <p className="text-lg font-black text-white mb-1 uppercase tracking-[0.3em]">
+                              {uploadMode === 'single' ? 'Drop document' : 'Drop batch'}
+                            </p>
+                            <p className="text-xs text-secondary font-black uppercase tracking-[0.4em]">
+                              Ready for DocJockey Speed
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* --- Welcome State Dialogue Box (Embedded) --- */}
+                      <div className="max-w-screen-xl mx-auto mb-8">
+                         {/* Reusable Input Block */}
+                         <ChatInputArea 
+                            inputText={inputText}
+                            setInputText={setInputText}
+                            sendMessage={sendMessage}
+                            handleKeyDown={handleKeyDown}
+                            handleFileSelect={handleFileSelect}
+                            fileInputRef={fileInputRef}
+                            attachedFiles={attachedFiles}
+                            setAttachedFiles={setAttachedFiles}
+                            isLoading={isLoading}
+                            isEmbedded={true}
+                         />
                       </div>
                     </motion.div>
-                  )}
-                  <div ref={messagesEndRef} />
+                  </div>
+                ) : (
+                  <div className="max-w-screen-2xl mx-auto p-4 space-y-4 py-8">
+                    {messages.map((msg, i) => (
+                      <ChatMessage key={i} msg={msg} />
+                    ))}
+                    {isLoading && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4">
+                        <div className="w-10 h-10 rounded-2xl bg-surface border border-white/10 flex items-center justify-center shrink-0 shadow-lg">
+                          <Loader2 size={18} className="animate-spin text-primary" />
+                        </div>
+                        <div className="bg-surface/30 border border-white/5 rounded-2xl px-6 py-5 shadow-sm">
+                          <span className="text-[10px] font-black text-secondary uppercase tracking-[0.3em] animate-pulse">Running DocJockey Engine...</span>
+                        </div>
+                      </motion.div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                )
+              ) : (
+                <div className="flex flex-col">
+                  {currentView === 'about' && <AboutView />}
+                  {currentView === 'privacy' && <PrivacyView />}
+                  {currentView === 'disclaimer' && <DisclaimerView />}
+                  {currentView === 'contact' && <ContactView />}
                 </div>
               )}
             </div>
@@ -922,7 +1061,7 @@ export default function App() {
 
           {/* Floating Input Area (Sticky Overlay - only when chat is active) */}
           <AnimatePresence>
-            {messages.length > 0 && (
+            {currentView === 'dashboard' && messages.length > 0 && (
               <motion.div 
                 initial={{ y: 100 }}
                 animate={{ y: 0 }}
@@ -948,7 +1087,7 @@ export default function App() {
         </main>
       </div>
 
-      <SiteFooter />
+      <SiteFooter setView={setCurrentView} />
 
       {activeTool && <ToolModal tool={activeTool} onClose={() => setActiveTool(null)} />}
     </div>
