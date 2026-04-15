@@ -3,7 +3,7 @@ services:
     name: pdf-saas-app
     env: node
     plan: free
-    buildCommand: npm install && npm run build && (python3 -m pip install -t backend/python_libs -r requirements.txt 2> backend/pip_error.log || echo "Critical: Pip installation failed" >> backend/pip_error.log)
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: GEMINI_API_KEY

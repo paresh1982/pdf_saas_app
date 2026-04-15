@@ -39,6 +39,26 @@ if (!process.env.GEMINI_API_KEY) {
   console.warn('⚠️ WARNING: GEMINI_API_KEY is not set in environment variables.');
 }
 
+// ─── Environment Audit (Triple-Layer Fix) ────────────────
+const auditEnvironment = () => {
+  console.log('🔍 [AUDIT] Starting Production Environment Check...');
+  const pythonVendorPath = path.join(__dirname, 'python_libs');
+  console.log(`🔍 [AUDIT] Expected Python Libs at: ${pythonVendorPath}`);
+  
+  if (fs.existsSync(pythonVendorPath)) {
+    const libs = fs.readdirSync(pythonVendorPath);
+    console.log(`✅ [AUDIT] Python Libs Found. Count: ${libs.length}`);
+  } else {
+    console.error('❌ [AUDIT] Python Libs MISSING at path.');
+    // Check root as fallback
+    const rootVendorPath = path.join(__dirname, '..', 'python_libs');
+    if (fs.existsSync(rootVendorPath)) {
+      console.log('⚠️ [AUDIT] Found libs in ROOT instead of backend/. This works but is not ideal.');
+    }
+  }
+};
+auditEnvironment();
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 

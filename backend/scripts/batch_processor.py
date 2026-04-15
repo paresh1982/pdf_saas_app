@@ -1,11 +1,18 @@
 import sys
 import os
 
-# Add local vendor directory to path (Look for python_libs in root)
+# Add local vendor directory to path (Look for python_libs relative to script)
 script_dir = os.path.dirname(os.path.abspath(__file__))
-vendor_dir = os.path.abspath(os.path.join(script_dir, '..', '..', 'python_libs'))
+# The vendor folder is in the parent 'backend/' directory
+vendor_dir = os.path.abspath(os.path.join(script_dir, '..', 'python_libs'))
+
 if os.path.exists(vendor_dir):
     sys.path.insert(0, vendor_dir)
+else:
+    # Fallback to absolute root if backend/ postinstall was bypassed
+    root_vendor = os.path.abspath(os.path.join(script_dir, '..', '..', 'python_libs'))
+    if os.path.exists(root_vendor):
+        sys.path.insert(0, root_vendor)
 
 import pandas as pd
 import json
