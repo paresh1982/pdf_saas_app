@@ -73,13 +73,58 @@ def process_batch(config_path):
         # Merge identical-column dataframes
         final_df = pd.concat(dfs, ignore_index=True)
         
-        # Save output
+        # Save output with professional formatting
         output_path = f"uploads/{output_filename}.{output_format}"
+        
         if output_format == 'csv':
             final_df.to_csv(output_path, index=False)
         else:
-            final_df.to_excel(output_path, index=False, engine='openpyxl')
-            
+            # Enhanced Excel formatting with openpyxl
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                final_df.to_excel(writer, index=False, sheet_name='Merged_Data')
+                
+                # Access the workbook and stylesheet
+                workbook = writer.book
+                worksheet = writer.sheets['Merged_Data']
+                
+                from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+                
+                # Define Styles
+                header_fill = PatternFill(start_color='E0E0E0', end_color='E0E0E0', fill_type='solid')
+                header_font = Font(bold=True, size=11, color='000000')
+                thin_border = Border(
+                    left=Side(style='thin', color='CCCCCC'),
+                    right=Side(style='thin', color='CCCCCC'),
+                    top=Side(style='thin', color='CCCCCC'),
+                    bottom=Side(style='thin', color='CCCCCC')
+                )
+                
+                # Apply Header Styling
+                for cell in worksheet[1]:
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
+                    cell.border = thin_border
+                
+                # Auto-fit Column Widths
+                for col in worksheet.columns:
+                    max_length = 0
+                    column = col[0].column_letter # Get the column name
+                    for cell in col:
+                        try:
+                            if len(str(cell.value)) > max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                    adjusted_width = (max_length + 4)
+                    worksheet.column_dimensions[column].width = adjusted_width
+                
+                # Apply Cell Borders and Alignment to all data cells
+                for row in worksheet.iter_rows(min_row=2):
+                    for cell in row:
+                        cell.border = thin_border
+                        cell.alignment = Alignment(horizontal='left', vertical='center')
+
         print(f"SUCCESS_PATH: {output_path}")
         
     except Exception as e:
