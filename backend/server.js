@@ -134,9 +134,17 @@ app.get('/api/admin/env', async (req, res) => {
     const { execSync } = require('child_process');
     const pythonVersion = execSync('python3 --version').toString().trim();
     const pipList = execSync('python3 -m pip list').toString().trim();
+    
+    // Check for local vendor libs
+    const vendorPath = path.join(__dirname, 'python_libs');
+    const hasVendor = fs.existsSync(vendorPath);
+    const vendorLibs = hasVendor ? fs.readdirSync(vendorPath).filter(f => !f.startsWith('.')) : [];
+
     res.json({
       timestamp: new Date().toISOString(),
       python: pythonVersion,
+      vendor_loaded: hasVendor,
+      vendor_count: vendorLibs.length,
       packages: pipList.split('\n').filter(line => line.length > 0)
     });
   } catch (err) {

@@ -3,7 +3,7 @@ services:
     name: pdf-saas-app
     env: node
     plan: free
-    buildCommand: npm install && npm run build && python3 -m pip install -r backend/requirements.txt
+    buildCommand: npm install && npm run build && python3 -m pip install -t backend/python_libs -r backend/requirements.txt
     startCommand: npm start
     envVars:
       - key: GEMINI_API_KEY
