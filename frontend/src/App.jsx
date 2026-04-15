@@ -158,6 +158,105 @@ function ContactView() {
   );
 }
 
+function HowItWorksView({ setView }) {
+  const steps = [
+    {
+      number: '01',
+      title: 'AI Chat Engine',
+      color: 'primary',
+      desc: 'The main workspace. Upload any PDF, image, Word, or Excel file and type your command in the input box. The AI engine reads the document natively—no pre-processing needed. Ask it to extract, summarize, or analyze. Results appear as structured JSON, tables, or readable text.',
+      tips: ['Attach multiple files in a single message', 'Ask it to extract all line items from an invoice', 'Request a summary of a legal document']
+    },
+    {
+      number: '02',
+      title: 'Single Document vs Batch Processor',
+      color: 'secondary',
+      desc: 'Use the toggle at the top of the upload zone to switch modes. Single Document processes one file at a time with focused extraction. Batch Processor stages multiple files for simultaneous analysis, ideal for processing a full month of invoices in one pass.',
+      tips: ['Batch mode supports mixed file types', 'Each file in a batch gets its own AI analysis context', 'Results are consolidated in the chat thread']
+    },
+    {
+      number: '03',
+      title: 'Merge PDF',
+      color: 'primary',
+      desc: 'Combine multiple PDF files into a single unified document. Select files from the tool modal, arrange them in order, and the engine produces a merged PDF ready for download. Useful for combining monthly reports, multi-part contracts, or assembled portfolios.',
+      tips: ['Supports unlimited files per merge', 'Preserves original page quality', 'Output filename is auto-generated with timestamp']
+    },
+    {
+      number: '04',
+      title: 'Split PDF',
+      color: 'secondary',
+      desc: 'Divide a PDF into smaller parts. Leave the page range blank to split every page into an individual file, or specify custom ranges (e.g. 1-3, 5, 8-10) to extract specific sections. Output is packaged as a ZIP archive for easy download.',
+      tips: ['Leave range blank = one file per page', 'Custom ranges: 1-3, 5, 8-10', 'ZIP archive delivered on completion']
+    },
+    {
+      number: '05',
+      title: 'Compress PDF',
+      color: 'primary',
+      desc: 'Reduce the file size of a PDF without significant quality loss. Useful for email attachments, portal uploads with size limits, or archiving large scanned documents. The engine optimizes embedded images and streams automatically.',
+      tips: ['Ideal for scanned invoices and reports', 'Preserves text layer and searchability', 'File size reduction varies by content type']
+    },
+    {
+      number: '06',
+      title: 'PDF ↔ Word / Excel Conversion',
+      color: 'secondary',
+      desc: 'Convert between formats seamlessly. PDF to Word extracts structured text and layout into an editable DOCX. PDF to Excel converts tabular data into spreadsheet rows. Excel to PDF renders your spreadsheet for print or archive. Word to PDF converts DOCX to a professional PDF.',
+      tips: ['AI-assisted table detection for PDF→Excel', 'Preserves heading hierarchy in PDF→Word', 'Excel output includes proper column headers']
+    },
+    {
+      number: '07',
+      title: 'A.I. Smart Redraft',
+      color: 'primary',
+      desc: 'Upload any document and provide natural language instructions. The AI re-generates the document incorporating your changes — update an invoice date, rename a vendor, change terms, or restructure content — and delivers a clean, professionally formatted output.',
+      tips: ['Instructions like: Change invoice date to 2024-12-01', 'Update vendor name to ABC Corp', 'Rewrite Section 3 in formal tone']
+    },
+    {
+      number: '08',
+      title: 'Rotate & Organize Pages',
+      color: 'secondary',
+      desc: 'Rotate pages to 90°, 180°, or 270° to correct scanned documents. Organize Pages lets you reorder pages by specifying a new sequence (e.g. 2, 1, 3) — perfect for rearranging chapters or correcting assembly errors in a compiled report.',
+      tips: ['Rotate: 90°, 180°, or 270°', 'Reorder: specify new sequence like 2,1,3,5,4', 'Results are instant single-file downloads']
+    },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-8 md:p-16 max-w-4xl mx-auto w-full min-h-[calc(100vh-160px)]"
+    >
+      <div className="mb-12">
+        <button onClick={() => setView('dashboard')} className="text-[10px] font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.3em] mb-6 flex items-center gap-2 transition-colors">
+          ← Back to Dashboard
+        </button>
+        <h2 className="text-3xl font-black tracking-tight text-white mb-2 uppercase italic">How DocJockey Works</h2>
+        <div className="w-20 h-1 red-gradient rounded-full mb-4" />
+        <p className="text-foreground/50 text-sm font-medium">A complete guide to every feature, in the order you'll use them.</p>
+      </div>
+
+      <div className="space-y-8">
+        {steps.map((step) => (
+          <div key={step.number} className={`glass-panel p-6 border-white/10 hover:border-${step.color}/30 transition-all group`}>
+            <div className="flex items-start gap-6">
+              <div className={`shrink-0 w-12 h-12 rounded-2xl bg-${step.color}/10 flex items-center justify-center`}>
+                <span className={`text-${step.color} text-xs font-black`}>{step.number}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-white font-black uppercase tracking-tight mb-3">{step.title}</h3>
+                <p className="text-foreground/60 text-sm leading-relaxed mb-4">{step.desc}</p>
+                <div className="space-y-1">
+                  {step.tips.map((tip, i) => (
+                    <p key={i} className={`text-[10px] font-black text-${step.color}/60 uppercase tracking-widest`}>→ {tip}</p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
 // Set global axios default
 axios.defaults.headers.common['X-User-ID'] = UID;
 
@@ -973,9 +1072,16 @@ export default function App() {
                         <LogoDJ size={52} />
                       </div>
                       <h2 className="text-2xl font-black mb-2 tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
-                      <p className="text-foreground/60 text-sm mb-8 leading-relaxed max-w-sm mx-auto font-medium">
+                      <p className="text-foreground/60 text-sm mb-4 leading-relaxed max-w-sm mx-auto font-medium">
                         Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
                       </p>
+                      <button
+                        onClick={() => setCurrentView('howto')}
+                        className="text-[10px] font-black text-secondary hover:text-white uppercase tracking-[0.3em] transition-colors mb-8 flex items-center gap-2 mx-auto group"
+                      >
+                        <HelpCircle size={12} className="group-hover:rotate-12 transition-transform" />
+                        Click to know more
+                      </button>
 
                       {/* --- Upload Tabs --- */}
                       <div className="flex bg-surface/50 p-1.5 rounded-2xl border border-white/5 mb-8 max-w-md mx-auto">
@@ -1054,6 +1160,7 @@ export default function App() {
                   {currentView === 'privacy' && <PrivacyView />}
                   {currentView === 'disclaimer' && <DisclaimerView />}
                   {currentView === 'contact' && <ContactView />}
+                  {currentView === 'howto' && <HowItWorksView setView={setCurrentView} />}
                 </div>
               )}
             </div>
