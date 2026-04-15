@@ -1041,8 +1041,7 @@ function BulkMergerView({ setView }) {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
         {stage === 'processing' && (
           <div className="flex-1 flex flex-col items-center justify-center py-20">
