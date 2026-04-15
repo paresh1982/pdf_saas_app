@@ -995,7 +995,7 @@ app.post('/api/batch/execute', async (req, res) => {
     fs.writeFileSync(configPath, JSON.stringify(config));
 
     const scriptPath = path.join(__dirname, 'scripts/batch_processor.py');
-    const pythonProcess = spawn('python', [scriptPath, configPath], {
+    const pythonProcess = spawn('python3', [scriptPath, configPath], {
       cwd: __dirname // Ensure script runs with backend/ as root
     });
 
