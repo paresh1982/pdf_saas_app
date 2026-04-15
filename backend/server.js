@@ -128,6 +128,22 @@ const upload = multer({
   },
 });
 
+// ─── Diagnostic Route ────────────────────────────────────
+app.get('/api/admin/env', async (req, res) => {
+  try {
+    const { execSync } = require('child_process');
+    const pythonVersion = execSync('python3 --version').toString().trim();
+    const pipList = execSync('python3 -m pip list').toString().trim();
+    res.json({
+      timestamp: new Date().toISOString(),
+      python: pythonVersion,
+      packages: pipList.split('\n').filter(line => line.length > 0)
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Diagnostic failed', details: err.message });
+  }
+});
+
 // ─── Gemini Engine ───────────────────────────────────────
 const SYSTEM_PROMPT = `You are NexGen AI — a universal document intelligence assistant.
 
