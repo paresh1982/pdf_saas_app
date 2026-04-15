@@ -1827,7 +1827,7 @@ const startServer = async () => {
       console.log(`🌐 URL: http://0.0.0.0:${PORT}`);
       console.log(`📡 Database: PostgreSQL (Supabase Connected)`);
       console.log(`📂 Storage: Local FileSystem (Ephemeral: /uploads)`);
-      console.log(`🧠 AI Models: gemini-2.5-pro ready\n`);
+      console.log(`🧠 AI Models: Extraction engine ready\n`);
     });
   } catch (err) {
     console.error('💥 FATAL ERROR: Deployment failed due to database connection issues.');
