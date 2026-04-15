@@ -62,6 +62,9 @@ auditEnvironment();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+// ─── Static Assets (Uploads & Downloads) ─────────────────
+app.use('/uploads', express.static(UPLOAD_DIR));
+
 // ─── Privacy Middleware ──────────────────────────────────
 app.use((req, res, next) => {
   req.userId = req.headers['x-user-id'] || 'anonymous';
