@@ -1295,26 +1295,24 @@ export default function App() {
                   <div className="space-y-2">
                     <button
                       onClick={() => handleAction(() => setCurrentView('bulk-merger'))}
-                      className={`w-full group relative overflow-hidden flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                      className={`w-full aspect-square group relative overflow-hidden flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all ${
                         currentView === 'bulk-merger' 
-                        ? 'bg-secondary text-white border-secondary shadow-lg shadow-secondary/20' 
-                        : 'bg-white/2 border-white/5 hover:border-secondary/30 hover:bg-white/5 text-foreground/60 hover:text-white'
+                        ? 'bg-primary text-white border-white shadow-2xl shadow-primary/40 scale-95' 
+                        : 'bg-white/2 border-white/5 hover:border-primary/40 hover:bg-white/5 text-foreground/60 hover:text-white'
                       }`}
+                      style={{
+                        borderImage: currentView !== 'bulk-merger' ? 'linear-gradient(135deg, #e63639 0%, #1da5a2 100%) 1' : 'none'
+                      }}
                     >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                        currentView === 'bulk-merger' ? 'bg-white/20' : 'bg-secondary/10 text-secondary group-hover:bg-secondary/20'
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all mb-3 ${
+                        currentView === 'bulk-merger' ? 'bg-white/20' : 'red-gradient text-white shadow-lg shadow-primary/20 group-hover:scale-110'
                       }`}>
-                        <Shuffle size={18} />
+                        <Shuffle size={28} />
                       </div>
-                      <div className="text-left">
-                        <p className={`text-[10px] font-black uppercase tracking-tight ${currentView === 'bulk-merger' ? 'text-white' : 'text-foreground/80'}`}>Bulk Excel/CSV Merger</p>
-                        <p className={`text-[8px] font-black uppercase tracking-widest ${currentView === 'bulk-merger' ? 'text-white/60' : 'text-secondary/60'}`}>100,000+ Rows • Python Powered</p>
+                      <div className="text-center">
+                        <p className={`text-[12px] font-black uppercase tracking-tight leading-tight ${currentView === 'bulk-merger' ? 'text-white' : 'text-foreground/90'}`}>Bulk Excel/CSV Merger</p>
+                        <p className={`text-[9px] font-black uppercase tracking-widest mt-2 ${currentView === 'bulk-merger' ? 'text-white/60' : 'text-primary'}`}>100k+ Rows • Pro</p>
                       </div>
-                      {currentView !== 'bulk-merger' && (
-                        <div className="absolute top-0 right-0 p-1">
-                          <div className="bg-secondary/20 text-secondary text-[6px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter">Pro</div>
-                        </div>
-                      )}
                     </button>
                   </div>
                 </div>
