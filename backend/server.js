@@ -1520,10 +1520,10 @@ app.post('/api/export/excel', async (req, res) => {
     sheet.addRow(headers);
     const headerRow = sheet.getRow(1);
     headerRow.eachCell(cell => {
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE63639' } };
+      cell.font = { bold: true, color: { argb: 'FF1A1A1A' }, size: 11 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB0B0B0' } };
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
-      cell.border = { bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } } };
+      cell.border = { bottom: { style: 'thin', color: { argb: 'FF888888' } } };
     });
     headerRow.height = 22;
 
