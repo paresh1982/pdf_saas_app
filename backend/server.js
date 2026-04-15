@@ -805,7 +805,7 @@ app.post('/api/tools/edit', upload.single('file'), async (req, res) => {
           let x = margin;
           // Draw header background tint
           if (rowIndex === 0) {
-            page.drawRectangle({ x, y: y - rowHeight, width: availableWidth, height: rowHeight, color: rgb(0.96, 0.97, 1.0) });
+            page.drawRectangle({ x, y: y - rowHeight, width: availableWidth, height: rowHeight, color: rgb(0.69, 0.69, 0.69) });
           }
 
           for (const cell of row) {
@@ -1029,13 +1029,20 @@ app.post('/api/tools/pdf-to-excel', upload.single('file'), async (req, res) => {
       if (!Array.isArray(data[0]) && typeof data[0] === 'object') {
         const headers = Object.keys(data[0]);
         worksheet.addRow(headers);
+        const hRow = worksheet.getRow(1);
+        hRow.eachCell(cell => {
+          cell.font = { bold: true, color: { argb: 'FF1A1A1A' }, size: 11 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB0B0B0' } };
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          cell.border = { bottom: { style: 'thin', color: { argb: 'FF888888' } } };
+        });
+        hRow.height = 22;
         data.forEach(item => {
           worksheet.addRow(headers.map(h => {
             let val = item[h];
             return typeof val === 'string' ? val.replace(/\*\*\*/g, '').replace(/\*\*/g, '') : val;
           }));
         });
-        worksheet.getRow(1).font = { bold: true };
       } 
       // Array of Arrays (Vertical Form / Raw Rows)
       else {
@@ -1112,7 +1119,7 @@ app.post('/api/tools/excel-to-pdf', upload.single('file'), async (req, res) => {
       const drawRow = (rowObj, isHeader = false) => {
         let x = margin;
         if (isHeader) {
-          page.drawRectangle({ x, y: y - rowHeight, width: availableWidth, height: rowHeight, color: rgb(0.95, 0.95, 0.95) });
+          page.drawRectangle({ x, y: y - rowHeight, width: availableWidth, height: rowHeight, color: rgb(0.69, 0.69, 0.69) });
         }
         for (const c of activeCols) {
           const cell = rowObj.getCell(c);
