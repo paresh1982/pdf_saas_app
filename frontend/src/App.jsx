@@ -672,9 +672,17 @@ function renderContent(text, convId) {
 // ─── Dynamic Table (renders ANY JSON array) ──────────────
 function DynamicTable({ data, raw, convId }) {
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(null);
   if (!data || data.length === 0) return null;
 
   const headers = Object.keys(data[0]);
+  const filename = `docjockey_export_${Date.now()}`;
+
+  const copyJSON = () => {
+    navigator.clipboard.writeText(raw || JSON.stringify(data, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const downloadCSV = () => {
     const csvContent = [
@@ -690,16 +698,24 @@ function DynamicTable({ data, raw, convId }) {
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `docjockey_export_${Date.now()}.csv`;
-    a.click();
+    a.href = url; a.download = `${filename}.csv`; a.click();
     URL.revokeObjectURL(url);
   };
 
-  const copyJSON = () => {
-    navigator.clipboard.writeText(raw || JSON.stringify(data, null, 2));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const downloadFromServer = async (format) => {
+    setLoading(format);
+    try {
+      const response = await axios.post(`/api/export/${format}`, { data, filename }, { responseType: 'blob' });
+      const ext = format === 'excel' ? 'xlsx' : format === 'word' ? 'docx' : 'pdf';
+      const url = URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url; a.download = `${filename}.${ext}`; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(`Export failed: ${err.message}`);
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (
@@ -708,12 +724,21 @@ function DynamicTable({ data, raw, convId }) {
         <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em] flex items-center gap-2">
           <Zap size={14} className="fill-primary/20" /> Structured Extraction • {data.length} records found
         </span>
-        <div className="flex gap-2">
-          <button onClick={copyJSON} className="view-btn">
-            {copied ? <Check size={12} /> : <Copy size={12} />} {copied ? 'Copied' : 'Copy JSON'}
+        <div className="flex flex-wrap gap-2">
+          <button onClick={copyJSON} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white/5 hover:bg-white/10 border border-white/10 transition-all">
+            {copied ? <Check size={12} /> : <Copy size={12} />} {copied ? 'Copied' : 'JSON'}
           </button>
-          <button onClick={downloadCSV} className="view-btn">
-            <Download size={12} /> Download CSV
+          <button onClick={() => downloadFromServer('excel')} disabled={loading === 'excel'} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 transition-all disabled:opacity-50">
+            {loading === 'excel' ? <Loader2 size={12} className="animate-spin" /> : <FileSpreadsheet size={12} />} Excel (.xlsx)
+          </button>
+          <button onClick={() => downloadFromServer('word')} disabled={loading === 'word'} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition-all disabled:opacity-50">
+            {loading === 'word' ? <Loader2 size={12} className="animate-spin" /> : <FileText size={12} />} Word (.docx)
+          </button>
+          <button onClick={downloadCSV} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-secondary/10 hover:bg-secondary/20 text-secondary border border-secondary/20 transition-all">
+            <Download size={12} /> CSV
+          </button>
+          <button onClick={() => downloadFromServer('pdf')} disabled={loading === 'pdf'} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all disabled:opacity-50">
+            {loading === 'pdf' ? <Loader2 size={12} className="animate-spin" /> : <FileType size={12} />} PDF
           </button>
         </div>
       </div>

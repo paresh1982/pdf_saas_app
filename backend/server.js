@@ -1502,6 +1502,158 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
+// ─── Export Routes ────────────────────────────────────────
+
+// Export as Excel (.xlsx)
+app.post('/api/export/excel', async (req, res) => {
+  try {
+    const { data, filename = 'docjockey_export' } = req.body;
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return res.status(400).json({ error: 'No data provided' });
+    }
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'DocJockey AI';
+    const sheet = workbook.addWorksheet('Extracted Data');
+    const headers = Object.keys(data[0]);
+
+    // Header row styling
+    sheet.addRow(headers);
+    const headerRow = sheet.getRow(1);
+    headerRow.eachCell(cell => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE63639' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.border = { bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } } };
+    });
+    headerRow.height = 22;
+
+    // Data rows
+    data.forEach((row, i) => {
+      const values = headers.map(h => {
+        const v = row[h];
+        return (v === null || v === undefined) ? '' : (typeof v === 'object' ? JSON.stringify(v) : v);
+      });
+      const dataRow = sheet.addRow(values);
+      dataRow.eachCell(cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 === 0 ? 'FFF5F5F5' : 'FFFFFFFF' } };
+        cell.alignment = { vertical: 'middle' };
+      });
+    });
+
+    // Auto column widths
+    sheet.columns.forEach((col, idx) => {
+      const maxLen = Math.max(headers[idx]?.length || 10, ...data.map(r => String(r[headers[idx]] ?? '').length));
+      col.width = Math.min(Math.max(maxLen + 4, 12), 50);
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}.xlsx"`);
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Export as Word (.docx)
+app.post('/api/export/word', async (req, res) => {
+  try {
+    const { data, filename = 'docjockey_export' } = req.body;
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return res.status(400).json({ error: 'No data provided' });
+    }
+    const headers = Object.keys(data[0]);
+
+    const headerCells = headers.map(h => new TableCell({
+      children: [new Paragraph({ children: [new TextRun({ text: h.toUpperCase(), bold: true, color: 'FFFFFF', size: 20 })], })],
+      shading: { fill: 'E63639' },
+      verticalAlign: VerticalAlign.CENTER,
+    }));
+
+    const dataRows = data.map((row, i) => new TableRow({
+      children: headers.map(h => new TableCell({
+        children: [new Paragraph({ children: [new TextRun({ text: String(row[h] ?? ''), size: 18 })] })],
+        shading: { fill: i % 2 === 0 ? 'F5F5F5' : 'FFFFFF' },
+      })),
+    }));
+
+    const doc = new Document({
+      sections: [{
+        children: [
+          new Paragraph({ children: [new TextRun({ text: 'DocJockey AI — Extracted Data', bold: true, size: 28 })], heading: HeadingLevel.HEADING_1 }),
+          new Paragraph({ children: [new TextRun({ text: `Generated: ${new Date().toLocaleDateString()}`, size: 18, color: '888888' })] }),
+          new Paragraph({ text: '' }),
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [new TableRow({ children: headerCells, tableHeader: true }), ...dataRows],
+          }),
+        ],
+      }],
+    });
+
+    const buffer = await Packer.toBuffer(doc);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}.docx"`);
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Export as PDF (text-based table)
+app.post('/api/export/pdf', async (req, res) => {
+  try {
+    const { data, filename = 'docjockey_export' } = req.body;
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return res.status(400).json({ error: 'No data provided' });
+    }
+    const headers = Object.keys(data[0]);
+    const pdfDoc = await PDFDocument.create();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const fontSize = 8;
+    const rowHeight = 18;
+    const marginX = 30;
+    const marginY = 40;
+    const colWidth = Math.min(Math.floor((595 - marginX * 2) / headers.length), 120);
+    const pageWidth = 595;
+
+    let page = pdfDoc.addPage([pageWidth, 842]);
+    let y = 842 - marginY;
+
+    // Title
+    page.drawText('DocJockey AI — Extracted Data', { x: marginX, y, font: fontBold, size: 14, color: rgb(0.9, 0.21, 0.22) });
+    y -= 24;
+    page.drawText(`Generated: ${new Date().toLocaleDateString()}`, { x: marginX, y, font, size: 9, color: rgb(0.5, 0.5, 0.5) });
+    y -= 20;
+
+    const drawRow = (rowData, isBold = false, bgColor = null) => {
+      if (y < marginY + rowHeight) {
+        page = pdfDoc.addPage([pageWidth, 842]);
+        y = 842 - marginY;
+      }
+      if (bgColor) page.drawRectangle({ x: marginX, y: y - 4, width: colWidth * headers.length, height: rowHeight, color: bgColor });
+      rowData.forEach((val, idx) => {
+        const text = String(val ?? '').slice(0, 20);
+        page.drawText(text, { x: marginX + idx * colWidth + 4, y: y + 2, font: isBold ? fontBold : font, size: fontSize, color: isBold ? rgb(1,1,1) : rgb(0.15,0.15,0.15) });
+      });
+      y -= rowHeight;
+    };
+
+    drawRow(headers, true, rgb(0.9, 0.21, 0.22));
+    data.forEach((row, i) => {
+      drawRow(headers.map(h => row[h]), false, i % 2 === 0 ? rgb(0.96, 0.96, 0.96) : null);
+    });
+
+    const pdfBytes = await pdfDoc.save();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}.pdf"`);
+    res.send(Buffer.from(pdfBytes));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Serve React Frontend (Production) ───────────────────
 const FRONTEND_DIR = path.join(__dirname, '../frontend/dist');
 if (fs.existsSync(FRONTEND_DIR)) {
