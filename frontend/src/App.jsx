@@ -1292,28 +1292,27 @@ export default function App() {
                 {/* --- Enterprise Bulk Suite --- */}
                 <div className="mb-6">
                   <p className="px-3 text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-3 mt-2">Enterprise Bulk Suite</p>
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => handleAction(() => setCurrentView('bulk-merger'))}
-                      className={`w-full aspect-square group relative overflow-hidden flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all ${
-                        currentView === 'bulk-merger' 
-                        ? 'bg-primary text-white border-white shadow-2xl shadow-primary/40 scale-95' 
-                        : 'bg-white/2 border-white/5 hover:border-primary/40 hover:bg-white/5 text-foreground/60 hover:text-white'
-                      }`}
-                      style={{
-                        borderImage: currentView !== 'bulk-merger' ? 'linear-gradient(135deg, #e63639 0%, #1da5a2 100%) 1' : 'none'
-                      }}
-                    >
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all mb-3 ${
-                        currentView === 'bulk-merger' ? 'bg-white/20' : 'red-gradient text-white shadow-lg shadow-primary/20 group-hover:scale-110'
-                      }`}>
-                        <Shuffle size={28} />
-                      </div>
-                      <div className="text-center">
-                        <p className={`text-[12px] font-black uppercase tracking-tight leading-tight ${currentView === 'bulk-merger' ? 'text-white' : 'text-foreground/90'}`}>Bulk Excel/CSV Merger</p>
-                        <p className={`text-[9px] font-black uppercase tracking-widest mt-2 ${currentView === 'bulk-merger' ? 'text-white/60' : 'text-primary'}`}>100k+ Rows • Pro</p>
-                      </div>
-                    </button>
+                  <div className="space-y-2 flex justify-center">
+                    <div className={`p-[3px] rounded-[40px] transition-all ${currentView === 'bulk-merger' ? 'bg-white' : 'bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/10'}`}>
+                      <button
+                        onClick={() => handleAction(() => setCurrentView('bulk-merger'))}
+                        className={`w-36 h-36 flex flex-col items-center justify-center p-4 rounded-[37px] transition-all ${
+                          currentView === 'bulk-merger' 
+                          ? 'bg-primary text-white scale-95' 
+                          : 'bg-surface hover:bg-white/5 text-foreground/60 hover:text-white'
+                        }`}
+                      >
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all mb-3 ${
+                          currentView === 'bulk-merger' ? 'bg-white/20' : 'red-gradient text-white shadow-lg shadow-primary/20 group-hover:scale-110'
+                        }`}>
+                          <Shuffle size={24} />
+                        </div>
+                        <div className="text-center">
+                          <p className={`text-[10px] font-black uppercase tracking-tight leading-tight ${currentView === 'bulk-merger' ? 'text-white' : 'text-foreground/90'}`}>Bulk Merger</p>
+                          <p className={`text-[8px] font-black uppercase tracking-widest mt-2 ${currentView === 'bulk-merger' ? 'text-white/60' : 'text-primary'}`}>100k+ Rows</p>
+                        </div>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
