@@ -140,11 +140,16 @@ app.get('/api/admin/env', async (req, res) => {
     const hasVendor = fs.existsSync(vendorPath);
     const vendorLibs = hasVendor ? fs.readdirSync(vendorPath).filter(f => !f.startsWith('.')) : [];
 
+    // Read build error log if it exists
+    const errorLogPath = path.join(__dirname, 'pip_error.log');
+    const pipError = fs.existsSync(errorLogPath) ? fs.readFileSync(errorLogPath, 'utf8') : null;
+
     res.json({
       timestamp: new Date().toISOString(),
       python: pythonVersion,
       vendor_loaded: hasVendor,
       vendor_count: vendorLibs.length,
+      pip_error: pipError,
       packages: pipList.split('\n').filter(line => line.length > 0)
     });
   } catch (err) {
