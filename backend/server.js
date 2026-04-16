@@ -434,14 +434,44 @@ app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
         [convId, 'user', message || '', JSON.stringify((req.files || []).map(f => f.originalname))]
     );
 
-    // 1. Gather Context
-    let filesContext = "";
-    if (req.files) {
+    // 1. Persist New Documents (if any)
+    if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const schema = await getSchemaContext(file);
+        await pool.query(
+          'INSERT INTO documents (conversation_id, user_id, filename, original_name, file_size) VALUES ($1, $2, $3, $4, $5)',
+          [convId, req.userId, file.filename, file.originalname, file.size]
+        );
+      }
+    }
+
+    // 2. Fetch All Conversation Documents (Context Re-hydration)
+    const { rows: docs } = await pool.query(
+      'SELECT filename, original_name FROM documents WHERE conversation_id = $1',
+      [convId]
+    );
+
+    let filesContext = "";
+    for (const doc of docs) {
+      const filePath = path.join(__dirname, 'uploads', doc.filename);
+      if (fs.existsSync(filePath)) {
+        // Prepare a pseudo-file object for getSchemaContext
+        const pseudoFile = { path: filePath, originalname: doc.original_name };
+        const schema = await getSchemaContext(pseudoFile);
         if (schema) filesContext += schema + "\n\n";
       }
     }
+
+    // 3. Fetch Message History
+    const { rows: history } = await pool.query(
+      'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+      [convId]
+    );
+    
+    // Map history to Gemini format (ignoring the temporary Analyst message being built)
+    const geminiHistory = history.map(h => ({
+      role: h.role === 'model' ? 'model' : 'user',
+      parts: [{ text: h.content }]
+    }));
 
     // 2. Call Gemini using the resilient Model Queue
     const systemPrompt = `You are an expert Python Pandas Data Analyst. 
@@ -456,9 +486,13 @@ CRITICAL RULES:
 2. DO NOT use generic filenames. You must use the EXACT absolute paths provided in the FILE_PATH lines. Always use raw strings for paths (e.g. r"C:\\path").
 3. Print the final answer to stdout. If the user asks for a calculation, print a sentence explaining the result. Avoid plotting charts for now, just print the text/data.
 4. Make the script robust against potential Date parsing issues.
-5. If the user asks a general question NOT requiring data analysis, still write a tiny script that prints the answer to stdout so the engine can display it correctly.`;
+5. If the user asks a general question NOT requiring data analysis, still write a tiny script that prints the answer to stdout so the engine can display it correctly.
+6. The user may ask follow-up questions. Refer to the previous history if they use pronouns like "it" or "that file".`;
 
-    const contents = [{ role: 'user', parts: [{ text: `User Prompt: ${message}\n\nFiles Provided:\n${filesContext}` }] }];
+    const contents = [...geminiHistory];
+    // If files were just uploaded but not yet in the prompt part, append the final prompt with filesContext
+    contents[contents.length - 1].parts[0].text += `\n\n### Available Data Files (Current Schema Context):\n${filesContext}`;
+
     const aiText = await callGemini(contents, systemPrompt);
     
     // 3. Robust Code Extraction
@@ -511,11 +545,7 @@ if os.path.exists(v_dir): sys.path.insert(0, v_dir)
 
     // Cleanup
     try { fs.unlinkSync(tempScriptPath); } catch (e) {}
-    if (req.files) {
-      req.files.forEach(f => {
-          try { fs.unlinkSync(f.path); } catch(e) {}
-      });
-    }
+    // req.files are NO LONGER unlinked here to allow follow-up questions in the same conversation.
 
     await pool.query(
         'INSERT INTO messages (conversation_id, role, content, attachments) VALUES ($1, $2, $3, $4)',
@@ -524,7 +554,7 @@ if os.path.exists(v_dir): sys.path.insert(0, v_dir)
 
     res.json({ response: finalResult, conversation_id: convId });
   } catch (err) {
-    if (req.files) { req.files.forEach(f => { try { fs.unlinkSync(f.path); } catch(e) {} }); }
+    // We don't unlink data files on error either, to allow troubleshooting/retries.
     res.status(500).json({ error: 'Analysis execution failed', details: err.message });
   }
 });
