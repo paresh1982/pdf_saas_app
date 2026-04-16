@@ -691,6 +691,8 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
             [convId, fileNames]
           );
           
+          let missingFiles = [];
+          
           for (const doc of docsResult.rows) {
             const filePath = path.join(UPLOAD_DIR, doc.filename);
             if (fs.existsSync(filePath)) {
@@ -703,7 +705,18 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
                 if (fileContext.text) combinedText += `\n\n--- DOCUMENT DATA ---\n${fileContext.text}`;
                 if (fileContext.inlineData) inlineDataParts.push({ inlineData: fileContext.inlineData });
               }
+            } else {
+              missingFiles.push(doc.original_name);
             }
+          }
+          
+          if (missingFiles.length > 0) {
+              const errorMsg = `⚠️ **Session Expired:** The underlying documents (${missingFiles.join(', ')}) were purged from our server's temporary storage. Please start a new chat and re-upload the files to continue extraction.`;
+              await pool.query(
+                  'INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)',
+                  [convId, 'model', errorMsg]
+              );
+              return res.json({ response: errorMsg, conversation_id: convId });
           }
         } catch (e) {
           console.error("Context recovery failed:", e);
