@@ -817,7 +817,7 @@ function BulkMergerView({ setView }) {
   const [files, setFiles] = useState([]);
   const [stage, setStage] = useState('selection'); // selection, analyzing, config, processing, result
   const [analysis, setAnalysis] = useState(null);
-  const [config, setConfig] = useState({ sheet: {}, columns: [], mode: 'strict', ai_instructions: '', output_format: 'xlsx' });
+  const [config, setConfig] = useState({ sheet: {}, columns: [], mode: null, ai_instructions: '', output_format: 'xlsx' });
   const [resultUrl, setResultUrl] = useState(null);
   const [error, setError] = useState(null);
 
@@ -847,7 +847,7 @@ function BulkMergerView({ setView }) {
       setConfig({ 
         sheet: initialSheets, 
         columns: commonColumns,
-        mode: 'strict',
+        mode: null,
         ai_instructions: '',
         output_format: 'xlsx'
       });
@@ -1007,13 +1007,13 @@ function BulkMergerView({ setView }) {
                         <button
                           onClick={() => setConfig(prev => ({ ...prev, mode: 'strict' }))}
                           className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] transition-all border text-left ${
-                            (!config.mode || config.mode === 'strict')
+                            config.mode === 'strict'
                               ? 'bg-secondary text-white border-secondary shadow-lg'
                               : 'bg-transparent text-foreground/60 border-white/10 hover:border-white/30 hover:text-white'
                           }`}
                         >
                           Manual / Strict Match
-                          <span className={`block text-[8px] font-normal normal-case mt-1 ${(!config.mode || config.mode === 'strict') ? 'text-white/80' : 'text-foreground/40'}`}>Select from identical headers</span>
+                          <span className={`block text-[8px] font-normal normal-case mt-1 ${config.mode === 'strict' ? 'text-white/80' : 'text-foreground/40'}`}>Select from identical headers</span>
                         </button>
                         <button
                           onClick={() => setConfig(prev => ({ ...prev, mode: 'ai' }))}
@@ -1032,7 +1032,7 @@ function BulkMergerView({ setView }) {
                       </div>
 
                       {/* Manual Mode UI */}
-                      {(!config.mode || config.mode === 'strict') && (
+                      {config.mode === 'strict' && (
                         <div className="animate-in fade-in zoom-in-95 duration-300">
                           <label className="text-[10px] font-black text-secondary uppercase tracking-widest mb-2 block">Available Columns</label>
                           <div className="flex flex-wrap gap-2">
@@ -1110,7 +1110,12 @@ function BulkMergerView({ setView }) {
             <div className="mt-auto pt-8 border-t border-white/5">
               <button 
                 onClick={runMerge}
-                className="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-secondary/20 hover:brightness-110 transition-all flex items-center justify-center gap-3"
+                disabled={!config.mode}
+                className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${
+                   config.mode 
+                    ? 'bg-secondary text-white shadow-xl shadow-secondary/20 hover:brightness-110' 
+                    : 'bg-white/5 text-foreground/20 cursor-not-allowed border border-white/5'
+                }`}
               >
                 <Shuffle size={18} /> Execute Enterprise Merge
               </button>
