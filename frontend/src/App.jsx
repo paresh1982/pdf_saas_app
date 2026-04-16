@@ -1614,6 +1614,24 @@ export default function App() {
                         </div>
                       </div>
 
+                      {/* --- Upload Mode Toggle (Restored) --- */}
+                      {!isAnalysisMode && (
+                        <div className="flex bg-surface/50 p-1.5 rounded-2xl border border-white/5 mb-8 max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
+                          <button 
+                            onClick={() => { setUploadMode('single'); setAttachedFiles([]); }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
+                          >
+                            <FileText size={14} /> Single document
+                          </button>
+                          <button 
+                            onClick={() => { setUploadMode('multiple'); setAttachedFiles([]); }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'multiple' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
+                          >
+                            <Layout size={14} /> Batch processor
+                          </button>
+                        </div>
+                      )}
+
                       <div
                         onClick={() => fileInputRef.current?.click()}
                         className="w-full max-w-screen-xl border-2 border-dashed border-white/5 hover:border-primary/20 rounded-[3rem] p-12 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-8"
