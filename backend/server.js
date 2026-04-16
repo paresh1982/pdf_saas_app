@@ -496,12 +496,32 @@ CRITICAL RULES:
 
     const aiText = await callGemini(contents, systemPrompt);
     
-    // 3. Robust Code Extraction
+    // 3. Robust Line-by-Line Code Extraction
     let pythonCode = "";
-    const codeMatch = aiText.match(/```python\s([\s\S]*?)```/) || aiText.match(/```\s([\s\S]*?)```/);
     
-    if (codeMatch) {
-       pythonCode = codeMatch[1].trim();
+    const extractPython = (text) => {
+        const lines = text.split('\n');
+        let insideCode = false;
+        let code = [];
+        for (const line of lines) {
+            if (!insideCode && (line.trim().startsWith('\`\`\`python') || line.trim() === '\`\`\`')) {
+                insideCode = true;
+                continue;
+            }
+            if (insideCode && line.trim() === '\`\`\`') {
+                break;
+            }
+            if (insideCode) {
+                code.push(line);
+            }
+        }
+        return code.join('\n').trim();
+    };
+
+    pythonCode = extractPython(aiText);
+    
+    if (pythonCode.length > 0) {
+       // Code extracted properly
     } else {
        // Fallback: If AI just returned code without backticks or language tag
        const lines = aiText.split('\n');
