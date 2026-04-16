@@ -443,7 +443,7 @@ app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
       }
     }
 
-    // 2. Call Gemini
+    // 2. Call Gemini using the resilient Model Queue
     const systemPrompt = `You are an expert Python Pandas Data Analyst. 
 The user wants to analyze some data files. 
 You will be provided with the user's prompt and a schema overview of the files (including their absolute FILE_PATH).
@@ -455,24 +455,29 @@ CRITICAL RULES:
 1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler before or after the code block.
 2. DO NOT use generic filenames. You must use the EXACT absolute paths provided in the FILE_PATH lines. Always use raw strings for paths (e.g. r"C:\\path").
 3. Print the final answer to stdout. If the user asks for a calculation, print a sentence explaining the result. Avoid plotting charts for now, just print the text/data.
-4. Make the script robust against potential Date parsing issues.`;
+4. Make the script robust against potential Date parsing issues.
+5. If the user asks a general question NOT requiring data analysis, still write a tiny script that prints the answer to stdout so the engine can display it correctly.`;
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
-      systemInstruction: systemPrompt,
-      contents: [{ role: 'user', parts: [{ text: `User Prompt: ${message}\n\nFiles Provided:\n${filesContext}` }] }]
-    });
-
-    const aiText = response.text || '';
+    const contents = [{ role: 'user', parts: [{ text: `User Prompt: ${message}\n\nFiles Provided:\n${filesContext}` }] }];
+    const aiText = await callGemini(contents, systemPrompt);
     
-    // 3. Extract Code
-    const codeMatch = aiText.match(/```python\s([\s\S]*?)```/);
-    if (!codeMatch) {
-       throw new Error("AI failed to generate a valid Python script. Raw output: " + aiText);
+    // 3. Robust Code Extraction
+    let pythonCode = "";
+    const codeMatch = aiText.match(/```python\s([\s\S]*?)```/) || aiText.match(/```\s([\s\S]*?)```/);
+    
+    if (codeMatch) {
+       pythonCode = codeMatch[1].trim();
+    } else {
+       // Fallback: If AI just returned code without backticks or language tag
+       const lines = aiText.split('\n');
+       const hasPandas = lines.some(l => l.includes('import pandas') || l.includes('pd.'));
+       if (hasPandas) {
+          pythonCode = aiText.trim();
+       } else {
+          // If totally conversational, create a dummy print script
+          pythonCode = `print("""${aiText.replace(/"/g, '\\"')}""")`;
+       }
     }
-    
-    const pythonCode = codeMatch[1].trim();
 
     // 4. Save and execute
     const { exec } = require('child_process');
