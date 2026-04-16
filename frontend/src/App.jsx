@@ -32,7 +32,9 @@ import {
   Moon,
   Menu,
   Database,
-  Shuffle
+  Shuffle,
+  Code,
+  ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -773,7 +775,7 @@ function DynamicTable({ data, raw, convId }) {
 // ─── Chat Message Bubble ─────────────────────────────────
 function ChatMessage({ msg }) {
   const isUser = msg.role === 'user';
-  const [showCode, setShowCode] = React.useState(false);
+  const [showCode, setShowCode] = useState(false);
   
   const attachments = (() => {
     try { return JSON.parse(msg.attachments || '[]'); } catch { return []; }
