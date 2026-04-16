@@ -484,11 +484,8 @@ Write a Python script that reads the files from the provided FILE_PATHs using pa
 CRITICAL RULES:
 1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler before or after the code block.
 2. CRITICAL PATH RULE: NEVER use hallucinated or generic paths like '/mnt/data/...'. You MUST use the exact absolute paths provided in the "FILE_PATH:" lines below. Always use raw strings (e.g., r"C:\path\to\file"). If you use /mnt/data, the system will crash!
-3. Print the final answer to stdout. If the result is a DataFrame or tabular data, you MUST print it as JSON wrapped in a markdown code block so the frontend can render it beautifully in a table. For example: 
-   print("\`\`\`json")
-   print(df.to_json(orient='records', date_format='iso'))
-   print("\`\`\`")
-   If it's just a simple calculation or single answer, print a clear sentence explaining the result instead. Avoid plotting charts for now.
+3. Print the final answer to stdout. If the result is a DataFrame or tabular data, you MUST print it strictly as a raw JSON string array using: print(df.to_json(orient='records', date_format='iso')). DO NOT wrap the json in markdown backticks inside your python print statements!
+4. If the result is a simple calculation or single value, print a clear sentence explaining the result instead. Avoid plotting charts for now.
 4. Make the script robust against potential Date parsing issues.
 5. If the user asks a general question NOT requiring data analysis, still write a tiny script that prints the answer to stdout so the engine can display it correctly.
 6. The user may ask follow-up questions. Refer to the previous history if they use pronouns like "it" or "that file".`;
@@ -537,7 +534,15 @@ if os.path.exists(v_dir): sys.path.insert(0, v_dir)
            if (error) {
                resolve(`❌ **Python Execution Error**:\n\`\`\`text\n${stderr || error.message}\n\`\`\``);
            } else {
-               resolve(`🔬 **Data Analysis Result**:\n\n${stdout}`);
+               let outputText = (stdout || '').trim();
+               // Automatically wrap raw JSON arrays in markdown for the UI table renderer
+               if (outputText.startsWith('[') && outputText.endsWith(']')) {
+                   try {
+                       JSON.parse(outputText);
+                       outputText = `\n\`\`\`json\n${outputText}\n\`\`\`\n`;
+                   } catch (e) { } // Fall back to raw text if parsing fails
+               }
+               resolve(`🔬 **Data Analysis Result**:\n\n${outputText}`);
            }
        });
     });
