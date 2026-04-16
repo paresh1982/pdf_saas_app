@@ -1051,23 +1051,31 @@ ${fileHeaders}
 
 User Instructions: "${ai_instructions}"
 
-Create a JSON mapping that renames matching semantic headers from each file into the unified headers requested by the user.
-Return ONLY valid JSON in this exact structure, where the top level keys are exactly the file basenames provided above:
+Task 1: Create a JSON mapping that renames matching semantic headers from each file into the unified headers requested by the user.
+Task 2: Identify the exact list of final output columns the user wants to keep, based on their instructions. If they don't explicitly specify, include all unified and relevant columns.
+
+Return ONLY valid JSON in this exact structure, where the top level keys in "mapping" are exactly the file basenames provided above:
 {
   "mapping": {
     "filename.csv": {
       "original_header_1": "unified_header_A",
       "original_header_2": "unified_header_B"
     }
-  }
+  },
+  "columns_to_keep": ["unified_header_A", "unified_header_B"]
 }
-If a file doesn't need mapping, don't include it. Do not include markdown code blocks, just raw JSON.`;
+If a file doesn't need mapping, don't include it in "mapping". Do not include markdown code blocks, just raw JSON.`;
 
         try {
           const responseText = await callGemini([{ text: prompt }]);
           const cleanedText = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
           const aiResult = JSON.parse(cleanedText);
           mapping = aiResult.mapping || null;
+          
+          if (aiResult.columns_to_keep && Array.isArray(aiResult.columns_to_keep) && aiResult.columns_to_keep.length > 0) {
+            // Override the columns array so the Python engine filters the output exactly as requested
+            req.body.columns = aiResult.columns_to_keep; 
+          }
         } catch (err) {
           console.warn('AI Mapping failed, proceeding without mapping', err);
         }
@@ -1077,7 +1085,7 @@ If a file doesn't need mapping, don't include it. Do not include markdown code b
     const config = {
       files: filePaths,
       sheet_name: sheet_name || 0,
-      columns: columns || [],
+      columns: req.body.columns || [],
       output_format: output_format || 'xlsx',
       output_filename: `Bulk_Merge_${Date.now()}`,
       mapping: mapping
