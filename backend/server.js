@@ -535,9 +535,14 @@ CRITICAL RULES:
     }
 
     // 3.5 Auto-correct hallucinated paths (e.g. /mnt/data/...) from chat history
+    // 3.5 Auto-correct hallucinated paths AND Check for Expired Render Disk Files
+    let missingFiles = [];
     if (docs && docs.length > 0) {
        for (const doc of docs) {
            const correctPath = path.join(__dirname, 'uploads', doc.filename).replace(/\\/g, '/');
+           if (!fs.existsSync(correctPath)) {
+               missingFiles.push(doc.original_name);
+           }
            // Match any string containing the original filename, including optional 'r' prefix, and replace the whole path
            const nameEscaped = doc.original_name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
            const regex = new RegExp(`r?['"][^'"]*?${nameEscaped}['"]`, 'gi');
@@ -549,6 +554,17 @@ CRITICAL RULES:
            pythonCode = pythonCode.replace(/r?['"]\/mnt\/data\/[^'"]+['"]/gi, `r"${correctPath}"`);
            pythonCode = pythonCode.replace(/r?['"]\/app\/data\/[^'"]+['"]/gi, `r"${correctPath}"`);
        }
+    }
+
+    // Abort execution if files were purged by Render's ephemeral disk system
+    if (missingFiles.length > 0 && docs.length === missingFiles.length) {
+        const errorMsg = `⚠️ **Session Expired:** The underlying data files (${missingFiles.join(', ')}) were purged from our server's temporary storage. Please start a new chat and re-upload the files to continue analysis.`;
+        
+        await pool.query(
+            'INSERT INTO messages (conversation_id, role, content, attachments) VALUES ($1, $2, $3, $4)',
+            [convId, 'model', errorMsg, JSON.stringify([{ type: 'python_code', code: '# Execution aborted due to missing physical files.\n# Please re-upload the dataset.' }])]
+        );
+        return res.json({ response: errorMsg, conversation_id: convId, python_code: '' });
     }
 
     // 4. Save and execute
