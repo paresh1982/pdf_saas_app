@@ -75,8 +75,8 @@ function PageContainer({ title, children }) {
 
 function AboutView() {
   return (
-    <PageContainer title="The DocJockey Mission">
-      <p>DocJockey isn't just a reader; it's a high-performance document engine architected for the speed of modern enterprise. Born from the need to turn stagnant PDFs into active intelligence, DocJockey leverages the world's most advanced document processing models to bridge the gap between unstructured data and structured success.</p>
+    <PageContainer title="The NexGen Mission">
+      <p>DocJockey isn't just a reader; it's a high-performance document engine architected for the speed of modern enterprise. Born from the need to turn stagnant PDFs into active intelligence, NexGen leverages the world's most advanced multimodal AI models to bridge the gap between unstructured data and structured success.</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-12">
         <div className="glass-panel p-6 border-white/10 group hover:border-primary/40 transition-all">
@@ -101,7 +101,7 @@ function PrivacyView() {
     <PageContainer title="Data Sovereignty">
       <section>
         <h3 className="text-white font-black uppercase tracking-[0.2em] mb-4 text-xs">1. Data Minimization</h3>
-        <p>DocJockey AI operates on a strictly "need-to-process" basis. Your documents are ephemeral: they are processed in high-security memory buffers and are never used to train global AI models without explicit, enterprise-level consent.</p>
+        <p>NexGen AI operates on a strictly "need-to-process" basis. Your documents are ephemeral: they are processed in high-security memory buffers and are never used to train global AI models without explicit, enterprise-level consent.</p>
       </section>
       <section>
         <h3 className="text-white font-black uppercase tracking-[0.2em] mb-4 text-xs">2. Encryption Protocol</h3>
@@ -124,7 +124,7 @@ function DisclaimerView() {
         </p>
       </div>
       <section className="space-y-4">
-        <p>DocJockey AI is provided on an "as-is" and "as-available" basis. We utilize probabilistic models to interpret complex document layouts; therefore, 100% accuracy in extraction cannot be guaranteed across all legacy or low-resolution scan formats.</p>
+        <p>DocJockey (NexGen AI) is provided on an "as-is" and "as-available" basis. We utilize probabilistic models to interpret complex document layouts; therefore, 100% accuracy in extraction cannot be guaranteed across all legacy or low-resolution scan formats.</p>
         <p>Liability for financial decisions, accounting entries, or legal interpretations made based on AI outputs remains solely with the human operator. We recommend manual verification of all extracted line items before committing to enterprise databases or financial filings.</p>
       </section>
     </PageContainer>
@@ -817,7 +817,7 @@ function BulkMergerView({ setView }) {
   const [files, setFiles] = useState([]);
   const [stage, setStage] = useState('selection'); // selection, analyzing, config, processing, result
   const [analysis, setAnalysis] = useState(null);
-  const [config, setConfig] = useState({ sheet: '', columns: [], output_format: 'xlsx' });
+  const [config, setConfig] = useState({ sheet: '', columns: [] });
   const [resultUrl, setResultUrl] = useState(null);
   const [error, setError] = useState(null);
 
@@ -857,7 +857,7 @@ function BulkMergerView({ setView }) {
         files: analysis.map(f => f.path),
         sheet_name: config.sheet,
         columns: config.columns,
-        output_format: config.output_format || 'xlsx'
+        output_format: 'xlsx'
       });
       setResultUrl(data.downloadUrl);
       setStage('result');
@@ -897,10 +897,10 @@ function BulkMergerView({ setView }) {
       <div className="glass-panel p-8 min-h-[400px] flex flex-col">
         {stage === 'selection' && (
           <div className="flex-1 flex flex-col">
-            <div className="mb-8 p-6 bg-secondary/10 border border-secondary/20 rounded-[2rem] flex items-center gap-6">
-               <Bot size={24} className="text-secondary shrink-0" />
-               <p className="text-sm font-bold text-foreground/80 leading-relaxed">
-                 Welcome to the <span className="text-secondary font-black">Bulk Merger</span>. This tool is designed for massive datasets. You can upload up to 10 files (CSV or Excel) and I will merge them into a single high-performance output using my high-speed enterprise backend.
+            <div className="mb-8 p-4 bg-secondary/5 border border-secondary/20 rounded-2xl flex items-start gap-4">
+               <Bot size={20} className="text-secondary shrink-0 mt-1" />
+               <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                 Welcome to the **Bulk Merger**. This tool is designed for massive datasets. You can upload up to 10 files (CSV or Excel) and I will merge them into a single high-performance output using my Python backend.
                </p>
             </div>
 
@@ -1007,26 +1007,7 @@ function BulkMergerView({ setView }) {
                           </button>
                         ))}
                       </div>
-                      <p className="text-sm text-foreground/40 font-bold mt-4 italic">Click to toggle columns. Only selected columns will be present in the final merge.</p>
-                    </div>
-
-                    {/* Output Format Selection */}
-                    <div className="space-y-3 mt-8 pt-6 border-t border-white/5">
-                        <label className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Output File Format</label>
-                        <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5 max-w-xs">
-                          <button 
-                            onClick={() => setConfig(prev => ({ ...prev, output_format: 'xlsx' }))}
-                            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${config.output_format === 'xlsx' ? 'bg-secondary text-white shadow-lg shadow-secondary/20' : 'text-foreground/30 hover:text-white'}`}
-                          >
-                            Excel (.xlsx)
-                          </button>
-                          <button 
-                            onClick={() => setConfig(prev => ({ ...prev, output_format: 'csv' }))}
-                            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${config.output_format === 'csv' ? 'bg-secondary text-white shadow-lg shadow-secondary/20' : 'text-foreground/30 hover:text-white'}`}
-                          >
-                            CSV (.csv)
-                          </button>
-                        </div>
+                      <p className="text-[9px] text-foreground/30 italic">Click to toggle columns. Only selected columns will be present in the final merge.</p>
                     </div>
                   </div>
                </div>
@@ -1035,9 +1016,9 @@ function BulkMergerView({ setView }) {
             <div className="mt-auto pt-8 border-t border-white/5">
               <button 
                 onClick={runMerge}
-                className="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-secondary/20 hover:brightness-110 transition-all flex items-center justify-center gap-3 text-sm"
+                className="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-secondary/20 hover:brightness-110 transition-all flex items-center justify-center gap-3"
               >
-                <Shuffle size={18} /> Execute Enterprise Merge
+                <Shuffle size={18} /> Execute Python Merge Engine
               </button>
             </div>
           </div>
@@ -1047,8 +1028,8 @@ function BulkMergerView({ setView }) {
           <div className="flex-1 flex flex-col items-center justify-center py-20">
             <div className="w-full max-w-sm">
                 <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-black text-secondary uppercase tracking-[0.2em]">Engaging Document Engine</span>
-                    <span className="text-xs font-black text-secondary animate-pulse uppercase tracking-[0.2em]">Processing...</span>
+                    <span className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Engaging Python Engine</span>
+                    <span className="text-[10px] font-black text-secondary animate-pulse uppercase tracking-[0.2em]">Processing...</span>
                 </div>
                 <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
                     <motion.div 
@@ -1058,7 +1039,7 @@ function BulkMergerView({ setView }) {
                         className="h-full bg-secondary"
                     />
                 </div>
-                <p className="text-xs text-foreground/50 text-center mt-6 uppercase tracking-[0.3em] font-black">
+                <p className="text-[10px] text-foreground/30 text-center mt-6 uppercase tracking-widest leading-relaxed">
                     Merging dataframes • Optimizing memory • Finalizing workbook
                 </p>
             </div>
@@ -1079,7 +1060,7 @@ function BulkMergerView({ setView }) {
                   download
                   className="flex-1 py-4 bg-green-600 text-white rounded-2xl font-black uppercase tracking-widest text-center shadow-xl shadow-green-500/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
                 >
-                  <Download size={18} /> Download (.{config.output_format.toUpperCase()})
+                  <Download size={18} /> Download (.xlsx)
                 </a>
                 <button 
                   onClick={() => { setStage('selection'); setFiles([]); setResultUrl(null); }}
