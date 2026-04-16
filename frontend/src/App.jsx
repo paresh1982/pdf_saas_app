@@ -1546,10 +1546,10 @@ export default function App() {
                           </div>
                           <div>
                             <p className="text-lg font-black text-white mb-1 uppercase tracking-[0.3em]">
-                              {uploadMode === 'single' ? 'Drop document' : 'Drop batch'}
+                              {isAnalysisMode ? 'Drop Data File' : (uploadMode === 'single' ? 'Drop document' : 'Drop batch')}
                             </p>
                             <p className="text-xs text-secondary font-black uppercase tracking-[0.4em] mb-4">
-                              Ready for DocJockey Speed
+                              {isAnalysisMode ? 'Excel / CSV Priority' : 'Ready for DocJockey Speed'}
                             </p>
 
                             <div 
@@ -1564,7 +1564,7 @@ export default function App() {
                                  }`}
                                >
                                  <Sparkles size={14} className={isAnalysisMode ? 'animate-pulse' : ''} />
-                                 {isAnalysisMode ? 'DocJockey Analysis Mode: ON' : 'Data Analyst Mode: OFF'}
+                                 {isAnalysisMode ? 'DocJockey Analysis Mode: ON' : 'DocJockey Analysis Mode: OFF'}
                                </button>
                             </div>
                           </div>
@@ -1585,6 +1585,7 @@ export default function App() {
                             setAttachedFiles={setAttachedFiles}
                             isLoading={isLoading}
                             isEmbedded={true}
+                            isAnalysisMode={isAnalysisMode}
                          />
                       </div>
                     </motion.div>
@@ -1665,7 +1666,8 @@ function ChatInputArea({
   attachedFiles, 
   setAttachedFiles,
   isLoading,
-  isEmbedded = false
+  isEmbedded = false,
+  isAnalysisMode = false
 }) {
   return (
     <div className="w-full">
@@ -1697,7 +1699,7 @@ function ChatInputArea({
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isEmbedded ? "Ask DocJockey to analyze or extract..." : "Send a message..."}
+            placeholder={isAnalysisMode ? "e.g., Clean this data, plot revenue by region..." : (isEmbedded ? "Ask DocJockey to analyze or extract..." : "Send a message...")}
             rows={1}
             className="w-full bg-transparent px-6 py-5 text-sm outline-none resize-none placeholder:text-foreground/20 max-h-56 leading-relaxed font-medium"
             style={{ minHeight: '64px' }}
