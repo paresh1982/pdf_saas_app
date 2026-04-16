@@ -1205,6 +1205,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
   const [activeTool, setActiveTool] = useState(null);
   const [uploadMode, setUploadMode] = useState('single');
+  const [isAnalysisMode, setIsAnalysisMode] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -1282,7 +1283,8 @@ export default function App() {
     setAttachedFiles([]);
 
     try {
-      const { data } = await axios.post(`${API}/chat`, formData, {
+      const endpoint = isAnalysisMode ? `${API}/analyze-data` : `${API}/chat`;
+      const { data } = await axios.post(endpoint, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -1546,9 +1548,25 @@ export default function App() {
                             <p className="text-lg font-black text-white mb-1 uppercase tracking-[0.3em]">
                               {uploadMode === 'single' ? 'Drop document' : 'Drop batch'}
                             </p>
-                            <p className="text-xs text-secondary font-black uppercase tracking-[0.4em]">
+                            <p className="text-xs text-secondary font-black uppercase tracking-[0.4em] mb-4">
                               Ready for DocJockey Speed
                             </p>
+
+                            <div 
+                              className="mt-2" 
+                              onClick={(e) => { e.stopPropagation(); setIsAnalysisMode(!isAnalysisMode); }}
+                            >
+                               <button 
+                                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 mx-auto ${
+                                   isAnalysisMode 
+                                     ? 'bg-primary text-white shadow-lg shadow-primary/20 border border-primary text-xs'
+                                     : 'bg-black/30 text-primary/50 border border-primary/20 hover:border-primary/50'
+                                 }`}
+                               >
+                                 <Sparkles size={14} className={isAnalysisMode ? 'animate-pulse' : ''} />
+                                 {isAnalysisMode ? 'DocJockey Analysis Mode: ON' : 'Data Analyst Mode: OFF'}
+                               </button>
+                            </div>
                           </div>
                         </div>
                       </div>
