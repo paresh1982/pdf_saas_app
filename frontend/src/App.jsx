@@ -773,9 +773,14 @@ function DynamicTable({ data, raw, convId }) {
 // ─── Chat Message Bubble ─────────────────────────────────
 function ChatMessage({ msg }) {
   const isUser = msg.role === 'user';
+  const [showCode, setShowCode] = React.useState(false);
+  
   const attachments = (() => {
     try { return JSON.parse(msg.attachments || '[]'); } catch { return []; }
   })();
+
+  const pythonAttachment = attachments.find(a => a.type === 'python_code');
+  const fileAttachments = attachments.filter(a => typeof a === 'string');
 
   return (
     <motion.div
@@ -789,9 +794,9 @@ function ChatMessage({ msg }) {
         {isUser ? <User size={20} /> : <Zap size={20} className={!isUser ? "text-primary" : ""} />}
       </div>
       <div className={`w-full max-w-[85%] ${isUser ? 'items-end' : 'items-start'}`}>
-        {attachments.length > 0 && (
+        {fileAttachments.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
-            {attachments.map((name, i) => (
+            {fileAttachments.map((name, i) => (
               <span key={i} className="flex items-center gap-2 text-[10px] bg-primary/10 text-primary px-3 py-1.5 rounded-xl font-black uppercase tracking-widest border border-primary/20 shadow-sm">
                 <FileText size={12} /> {name}
               </span>
@@ -802,7 +807,37 @@ function ChatMessage({ msg }) {
           {isUser ? (
             <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{msg.content}</p>
           ) : (
-            <div>{renderContent(msg.content, msg.conversation_id)}</div>
+            <div className="space-y-4">
+              <div className="font-outfit">{renderContent(msg.content, msg.conversation_id)}</div>
+              
+              {pythonAttachment && (
+                <div className="pt-2 border-t border-white/5">
+                  <button 
+                    onClick={() => setShowCode(!showCode)}
+                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-secondary hover:text-white transition-colors"
+                  >
+                    <Code size={12} />
+                    {showCode ? 'Hide Analysis Code' : 'Show Analysis Code'}
+                    {showCode ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  </button>
+                  
+                  <AnimatePresence>
+                    {showCode && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden mt-3"
+                      >
+                        <div className="bg-black/40 rounded-xl p-4 border border-white/5 font-mono text-[11px] text-foreground/80 overflow-x-auto whitespace-pre">
+                          <code>{pythonAttachment.code}</code>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
           )}
         </div>
         <p className="text-[10px] text-foreground/20 mt-2 px-2 font-black uppercase tracking-widest">
@@ -1297,7 +1332,8 @@ export default function App() {
       const aiMsg = {
         role: 'model',
         content: data.response,
-        attachments: '[]',
+        attachments: data.python_code ? JSON.stringify([{ type: 'python_code', code: data.python_code }]) : '[]',
+        python_code: data.python_code, // Store locally as well
         created_at: new Date().toISOString(),
       };
       setMessages(prev => [...prev, aiMsg]);

@@ -540,19 +540,20 @@ if os.path.exists(v_dir): sys.path.insert(0, v_dir)
 
     let finalResult = await execPromise;
 
-    // Add generating code as a collapsible section for debugging/transparency
-    finalResult += `\n\n<details><summary>View Python Code</summary>\n\n\`\`\`python\n${pythonCode}\n\`\`\`\n</details>`;
-
     // Cleanup
     try { fs.unlinkSync(tempScriptPath); } catch (e) {}
     // req.files are NO LONGER unlinked here to allow follow-up questions in the same conversation.
 
     await pool.query(
         'INSERT INTO messages (conversation_id, role, content, attachments) VALUES ($1, $2, $3, $4)',
-        [convId, 'model', finalResult, '[]']
+        [convId, 'model', finalResult, JSON.stringify([{ type: 'python_code', code: pythonCode }])]
     );
 
-    res.json({ response: finalResult, conversation_id: convId });
+    res.json({ 
+        response: finalResult, 
+        conversation_id: convId,
+        python_code: pythonCode 
+    });
   } catch (err) {
     // We don't unlink data files on error either, to allow troubleshooting/retries.
     res.status(500).json({ error: 'Analysis execution failed', details: err.message });
