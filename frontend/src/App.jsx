@@ -1285,10 +1285,17 @@ export default function App() {
   // Load messages when conversation changes
   useEffect(() => {
     if (!activeConvId) { setMessages([]); return; }
+    
+    // Find conversation to set the correct mode
+    const currentConv = conversations.find(c => c.id === activeConvId);
+    if (currentConv) {
+      setIsAnalysisMode(currentConv.type === 'analysis');
+    }
+
     axios.get(`${API}/conversations/${activeConvId}/messages`)
       .then(r => setMessages(r.data))
       .catch(() => {});
-  }, [activeConvId]);
+  }, [activeConvId, conversations]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -1328,7 +1335,11 @@ export default function App() {
     setAttachedFiles([]);
 
     try {
-      const endpoint = isAnalysisMode ? `${API}/analyze-data` : `${API}/chat`;
+      // Determine endpoint based on conversation type
+      const currentConv = conversations.find(c => c.id === activeConvId);
+      const isAnalysis = currentConv?.type === 'analysis' || isAnalysisMode;
+      const endpoint = isAnalysis ? `${API}/analyze-data` : `${API}/chat`;
+
       const { data } = await axios.post(endpoint, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -1436,7 +1447,11 @@ export default function App() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <MessageSquarePlus size={13} className="shrink-0" />
+                          {conv.type === 'analysis' ? (
+                            <Zap size={13} className="shrink-0 text-primary" fill="currentColor" />
+                          ) : (
+                            <FileSpreadsheet size={13} className="shrink-0 opacity-40" />
+                          )}
                           <span className="text-[11px] font-medium truncate">{conv.title}</span>
                         </div>
                         <button
@@ -1555,31 +1570,48 @@ export default function App() {
                         <LogoDJ size={52} />
                       </div>
                       <h2 className="text-2xl font-black mb-2 tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
-                      <p className="text-foreground/60 text-sm mb-4 leading-relaxed max-w-sm mx-auto font-medium">
-                        Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
-                      </p>
-                      <button
-                        onClick={() => setCurrentView('howto')}
-                        className="text-[10px] font-black text-secondary hover:text-white uppercase tracking-[0.3em] transition-colors mb-8 flex items-center gap-2 mx-auto group"
-                      >
-                        <HelpCircle size={12} className="group-hover:rotate-12 transition-transform" />
-                        Click to know more
-                      </button>
+                      
+                      {/* --- Welcome State Mode Selection --- */}
+                      <div className="flex flex-col md:flex-row gap-6 max-w-4xl mx-auto mb-12">
+                        {/* Master Extractor Card */}
+                        <div 
+                          onClick={() => setIsAnalysisMode(false)}
+                          className={`flex-1 p-8 rounded-[2.5rem] cursor-pointer transition-all duration-500 border-2 group ${
+                            !isAnalysisMode 
+                            ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-105' 
+                            : 'bg-surface/30 border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 hover:border-primary/30'
+                          }`}
+                        >
+                           <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all border ${
+                             !isAnalysisMode ? 'bg-primary text-white shadow-lg' : 'bg-surface border-white/10 text-foreground/40'
+                           }`}>
+                             <Layout size={32} />
+                           </div>
+                           <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Master Extractor</h3>
+                           <p className="text-xs text-foreground/40 font-medium leading-relaxed uppercase tracking-widest">
+                             Multimodal table detection • Batch merging • PDF to structured data
+                           </p>
+                        </div>
 
-                      {/* --- Upload Tabs --- */}
-                      <div className="flex bg-surface/50 p-1.5 rounded-2xl border border-white/5 mb-8 max-w-md mx-auto">
-                        <button 
-                          onClick={() => { setUploadMode('single'); setAttachedFiles([]); }}
-                          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
+                        {/* Data Analyst Card */}
+                        <div 
+                          onClick={() => setIsAnalysisMode(true)}
+                          className={`flex-1 p-8 rounded-[2.5rem] cursor-pointer transition-all duration-500 border-2 group ${
+                            isAnalysisMode 
+                            ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-105' 
+                            : 'bg-surface/30 border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 hover:border-primary/30'
+                          }`}
                         >
-                          <FileText size={14} /> Single document
-                        </button>
-                        <button 
-                          onClick={() => { setUploadMode('multiple'); setAttachedFiles([]); }}
-                          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'multiple' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
-                        >
-                          <Layout size={14} /> Batch processor
-                        </button>
+                           <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all border ${
+                             isAnalysisMode ? 'bg-primary text-white shadow-lg' : 'bg-surface border-white/10 text-foreground/40'
+                           }`}>
+                             <Zap size={32} fill={isAnalysisMode ? 'currentColor' : 'none'} />
+                           </div>
+                           <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Visual Analyst</h3>
+                           <p className="text-xs text-foreground/40 font-medium leading-relaxed uppercase tracking-widest">
+                             Python engine • Data cleaning • Predictive analytics • Visualization
+                           </p>
+                        </div>
                       </div>
 
                       <div
@@ -1596,8 +1628,6 @@ export default function App() {
                             </p>
                             <p className="text-xs text-secondary font-black uppercase tracking-[0.4em] mb-4">
                               {isAnalysisMode ? 'Excel / CSV Priority' : 'Ready for DocJockey Speed'}
-                            </p>
-
                             </p>
                           </div>
                         </div>
@@ -1707,19 +1737,6 @@ function ChatInputArea({
 }) {
   return (
     <div className="w-full">
-      <div className="flex justify-end mb-2 px-4 italic">
-        <button 
-          onClick={() => setIsAnalysisMode(!isAnalysisMode)}
-          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border ${
-            isAnalysisMode 
-            ? 'bg-primary/20 text-primary border-primary/30 shadow-lg shadow-primary/10' 
-            : 'bg-surface/50 text-foreground/30 border-white/5 hover:text-white hover:border-white/10'
-          }`}
-        >
-          <Zap size={10} fill={isAnalysisMode ? "currentColor" : "none"} />
-          {isAnalysisMode ? 'Deep Analysis Mode' : 'Switch to Analysis Mode'}
-        </button>
-      </div>
       {attachedFiles.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
           {attachedFiles.map((file, i) => (

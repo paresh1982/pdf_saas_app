@@ -424,8 +424,8 @@ app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
       convId = 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
       const title = 'Data Analysis: ' + (message?.substring(0, 40) || 'New Session');
       await pool.query(
-        'INSERT INTO conversations (id, user_id, title) VALUES ($1, $2, $3)',
-        [convId, req.userId, title]
+        'INSERT INTO conversations (id, user_id, title, type) VALUES ($1, $2, $3, $4)',
+        [convId, req.userId, title, 'analysis']
       );
     }
     
@@ -571,8 +571,8 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
       convId = 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
       const title = message?.substring(0, 60) || 'New Chat';
       await pool.query(
-        'INSERT INTO conversations (id, user_id, title) VALUES ($1, $2, $3)',
-        [convId, req.userId, title]
+        'INSERT INTO conversations (id, user_id, title, type) VALUES ($1, $2, $3, $4)',
+        [convId, req.userId, title, 'chat']
       );
     }
 
