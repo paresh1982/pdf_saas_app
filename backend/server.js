@@ -381,13 +381,45 @@ app.delete('/api/conversations/:id', async (req, res) => {
   }
 });
 
-// ─── DATA ANALYSIS ENDPOINT (Phase 1 Stub) ───────────────
+// Helper to extract top 5 rows for AI context
+async function getSchemaContext(file) {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const mimeType = file.mimetype || '';
+    const originalName = file.originalname?.toLowerCase() || '';
+    
+    if (mimeType === 'text/csv' || originalName.endsWith('.csv')) {
+      await workbook.csv.readFile(file.path);
+    } else {
+      await workbook.xlsx.readFile(file.path);
+    }
+    
+    let schemaText = `FILE_PATH: ${path.resolve(file.path)}\n`;
+    schemaText += `FILE_NAME: ${file.originalname}\n`;
+    
+    workbook.eachSheet(sheet => {
+      schemaText += `--- SHEET: ${sheet.name} ---\n`;
+      let rowCount = 0;
+      sheet.eachRow((row, rowNum) => {
+        if (rowCount >= 5) return;
+        const values = Array.isArray(row.values) ? row.values.slice(1) : Object.values(row.values);
+        schemaText += `Row ${rowNum}: | ${values.filter(v => v !== undefined).join(' | ')} |\n`;
+        rowCount++;
+      });
+      schemaText += `\n`;
+    });
+    return schemaText;
+  } catch (err) {
+    return `FILE_PATH: ${path.resolve(file.path)}\nFILE_NAME: ${file.originalname}\n(Failed to parse schema: ${err.message})`;
+  }
+}
+
+// ─── DATA ANALYSIS ENDPOINT (Phase 2) ───────────────
 app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
   try {
     const { message, conversation_id } = req.body;
     let convId = conversation_id;
 
-    // Auto-create conversation if none provided
     if (!convId) {
       convId = 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
       const title = 'Data Analysis: ' + (message?.substring(0, 40) || 'New Session');
@@ -397,30 +429,89 @@ app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
       );
     }
     
-    // Save user message
     await pool.query(
         'INSERT INTO messages (conversation_id, role, content, attachments) VALUES ($1, $2, $3, $4)',
         [convId, 'user', message || '', JSON.stringify((req.files || []).map(f => f.originalname))]
     );
 
-    // Mock response for Phase 1
-    const stubResponse = `🔬 **Data Analyst Mode Activated!**\n\nI have securely received your files and your prompt: _"${message}"_.\n\n_Phase 1 routing successful. Python execution engine binding pending..._`;
+    // 1. Gather Context
+    let filesContext = "";
+    if (req.files) {
+      for (const file of req.files) {
+        const schema = await getSchemaContext(file);
+        if (schema) filesContext += schema + "\n\n";
+      }
+    }
 
-    await pool.query(
-        'INSERT INTO messages (conversation_id, role, content, attachments) VALUES ($1, $2, $3, $4)',
-        [convId, 'model', stubResponse, '[]']
-    );
+    // 2. Call Gemini
+    const systemPrompt = `You are an expert Python Pandas Data Analyst. 
+The user wants to analyze some data files. 
+You will be provided with the user's prompt and a schema overview of the files (including their absolute FILE_PATH).
 
-    // Cleanup uploaded files immediately for the stub
+YOUR MISSION:
+Write a Python script that reads the files from the provided FILE_PATHs using pandas, performs the exact analysis the user requested, and prints the result to stdout using clean, formatted text.
+
+CRITICAL RULES:
+1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler before or after the code block.
+2. DO NOT use generic filenames. You must use the EXACT absolute paths provided in the FILE_PATH lines. Always use raw strings for paths (e.g. r"C:\\path").
+3. Print the final answer to stdout. If the user asks for a calculation, print a sentence explaining the result. Avoid plotting charts for now, just print the text/data.
+4. Make the script robust against potential Date parsing issues.`;
+
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      systemInstruction: systemPrompt,
+      contents: [{ role: 'user', parts: [{ text: `User Prompt: ${message}\n\nFiles Provided:\n${filesContext}` }] }]
+    });
+
+    const aiText = response.text || '';
+    
+    // 3. Extract Code
+    const codeMatch = aiText.match(/```python\s([\s\S]*?)```/);
+    if (!codeMatch) {
+       throw new Error("AI failed to generate a valid Python script. Raw output: " + aiText);
+    }
+    
+    const pythonCode = codeMatch[1].trim();
+
+    // 4. Save and execute
+    const { exec } = require('child_process');
+    // Save inside scripts/ to keep it clean
+    const tempScriptPath = path.join(__dirname, 'scripts', `temp_analysis_${Date.now()}.py`);
+    fs.writeFileSync(tempScriptPath, pythonCode);
+
+    const execPromise = new Promise((resolve) => {
+       exec(`python "${tempScriptPath}"`, { timeout: 45000 }, (error, stdout, stderr) => {
+           if (error) {
+               resolve(`❌ **Python Execution Error**:\n\`\`\`text\n${stderr || error.message}\n\`\`\``);
+           } else {
+               resolve(`🔬 **Data Analysis Result**:\n\n${stdout}`);
+           }
+       });
+    });
+
+    let finalResult = await execPromise;
+
+    // Add generating code as a collapsible section for debugging/transparency
+    finalResult += `\n\n<details><summary>View Python Code</summary>\n\n\`\`\`python\n${pythonCode}\n\`\`\`\n</details>`;
+
+    // Cleanup
+    try { fs.unlinkSync(tempScriptPath); } catch (e) {}
     if (req.files) {
       req.files.forEach(f => {
           try { fs.unlinkSync(f.path); } catch(e) {}
       });
     }
 
-    res.json({ response: stubResponse, conversation_id: convId });
+    await pool.query(
+        'INSERT INTO messages (conversation_id, role, content, attachments) VALUES ($1, $2, $3, $4)',
+        [convId, 'model', finalResult, '[]']
+    );
+
+    res.json({ response: finalResult, conversation_id: convId });
   } catch (err) {
-    res.status(500).json({ error: 'Analysis routing failed', details: err.message });
+    if (req.files) { req.files.forEach(f => { try { fs.unlinkSync(f.path); } catch(e) {} }); }
+    res.status(500).json({ error: 'Analysis execution failed', details: err.message });
   }
 });
 
