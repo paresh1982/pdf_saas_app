@@ -900,7 +900,7 @@ function BulkMergerView({ setView }) {
             <div className="mb-8 p-4 bg-secondary/5 border border-secondary/20 rounded-2xl flex items-start gap-4">
                <Bot size={20} className="text-secondary shrink-0 mt-1" />
                <p className="text-sm text-foreground/80 leading-relaxed font-medium">
-                 Welcome to the **Bulk Merger**. This tool is designed for massive datasets. You can upload up to 10 files (CSV or Excel) and I will merge them into a single high-performance output using my Python backend.
+                 Welcome to the **Bulk Merger**. This tool is designed for massive datasets. You can upload up to 10 files (CSV or Excel) and I will merge them into a single high-performance output using our enterprise backend.
                </p>
             </div>
 
@@ -1018,7 +1018,7 @@ function BulkMergerView({ setView }) {
                 onClick={runMerge}
                 className="w-full py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-secondary/20 hover:brightness-110 transition-all flex items-center justify-center gap-3"
               >
-                <Shuffle size={18} /> Execute Python Merge Engine
+                <Shuffle size={18} /> Execute Enterprise Merge
               </button>
             </div>
           </div>
@@ -1028,7 +1028,7 @@ function BulkMergerView({ setView }) {
           <div className="flex-1 flex flex-col items-center justify-center py-20">
             <div className="w-full max-w-sm">
                 <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Engaging Python Engine</span>
+                    <span className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Engaging Document Engine</span>
                     <span className="text-[10px] font-black text-secondary animate-pulse uppercase tracking-[0.2em]">Processing...</span>
                 </div>
                 <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
