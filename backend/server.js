@@ -483,10 +483,19 @@ CRITICAL RULES:
     const { exec } = require('child_process');
     // Save inside scripts/ to keep it clean
     const tempScriptPath = path.join(__dirname, 'scripts', `temp_analysis_${Date.now()}.py`);
-    fs.writeFileSync(tempScriptPath, pythonCode);
+    
+    // Bootstrap Python to find the vendored libraries in backend/python_libs
+    const bootstrap = `import sys, os
+sc_dir = os.path.dirname(os.path.abspath(__file__))
+v_dir = os.path.abspath(os.path.join(sc_dir, '..', 'python_libs'))
+if os.path.exists(v_dir): sys.path.insert(0, v_dir)
+
+`;
+    fs.writeFileSync(tempScriptPath, bootstrap + pythonCode);
 
     const execPromise = new Promise((resolve) => {
-       exec(`python "${tempScriptPath}"`, { timeout: 45000 }, (error, stdout, stderr) => {
+       // Use python3 to match the Merger logic and Render environment
+       exec(`python3 "${tempScriptPath}"`, { timeout: 45000 }, (error, stdout, stderr) => {
            if (error) {
                resolve(`❌ **Python Execution Error**:\n\`\`\`text\n${stderr || error.message}\n\`\`\``);
            } else {
