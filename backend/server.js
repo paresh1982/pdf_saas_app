@@ -483,7 +483,7 @@ Write a Python script that reads the files from the provided FILE_PATHs using pa
 
 CRITICAL RULES:
 1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler before or after the code block.
-2. DO NOT use generic filenames. You must use the EXACT absolute paths provided in the FILE_PATH lines. Always use raw strings for paths (e.g. r"C:\\path").
+2. CRITICAL PATH RULE: NEVER use hallucinated or generic paths like '/mnt/data/...'. You MUST use the exact absolute paths provided in the "FILE_PATH:" lines below. Always use raw strings (e.g., r"C:\path\to\file"). If you use /mnt/data, the system will crash!
 3. Print the final answer to stdout. If the result is a DataFrame or tabular data, you MUST print it as JSON wrapped in a markdown code block so the frontend can render it beautifully in a table. For example: 
    print("\`\`\`json")
    print(df.to_json(orient='records', date_format='iso'))
