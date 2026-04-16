@@ -75,8 +75,8 @@ function PageContainer({ title, children }) {
 
 function AboutView() {
   return (
-    <PageContainer title="The NexGen Mission">
-      <p>DocJockey isn't just a reader; it's a high-performance document engine architected for the speed of modern enterprise. Born from the need to turn stagnant PDFs into active intelligence, NexGen leverages the world's most advanced multimodal AI models to bridge the gap between unstructured data and structured success.</p>
+    <PageContainer title="The DocJockey Mission">
+      <p>DocJockey isn't just a reader; it's a high-performance document engine architected for the speed of modern enterprise. Born from the need to turn stagnant PDFs into active intelligence, DocJockey leverages the world's most advanced document processing models to bridge the gap between unstructured data and structured success.</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-12">
         <div className="glass-panel p-6 border-white/10 group hover:border-primary/40 transition-all">
@@ -101,7 +101,7 @@ function PrivacyView() {
     <PageContainer title="Data Sovereignty">
       <section>
         <h3 className="text-white font-black uppercase tracking-[0.2em] mb-4 text-xs">1. Data Minimization</h3>
-        <p>NexGen AI operates on a strictly "need-to-process" basis. Your documents are ephemeral: they are processed in high-security memory buffers and are never used to train global AI models without explicit, enterprise-level consent.</p>
+        <p>DocJockey AI operates on a strictly "need-to-process" basis. Your documents are ephemeral: they are processed in high-security memory buffers and are never used to train global AI models without explicit, enterprise-level consent.</p>
       </section>
       <section>
         <h3 className="text-white font-black uppercase tracking-[0.2em] mb-4 text-xs">2. Encryption Protocol</h3>
@@ -124,7 +124,7 @@ function DisclaimerView() {
         </p>
       </div>
       <section className="space-y-4">
-        <p>DocJockey (NexGen AI) is provided on an "as-is" and "as-available" basis. We utilize probabilistic models to interpret complex document layouts; therefore, 100% accuracy in extraction cannot be guaranteed across all legacy or low-resolution scan formats.</p>
+        <p>DocJockey AI is provided on an "as-is" and "as-available" basis. We utilize probabilistic models to interpret complex document layouts; therefore, 100% accuracy in extraction cannot be guaranteed across all legacy or low-resolution scan formats.</p>
         <p>Liability for financial decisions, accounting entries, or legal interpretations made based on AI outputs remains solely with the human operator. We recommend manual verification of all extracted line items before committing to enterprise databases or financial filings.</p>
       </section>
     </PageContainer>

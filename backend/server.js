@@ -181,7 +181,7 @@ app.get('/api/admin/env', async (req, res) => {
 });
 
 // ─── Gemini Engine ───────────────────────────────────────
-const SYSTEM_PROMPT = `You are NexGen AI — a universal document intelligence assistant.
+const SYSTEM_PROMPT = `You are DocJockey AI — a universal document intelligence assistant.
 
 You can analyze ANY type of PDF document: invoices, contracts, white papers, 
 technical manuals, lab reports, resumes, cheat sheets, academic papers, and more.
@@ -336,7 +336,7 @@ async function callGemini(contents, customSystemPrompt = null) {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'NexGen AI v3.0', version: '3.0.0' });
+  res.json({ status: 'ok', service: 'DocJockey Document Engine', version: '1.0.0' });
 });
 
 // ─── GET Conversations ───────────────────────────────────
