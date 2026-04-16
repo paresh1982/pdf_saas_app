@@ -791,10 +791,17 @@ function ChatMessage({ msg }) {
       animate={{ opacity: 1, y: 0 }}
       className={`flex gap-4 ${isUser ? 'flex-row-reverse' : ''}`}
     >
-      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-1 shadow-lg transition-transform hover:scale-105 ${
-        isUser ? 'bg-primary text-white' : 'bg-surface border border-white/10 text-foreground'
-      }`}>
-        {isUser ? <User size={20} /> : <Zap size={20} className={!isUser ? "text-primary" : ""} />}
+      <div className="flex flex-col items-center gap-2 shrink-0">
+        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mt-1 shadow-lg transition-transform hover:scale-105 ${
+          isUser ? 'bg-primary text-white' : 'bg-surface border border-white/10 text-foreground'
+        }`}>
+          {isUser ? <User size={20} /> : <Zap size={20} fill={!isUser && pythonAttachment ? "currentColor" : "none"} className={!isUser ? "text-primary" : ""} />}
+        </div>
+        {!isUser && pythonAttachment && (
+          <span className="text-[7px] font-black bg-primary text-white px-1.5 py-0.5 rounded-md uppercase tracking-wider animate-pulse">
+            Analyst
+          </span>
+        )}
       </div>
       <div className={`w-full max-w-[85%] ${isUser ? 'items-end' : 'items-start'}`}>
         {fileAttachments.length > 0 && (
@@ -1591,21 +1598,7 @@ export default function App() {
                               {isAnalysisMode ? 'Excel / CSV Priority' : 'Ready for DocJockey Speed'}
                             </p>
 
-                            <div 
-                              className="mt-2" 
-                              onClick={(e) => { e.stopPropagation(); setIsAnalysisMode(!isAnalysisMode); }}
-                            >
-                               <button 
-                                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 mx-auto ${
-                                   isAnalysisMode 
-                                     ? 'bg-primary text-white shadow-lg shadow-primary/20 border border-primary text-xs'
-                                     : 'bg-black/30 text-primary/50 border border-primary/20 hover:border-primary/50'
-                                 }`}
-                               >
-                                 <Sparkles size={14} className={isAnalysisMode ? 'animate-pulse' : ''} />
-                                 {isAnalysisMode ? 'DocJockey Analysis Mode: ON' : 'DocJockey Analysis Mode: OFF'}
-                               </button>
-                            </div>
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -1625,6 +1618,7 @@ export default function App() {
                             isLoading={isLoading}
                             isEmbedded={true}
                             isAnalysisMode={isAnalysisMode}
+                            setIsAnalysisMode={setIsAnalysisMode}
                          />
                       </div>
                     </motion.div>
@@ -1679,6 +1673,8 @@ export default function App() {
                       attachedFiles={attachedFiles}
                       setAttachedFiles={setAttachedFiles}
                       isLoading={isLoading}
+                      isAnalysisMode={isAnalysisMode}
+                      setIsAnalysisMode={setIsAnalysisMode}
                    />
                 </div>
               </motion.div>
@@ -1706,10 +1702,24 @@ function ChatInputArea({
   setAttachedFiles,
   isLoading,
   isEmbedded = false,
-  isAnalysisMode = false
+  isAnalysisMode = false,
+  setIsAnalysisMode
 }) {
   return (
     <div className="w-full">
+      <div className="flex justify-end mb-2 px-4 italic">
+        <button 
+          onClick={() => setIsAnalysisMode(!isAnalysisMode)}
+          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border ${
+            isAnalysisMode 
+            ? 'bg-primary/20 text-primary border-primary/30 shadow-lg shadow-primary/10' 
+            : 'bg-surface/50 text-foreground/30 border-white/5 hover:text-white hover:border-white/10'
+          }`}
+        >
+          <Zap size={10} fill={isAnalysisMode ? "currentColor" : "none"} />
+          {isAnalysisMode ? 'Deep Analysis Mode' : 'Switch to Analysis Mode'}
+        </button>
+      </div>
       {attachedFiles.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
           {attachedFiles.map((file, i) => (
