@@ -21,6 +21,7 @@ def process_batch(config_path):
         selected_columns = config.get('columns', [])
         output_format = config.get('output_format', 'xlsx')
         output_filename = config.get('output_filename', 'merged_output')
+        mapping = config.get('mapping') or {}
         
         dfs = []
         for file_path in file_paths:
@@ -43,6 +44,11 @@ def process_batch(config_path):
                     print(f"ERROR_FILE: Unsupported format - {file_path}", file=sys.stderr)
                     continue
                 
+                # Apply AI Mapping if available for this specific file
+                basename = os.path.basename(file_path)
+                if basename in mapping and mapping[basename]:
+                    df = df.rename(columns=mapping[basename])
+
                 # Filter columns if specified
                 if selected_columns:
                     # Case-insensitive column matching fallback

@@ -1032,15 +1032,55 @@ app.post('/api/batch/analyze', upload.array('files', 10), async (req, res) => {
 // ─── POWER TOOL: Bulk File Execute (Python Hand-off) ───
 app.post('/api/batch/execute', async (req, res) => {
   try {
-    const { files, sheet_name, columns, output_format } = req.body;
+    const { files, sheet_name, columns, output_format, mode, ai_instructions } = req.body;
     if (!files || files.length === 0) return res.status(400).json({ error: 'No files to process' });
 
+    // The files array now contains full objects { path, name, columns, sheets }
+    const filePaths = typeof files[0] === 'object' ? files.map(f => f.path) : files;
+    let mapping = null;
+
+    if (mode === 'ai' && ai_instructions) {
+      if (typeof files[0] !== 'object' || !files[0].columns) {
+         console.warn('AI Mapping requires full file objects with columns. Proceeding without mapping.');
+      } else {
+        const fileHeaders = files.map(f => `File: ${path.basename(f.path)}\nHeaders: ${f.columns.join(', ')}`).join('\n\n');
+        const prompt = `You are DocJockey AI.
+Analyze the following files and their column headers:
+
+${fileHeaders}
+
+User Instructions: "${ai_instructions}"
+
+Create a JSON mapping that renames matching semantic headers from each file into the unified headers requested by the user.
+Return ONLY valid JSON in this exact structure, where the top level keys are exactly the file basenames provided above:
+{
+  "mapping": {
+    "filename.csv": {
+      "original_header_1": "unified_header_A",
+      "original_header_2": "unified_header_B"
+    }
+  }
+}
+If a file doesn't need mapping, don't include it. Do not include markdown code blocks, just raw JSON.`;
+
+        try {
+          const responseText = await callGemini([{ text: prompt }]);
+          const cleanedText = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
+          const aiResult = JSON.parse(cleanedText);
+          mapping = aiResult.mapping || null;
+        } catch (err) {
+          console.warn('AI Mapping failed, proceeding without mapping', err);
+        }
+      }
+    }
+
     const config = {
-      files,
+      files: filePaths,
       sheet_name: sheet_name || 0,
       columns: columns || [],
       output_format: output_format || 'xlsx',
-      output_filename: `Bulk_Merge_${Date.now()}`
+      output_filename: `Bulk_Merge_${Date.now()}`,
+      mapping: mapping
     };
 
     const configPath = path.join(UPLOAD_DIR, `config_${Date.now()}.json`);

@@ -817,7 +817,7 @@ function BulkMergerView({ setView }) {
   const [files, setFiles] = useState([]);
   const [stage, setStage] = useState('selection'); // selection, analyzing, config, processing, result
   const [analysis, setAnalysis] = useState(null);
-  const [config, setConfig] = useState({ sheet: '', columns: [], output_format: 'xlsx' });
+  const [config, setConfig] = useState({ sheet: '', columns: [], mode: 'strict', ai_instructions: '', output_format: 'xlsx' });
   const [resultUrl, setResultUrl] = useState(null);
   const [error, setError] = useState(null);
 
@@ -841,7 +841,10 @@ function BulkMergerView({ setView }) {
       
       setConfig({ 
         sheet: sheets[0] || 0, 
-        columns: commonColumns 
+        columns: commonColumns,
+        mode: 'strict',
+        ai_instructions: '',
+        output_format: 'xlsx'
       });
       setStage('config');
     } catch (err) {
@@ -854,9 +857,11 @@ function BulkMergerView({ setView }) {
     setStage('processing');
     try {
       const { data } = await axios.post(`${API}/batch/execute`, {
-        files: analysis.map(f => f.path),
+        files: analysis,
         sheet_name: config.sheet,
         columns: config.columns,
+        mode: config.mode || 'strict',
+        ai_instructions: config.ai_instructions,
         output_format: config.output_format || 'xlsx'
       });
       setResultUrl(data.downloadUrl);
@@ -985,29 +990,81 @@ function BulkMergerView({ setView }) {
                       </div>
                     )}
 
-                    {/* Column Selection */}
-                    <div className="space-y-3 mt-4">
-                      <label className="text-[10px] font-black text-secondary uppercase tracking-widest">Columns to Merge</label>
-                      <div className="flex flex-wrap gap-2">
-                        {analysis[0]?.columns?.map(col => (
-                          <button
-                            key={col}
-                            onClick={() => {
-                              const exists = config.columns.includes(col);
-                              setConfig(prev => ({
-                                ...prev,
-                                columns: exists ? prev.columns.filter(c => c !== col) : [...prev.columns, col]
-                              }));
-                            }}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all border ${
-                              config.columns.includes(col) ? 'bg-secondary text-white border-secondary' : 'bg-white/5 border-white/5 text-foreground/40 hover:border-white/20'
-                            }`}
-                          >
-                            {col}
-                          </button>
-                        ))}
+                    {/* Column Selection Mode Toggle */}
+                    <div className="space-y-3 mt-4 pt-6 border-t border-white/5">
+                      <label className="text-[10px] font-black text-secondary uppercase tracking-widest mb-3 block">Column Mapping Mode</label>
+                      <div className="flex gap-3 mb-4">
+                        <button
+                          onClick={() => setConfig(prev => ({ ...prev, mode: 'strict' }))}
+                          className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] transition-all border text-left ${
+                            (!config.mode || config.mode === 'strict')
+                              ? 'bg-secondary text-white border-secondary shadow-lg'
+                              : 'bg-transparent text-foreground/60 border-white/10 hover:border-white/30 hover:text-white'
+                          }`}
+                        >
+                          Manual / Strict Match
+                          <span className={`block text-[8px] font-normal normal-case mt-1 ${(!config.mode || config.mode === 'strict') ? 'text-white/80' : 'text-foreground/40'}`}>Select from identical headers</span>
+                        </button>
+                        <button
+                          onClick={() => setConfig(prev => ({ ...prev, mode: 'ai' }))}
+                          className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] transition-all border text-left flex items-start justify-between gap-2 ${
+                            config.mode === 'ai'
+                              ? 'bg-primary text-white border-primary shadow-lg shadow-primary/30'
+                              : 'bg-transparent text-foreground/60 border-white/10 hover:border-primary/50 hover:text-white'
+                          }`}
+                        >
+                           <div>
+                             DocJockey AI Mapping
+                             <span className={`block text-[8px] font-normal normal-case mt-1 ${config.mode === 'ai' ? 'text-white/80' : 'text-foreground/40'}`}>Map different headers</span>
+                           </div>
+                           <Sparkles size={14} className={config.mode === 'ai' ? 'animate-pulse text-white mt-1' : 'text-primary/50 mt-1'} />
+                        </button>
                       </div>
-                      <p className="text-[9px] text-foreground/30 italic">Click to toggle columns. Only selected columns will be present in the final merge.</p>
+
+                      {/* Manual Mode UI */}
+                      {(!config.mode || config.mode === 'strict') && (
+                        <div className="animate-in fade-in zoom-in-95 duration-300">
+                          <label className="text-[10px] font-black text-secondary uppercase tracking-widest mb-2 block">Available Columns</label>
+                          <div className="flex flex-wrap gap-2">
+                            {analysis[0]?.columns?.map(col => (
+                              <button
+                                key={col}
+                                onClick={() => {
+                                  const exists = config.columns.includes(col);
+                                  setConfig(prev => ({
+                                    ...prev,
+                                    columns: exists ? prev.columns.filter(c => c !== col) : [...prev.columns, col]
+                                  }));
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all border ${
+                                  config.columns.includes(col) ? 'bg-secondary text-white border-secondary' : 'bg-white/5 border-white/5 text-foreground/40 hover:border-white/20'
+                                }`}
+                              >
+                                {col}
+                              </button>
+                            ))}
+                          </div>
+                          <p className="text-[9px] text-foreground/30 italic mt-2">Click to toggle columns. Only selected columns will be present in the final merge.</p>
+                        </div>
+                      )}
+
+                      {/* AI Mode UI */}
+                      {config.mode === 'ai' && (
+                        <div className="animate-in fade-in zoom-in-95 duration-300 border border-primary/20 bg-primary/5 rounded-xl p-4">
+                           <label className="text-[10px] font-black text-primary uppercase tracking-widest mb-2 flex items-center gap-2">
+                             <Sparkles size={12} /> Mapping Instructions
+                           </label>
+                           <textarea
+                             value={config.ai_instructions || ''}
+                             onChange={(e) => setConfig(prev => ({ ...prev, ai_instructions: e.target.value }))}
+                             placeholder="e.g., 'Merge Rate and Price into Unit Price. Merge Items and Goods into Product Name.'"
+                             className="w-full h-24 bg-black/40 border border-white/10 rounded-lg p-3 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 custom-scrollbar resize-none"
+                           />
+                           <p className="text-[9px] text-primary/60 italic mt-3 leading-relaxed">
+                             DocJockey AI will analyze the headers of all files and compile a mapping schema based on your instructions before executing the high-speed merge.
+                           </p>
+                        </div>
+                      )}
                     </div>
 
                     {/* Output Format Toggle */}
