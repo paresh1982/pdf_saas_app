@@ -119,11 +119,9 @@ def process_batch(config_path):
                     adjusted_width = (max_length + 4)
                     worksheet.column_dimensions[column].width = adjusted_width
                 
-                # Apply Cell Borders and Alignment to all data cells
-                for row in worksheet.iter_rows(min_row=2):
-                    for cell in row:
-                        cell.border = thin_border
-                        cell.alignment = Alignment(horizontal='left', vertical='center')
+                # Apply Cell Borders and Alignment to data rows
+                # Deliberately omitted — let users apply their own formatting.
+                # Applying borders to every cell is slow on large datasets.
 
         print(f"SUCCESS_PATH: {output_path}")
         

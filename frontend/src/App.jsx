@@ -817,7 +817,7 @@ function BulkMergerView({ setView }) {
   const [files, setFiles] = useState([]);
   const [stage, setStage] = useState('selection'); // selection, analyzing, config, processing, result
   const [analysis, setAnalysis] = useState(null);
-  const [config, setConfig] = useState({ sheet: '', columns: [] });
+  const [config, setConfig] = useState({ sheet: '', columns: [], output_format: 'xlsx' });
   const [resultUrl, setResultUrl] = useState(null);
   const [error, setError] = useState(null);
 
@@ -857,7 +857,7 @@ function BulkMergerView({ setView }) {
         files: analysis.map(f => f.path),
         sheet_name: config.sheet,
         columns: config.columns,
-        output_format: 'xlsx'
+        output_format: config.output_format || 'xlsx'
       });
       setResultUrl(data.downloadUrl);
       setStage('result');
@@ -1009,6 +1009,29 @@ function BulkMergerView({ setView }) {
                       </div>
                       <p className="text-[9px] text-foreground/30 italic">Click to toggle columns. Only selected columns will be present in the final merge.</p>
                     </div>
+
+                    {/* Output Format Toggle */}
+                    <div className="mt-6 pt-6 border-t border-white/5">
+                      <label className="text-[10px] font-black text-secondary uppercase tracking-widest mb-3 block">Output Format</label>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setConfig(prev => ({ ...prev, output_format: 'xlsx' }))}
+                          className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border ${
+                            config.output_format === 'xlsx' ? 'bg-secondary text-white border-secondary shadow-lg' : 'bg-white/5 border-white/5 text-foreground/40 hover:text-white'
+                          }`}
+                        >
+                          Excel (.xlsx)
+                        </button>
+                        <button
+                          onClick={() => setConfig(prev => ({ ...prev, output_format: 'csv' }))}
+                          className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border ${
+                            config.output_format === 'csv' ? 'bg-secondary text-white border-secondary shadow-lg' : 'bg-white/5 border-white/5 text-foreground/40 hover:text-white'
+                          }`}
+                        >
+                          CSV (.csv)
+                        </button>
+                      </div>
+                    </div>
                   </div>
                </div>
             </div>
@@ -1060,7 +1083,7 @@ function BulkMergerView({ setView }) {
                   download
                   className="flex-1 py-4 bg-green-600 text-white rounded-2xl font-black uppercase tracking-widest text-center shadow-xl shadow-green-500/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
                 >
-                  <Download size={18} /> Download (.xlsx)
+                  <Download size={18} /> Download (.{(config.output_format || 'xlsx').toUpperCase()})
                 </a>
                 <button 
                   onClick={() => { setStage('selection'); setFiles([]); setResultUrl(null); }}
