@@ -39,7 +39,14 @@ def process_batch(config_path):
                 if ext == '.csv':
                     df = pd.read_csv(file_path)
                 elif ext in ['.xlsx', '.xls']:
-                    df = pd.read_excel(file_path, sheet_name=sheet_name)
+                    target_sheet = 0
+                    if isinstance(sheet_name, dict):
+                        # Check exact path or fallback to 0
+                        # Frontend sends the original path strings from the analysis map
+                        target_sheet = sheet_name.get(file_path, 0)
+                    else:
+                        target_sheet = sheet_name
+                    df = pd.read_excel(file_path, sheet_name=target_sheet)
                 else:
                     print(f"ERROR_FILE: Unsupported format - {file_path}", file=sys.stderr)
                     continue

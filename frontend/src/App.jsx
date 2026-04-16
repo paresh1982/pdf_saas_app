@@ -817,7 +817,7 @@ function BulkMergerView({ setView }) {
   const [files, setFiles] = useState([]);
   const [stage, setStage] = useState('selection'); // selection, analyzing, config, processing, result
   const [analysis, setAnalysis] = useState(null);
-  const [config, setConfig] = useState({ sheet: '', columns: [], mode: 'strict', ai_instructions: '', output_format: 'xlsx' });
+  const [config, setConfig] = useState({ sheet: {}, columns: [], mode: 'strict', ai_instructions: '', output_format: 'xlsx' });
   const [resultUrl, setResultUrl] = useState(null);
   const [error, setError] = useState(null);
 
@@ -835,12 +835,17 @@ function BulkMergerView({ setView }) {
       const { data } = await axios.post(`${API}/batch/analyze`, formData);
       setAnalysis(data.files);
       
-      // Auto-set default sheet if consistent across files
-      const sheets = data.files[0]?.sheets || [];
+      // Auto-set default sheet for all files with sheets
+      const initialSheets = {};
+      data.files.forEach(f => {
+        if (f.sheets && f.sheets.length > 0) {
+          initialSheets[f.path] = f.sheets[0];
+        }
+      });
       const commonColumns = data.files[0]?.columns || [];
       
       setConfig({ 
-        sheet: sheets[0] || 0, 
+        sheet: initialSheets, 
         columns: commonColumns,
         mode: 'strict',
         ai_instructions: '',
@@ -970,23 +975,28 @@ function BulkMergerView({ setView }) {
                       I've analyzed your files. To ensure a perfect merge, please confirm the configuration:
                     </p>
                     
-                    {/* Sheet Selection (if Excel) */}
-                    {analysis.some(f => f.sheets.length > 0) && (
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-secondary uppercase tracking-widest">Target Sheet Name</label>
-                        <div className="flex flex-wrap gap-2">
-                          {Array.from(new Set(analysis.flatMap(f => f.sheets))).map(s => (
-                            <button
-                              key={s}
-                              onClick={() => setConfig(prev => ({ ...prev, sheet: s }))}
-                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all border ${
-                                config.sheet === s ? 'bg-secondary text-white border-secondary' : 'bg-white/5 border-white/5 text-foreground/40'
-                              }`}
-                            >
-                              {s}
-                            </button>
-                          ))}
-                        </div>
+                    {/* Sheet Selection (if Excel files have >1 sheets) */}
+                    {analysis.filter(f => f.sheets && f.sheets.length > 1).length > 0 && (
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black text-secondary uppercase tracking-widest">Target Sheets (Multi-Sheet Files)</label>
+                        {analysis.filter(f => f.sheets && f.sheets.length > 1).map((file, idx) => (
+                           <div key={idx} className="space-y-2 p-3 bg-white/5 border border-white/10 rounded-xl">
+                             <p className="text-[11px] font-bold text-white">File: {file.filename || file.name}</p>
+                             <div className="flex flex-wrap gap-2">
+                               {file.sheets.map(s => (
+                                 <button
+                                   key={s}
+                                   onClick={() => setConfig(prev => ({ ...prev, sheet: { ...prev.sheet, [file.path]: s } }))}
+                                   className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all border ${
+                                     config.sheet[file.path] === s ? 'bg-secondary text-white border-secondary' : 'bg-transparent border-white/20 text-foreground/40 hover:border-white/50 hover:text-white'
+                                   }`}
+                                 >
+                                   {s}
+                                 </button>
+                               ))}
+                             </div>
+                           </div>
+                        ))}
                       </div>
                     )}
 

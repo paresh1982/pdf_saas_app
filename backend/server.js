@@ -1084,7 +1084,7 @@ If a file doesn't need mapping, don't include it in "mapping". Do not include ma
 
     const config = {
       files: filePaths,
-      sheet_name: sheet_name || 0,
+      sheet_name: sheet_name || {},
       columns: req.body.columns || [],
       output_format: output_format || 'xlsx',
       output_filename: `Bulk_Merge_${Date.now()}`,
