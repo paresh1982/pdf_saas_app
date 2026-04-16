@@ -1013,22 +1013,26 @@ function BulkMergerView({ setView }) {
                     {/* Output Format Toggle */}
                     <div className="mt-6 pt-6 border-t border-white/5">
                       <label className="text-[10px] font-black text-secondary uppercase tracking-widest mb-3 block">Output Format</label>
-                      <div className="flex gap-2">
+                      <div className="flex gap-3">
                         <button
                           onClick={() => setConfig(prev => ({ ...prev, output_format: 'xlsx' }))}
-                          className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border ${
-                            config.output_format === 'xlsx' ? 'bg-secondary text-white border-secondary shadow-lg' : 'bg-white/5 border-white/5 text-foreground/40 hover:text-white'
+                          className={`flex-1 py-4 rounded-xl text-xs font-black uppercase tracking-[0.2em] transition-all border-2 ${
+                            config.output_format === 'xlsx'
+                              ? 'bg-primary text-white border-primary shadow-lg shadow-primary/30'
+                              : 'bg-transparent text-foreground/60 border-primary/40 hover:border-primary hover:text-white'
                           }`}
                         >
-                          Excel (.xlsx)
+                          📊 Excel (.xlsx)
                         </button>
                         <button
                           onClick={() => setConfig(prev => ({ ...prev, output_format: 'csv' }))}
-                          className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border ${
-                            config.output_format === 'csv' ? 'bg-secondary text-white border-secondary shadow-lg' : 'bg-white/5 border-white/5 text-foreground/40 hover:text-white'
+                          className={`flex-1 py-4 rounded-xl text-xs font-black uppercase tracking-[0.2em] transition-all border-2 ${
+                            config.output_format === 'csv'
+                              ? 'bg-primary text-white border-primary shadow-lg shadow-primary/30'
+                              : 'bg-transparent text-foreground/60 border-primary/40 hover:border-primary hover:text-white'
                           }`}
                         >
-                          CSV (.csv)
+                          📄 CSV (.csv)
                         </button>
                       </div>
                     </div>
