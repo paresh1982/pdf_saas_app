@@ -778,6 +778,7 @@ function ChatMessage({ msg }) {
   const [showCode, setShowCode] = useState(false);
   
   const attachments = (() => {
+    if (Array.isArray(msg.attachments)) return msg.attachments;
     try { return JSON.parse(msg.attachments || '[]'); } catch { return []; }
   })();
 
@@ -1312,7 +1313,7 @@ export default function App() {
     const tempUserMsg = {
       role: 'user',
       content: inputText,
-      attachments: JSON.stringify(attachedFiles.map(f => f.name)),
+      attachments: attachedFiles.map(f => f.name),
       created_at: new Date().toISOString(),
     };
     setMessages(prev => [...prev, tempUserMsg]);
@@ -1334,7 +1335,7 @@ export default function App() {
       const aiMsg = {
         role: 'model',
         content: data.response,
-        attachments: data.python_code ? JSON.stringify([{ type: 'python_code', code: data.python_code }]) : '[]',
+        attachments: data.python_code ? [{ type: 'python_code', code: data.python_code }] : [],
         python_code: data.python_code, // Store locally as well
         created_at: new Date().toISOString(),
       };

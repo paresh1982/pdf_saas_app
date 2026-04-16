@@ -546,7 +546,7 @@ if os.path.exists(v_dir): sys.path.insert(0, v_dir)
 
     await pool.query(
         'INSERT INTO messages (conversation_id, role, content, attachments) VALUES ($1, $2, $3, $4)',
-        [convId, 'model', finalResult, JSON.stringify([{ type: 'python_code', code: pythonCode }])]
+        [convId, 'model', finalResult, [{ type: 'python_code', code: pythonCode }]]
     );
 
     res.json({ 
@@ -597,7 +597,7 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
     const attachmentNames = uploadedDocs.map(d => d.original_name);
     await pool.query(
       'INSERT INTO messages (conversation_id, role, content, attachments) VALUES ($1, $2, $3, $4)',
-      [convId, 'user', message || '', JSON.stringify(attachmentNames)]
+      [convId, 'user', message || '', attachmentNames]
     );
 
     // Load history
