@@ -538,16 +538,16 @@ CRITICAL RULES:
     if (docs && docs.length > 0) {
        for (const doc of docs) {
            const correctPath = path.join(__dirname, 'uploads', doc.filename).replace(/\\/g, '/');
-           // Match any string containing the original filename and replace the whole path
+           // Match any string containing the original filename, including optional 'r' prefix, and replace the whole path
            const nameEscaped = doc.original_name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-           const regex = new RegExp(`['"][^'"]*?${nameEscaped}['"]`, 'gi');
+           const regex = new RegExp(`r?['"][^'"]*?${nameEscaped}['"]`, 'gi');
            pythonCode = pythonCode.replace(regex, `r"${correctPath}"`);
        }
        // Fallback for strictly hallucinatory directories if there's only 1 document
        if (docs.length === 1) {
            const correctPath = path.join(__dirname, 'uploads', docs[0].filename).replace(/\\/g, '/');
-           pythonCode = pythonCode.replace(/['"]\/mnt\/data\/[^'"]+['"]/gi, `r"${correctPath}"`);
-           pythonCode = pythonCode.replace(/['"]\/app\/data\/[^'"]+['"]/gi, `r"${correctPath}"`);
+           pythonCode = pythonCode.replace(/r?['"]\/mnt\/data\/[^'"]+['"]/gi, `r"${correctPath}"`);
+           pythonCode = pythonCode.replace(/r?['"]\/app\/data\/[^'"]+['"]/gi, `r"${correctPath}"`);
        }
     }
 
