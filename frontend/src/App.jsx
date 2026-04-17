@@ -736,8 +736,8 @@ function DynamicTable({ data, raw, convId, isNested = false }) {
   };
 
   return (
-    <div className={`${isNested ? '' : 'my-6 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl'}`}>
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-6 py-4 border-b border-white/5 bg-white/2 gap-4">
+    <div className={`${isNested ? '' : 'my-2 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl'}`}>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-5 py-3 border-b border-white/5 bg-white/2 gap-4">
         <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em] flex items-center gap-2">
           <Zap size={14} className="fill-primary/20" /> Structured Extraction • {data.length} records found
         </span>
@@ -764,7 +764,7 @@ function DynamicTable({ data, raw, convId, isNested = false }) {
           <thead className="sticky top-0 z-10">
             <tr className="bg-surface/95 backdrop-blur-md text-foreground/40 uppercase tracking-widest font-black text-[9px] border-b border-white/5">
               {headers.map(h => (
-                <th key={h} className="px-6 py-4 text-left whitespace-nowrap">{h.replace(/_/g, ' ')}</th>
+                <th key={h} className="px-4 py-2 text-left whitespace-nowrap">{h.replace(/_/g, ' ')}</th>
               ))}
             </tr>
           </thead>
@@ -772,7 +772,7 @@ function DynamicTable({ data, raw, convId, isNested = false }) {
             {data.map((row, i) => (
               <tr key={i} className="hover:bg-white/5 transition-colors group">
                 {headers.map(h => (
-                  <td key={h} className="px-6 py-4 text-foreground/70 whitespace-nowrap max-w-[250px] truncate group-hover:text-white font-medium">
+                  <td key={h} className="px-4 py-1.5 text-foreground/70 whitespace-nowrap max-w-[250px] truncate group-hover:text-white font-medium">
                     {formatValue(row[h])}
                   </td>
                 ))}
@@ -855,7 +855,7 @@ function DynamicChart({ config }) {
   };
 
   return (
-    <div className="w-full h-[350px] mt-6">
+    <div className="w-full h-[320px] mt-4">
       <ResponsiveContainer width="100%" height="100%">
         {renderChart()}
       </ResponsiveContainer>
@@ -883,9 +883,9 @@ function AnalysisDashboard({ dataObj, raw, convId }) {
   const hasTable = !!dataObj.tableData;
 
   return (
-    <div className="my-6 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
-      <div className="px-6 py-4 border-b border-white/5 bg-white/2">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+    <div className="my-2 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
+      <div className="px-5 py-3 border-b border-white/5 bg-white/2">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
           <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em] flex items-center gap-2">
              <BarChart3 size={14} className="text-primary" /> Visual Intelligence Dashboard
           </span>
@@ -893,7 +893,7 @@ function AnalysisDashboard({ dataObj, raw, convId }) {
              {hasTable && (
                <button 
                  onClick={() => setActiveTab('table')}
-                 className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                 className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                    activeTab === 'table' ? 'bg-secondary/20 text-secondary' : 'text-foreground/40 hover:text-white'
                  }`}
                >
@@ -903,7 +903,7 @@ function AnalysisDashboard({ dataObj, raw, convId }) {
              {hasChart && (
                <button 
                  onClick={() => setActiveTab('chart')}
-                 className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                 className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                    activeTab === 'chart' ? 'bg-primary/20 text-primary' : 'text-foreground/40 hover:text-white'
                  }`}
                >
@@ -919,7 +919,7 @@ function AnalysisDashboard({ dataObj, raw, convId }) {
         )}
       </div>
 
-      <div className="p-2 sm:p-6 bg-black/20">
+      <div className="p-2 sm:p-4 bg-black/20">
          {activeTab === 'table' && hasTable && (
             <DynamicTable data={dataObj.tableData} raw={JSON.stringify(dataObj.tableData, null, 2)} convId={convId} isNested={true} />
          )}
@@ -976,7 +976,7 @@ function ChatMessage({ msg }) {
           {isUser ? (
             <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{msg.content}</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               <div className="font-outfit">{renderContent(msg.content, msg.conversation_id)}</div>
               
               {pythonAttachment && (
@@ -1838,7 +1838,7 @@ export default function App() {
                     </motion.div>
                   </div>
                 ) : (
-                  <div className="max-w-screen-2xl mx-auto p-4 space-y-4 py-8">
+                  <div className="max-w-screen-2xl mx-auto p-4 space-y-4 py-4">
                     {messages.map((msg, i) => (
                       <ChatMessage key={i} msg={msg} />
                     ))}
