@@ -96,6 +96,52 @@ const pool = new Pool({
   connectionTimeoutMillis: 5000, // Return an error if a connection takes longer than 5 seconds
 });
 
+// ─── UI Decorators & Privacy Filters ──────────────────────
+/**
+ * Sanitizes the analysis response to hide internal server paths.
+ * Replaces full paths with original filenames or generic labels.
+ */
+const sanitizeAnalysisResponse = (response, docs) => {
+  if (!response || typeof response !== 'object') return response;
+
+  try {
+    let jsonStr = JSON.stringify(response);
+
+    // 1. Map absolute paths to Original Display Names
+    if (docs && docs.length > 0) {
+      const uploadPath = path.join(__dirname, 'uploads').replace(/\\/g, '/');
+      const escapedUploadPath = uploadPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      
+      // Remove the directory prefix first (catch both / and \ variations)
+      jsonStr = jsonStr.replace(new RegExp(escapedUploadPath.replace(/\//g, '[\\\\/]') + '[\\\\/]?', 'gi'), '');
+
+      // Replace hashed filenames with original names
+      for (const doc of docs) {
+        if (doc.filename && doc.original_name) {
+          const escapedHashed = doc.filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          jsonStr = jsonStr.replace(new RegExp(escapedHashed, 'gi'), doc.original_name);
+        }
+      }
+    }
+
+    // 2. Catch common cloud paths as a safety net
+    jsonStr = jsonStr.replace(/\/opt\/render\/project\/src\/backend\/uploads\//gi, '');
+    jsonStr = jsonStr.replace(/\/app\/backend\/uploads\//gi, '');
+    
+    // 3. Remove any remaining raw string prefixes leaking into text (r"/...)
+    jsonStr = jsonStr.replace(/r?["']\/[^"']*?uploads\/[^"']*?["']/gi, (match) => {
+       // If it contains a known original name, it might have been partially caught. 
+       // We just want to strip the path and any 'r' prefix if it survived.
+       return match.split('/').pop().replace(/["']$/, '');
+    });
+
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    console.error('❌ Sanitization Error:', e);
+    return response;
+  }
+};
+
 const initDB = async () => {
   try {
     // Conversations table
@@ -623,15 +669,23 @@ if os.path.exists(v_dir): sys.path.insert(0, v_dir)
                resolve(`❌ **Python Execution Error**:\n\`\`\`text\n${stderr || error.message}\n\`\`\``);
            } else {
                let outputText = (stdout || '').trim();
-               // Automatically wrap raw JSON arrays OR JSON objects in markdown for the UI renderer
-               const isJsonObj = outputText.startsWith('{') && outputText.endsWith('}');
-               const isJsonArr = outputText.startsWith('[') && outputText.endsWith(']');
-               if (isJsonArr || isJsonObj) {
-                   try {
-                       JSON.parse(outputText);
-                       outputText = `\n\`\`\`json\n${outputText}\n\`\`\`\n`;
-                   } catch (e) { } // Fall back to raw text if parsing fails
+               
+               // --- INTEGRATED SANITIZATION LAYER ---
+               try {
+                   const jsonMatch = outputText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                   if (jsonMatch) {
+                       let parsed = JSON.parse(jsonMatch[0]);
+                       parsed = sanitizeAnalysisResponse(parsed, docs);
+                       const cleanJson = JSON.stringify(parsed, null, 2);
+                       outputText = outputText.replace(jsonMatch[0], `\n\`\`\`json\n${cleanJson}\n\`\`\`\n`);
+                   } else {
+                       const sanitized = sanitizeAnalysisResponse({ t: outputText }, docs);
+                       outputText = sanitized.t;
+                   }
+               } catch (e) {
+                   console.error('⚠️ Sanitization Error:', e);
                }
+
                resolve(`🔬 **Data Analysis Result**:\n\n${outputText}`);
            }
        });
