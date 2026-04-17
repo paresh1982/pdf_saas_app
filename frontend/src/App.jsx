@@ -683,6 +683,16 @@ function renderContent(text, convId) {
   });
 }
 
+// ─── Number/Value Formatter ──────────────────────────────
+const formatValue = (val) => {
+  if (val === null || val === undefined) return '—';
+  if (typeof val === 'number') {
+    return val.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+  if (typeof val === 'object') return JSON.stringify(val);
+  return String(val);
+};
+
 // ─── Dynamic Table (renders ANY JSON array) ──────────────
 function DynamicTable({ data, raw, convId, isNested = false }) {
   const [copied, setCopied] = useState(false);
@@ -770,7 +780,7 @@ function DynamicTable({ data, raw, convId, isNested = false }) {
               <tr key={i} className="hover:bg-white/5 transition-colors group">
                 {headers.map(h => (
                   <td key={h} className="px-6 py-4 text-foreground/70 whitespace-nowrap max-w-[250px] truncate group-hover:text-white font-medium">
-                    {typeof row[h] === 'object' ? JSON.stringify(row[h]) : String(row[h] ?? '—')}
+                    {formatValue(row[h])}
                   </td>
                 ))}
               </tr>
@@ -796,7 +806,7 @@ function DynamicChart({ config }) {
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
             <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
             <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
-            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
+            <Tooltip formatter={formatValue} cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
             <Legend wrapperStyle={{ fontSize: '10px' }} />
             <Bar dataKey={yAxisKey} fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={60} />
           </BarChart>
@@ -807,7 +817,7 @@ function DynamicChart({ config }) {
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
             <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
             <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
-            <Tooltip contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
+            <Tooltip formatter={formatValue} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
             <Legend wrapperStyle={{ fontSize: '10px' }} />
             <Line type="monotone" dataKey={yAxisKey} stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }} activeDot={{ r: 6, fill: '#fff', stroke: '#ef4444' }} />
           </LineChart>
@@ -818,7 +828,7 @@ function DynamicChart({ config }) {
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
             <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
             <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
-            <Tooltip contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
+            <Tooltip formatter={formatValue} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
             <Legend wrapperStyle={{ fontSize: '10px' }} />
             <Area type="monotone" dataKey={yAxisKey} stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} strokeWidth={2} />
           </AreaChart>
@@ -829,7 +839,7 @@ function DynamicChart({ config }) {
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
             <XAxis dataKey={xAxisKey} type="category" allowDuplicatedCategory={false} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} />
             <YAxis dataKey={yAxisKey} type="number" stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
-            <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
+            <Tooltip formatter={formatValue} cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
             <Legend wrapperStyle={{ fontSize: '10px' }} />
             <Scatter name={yAxisKey} data={data} fill="#ef4444" />
           </ScatterChart>
@@ -837,7 +847,7 @@ function DynamicChart({ config }) {
       case 'pie':
         return (
           <PieChart>
-            <Tooltip contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
+            <Tooltip formatter={formatValue} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
             <Legend wrapperStyle={{ fontSize: '10px' }} />
             <Pie data={data} dataKey={yAxisKey} nameKey={xAxisKey} cx="50%" cy="50%" outerRadius={120} fill="#ef4444" label>
               {data.map((entry, index) => (
