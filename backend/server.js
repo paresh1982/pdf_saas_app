@@ -561,7 +561,8 @@ CRITICAL RULES:
        "type": "bar", # matching primaryView
        "data": df.to_dict(orient="records"), # Aggegrated data best for a chart
        "xAxisKey": "CategoryColumn",
-       "yAxisKey": "ValueColumn"
+       "yAxisKey": "ValueColumn",
+       "groupByKey": "GroupColumn" # REQUIRED if plotting separate series by color/legend
    }
    
    print(json.dumps(response))

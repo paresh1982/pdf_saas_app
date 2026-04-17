@@ -794,10 +794,11 @@ const CHART_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#0
 function DynamicChart({ config }) {
   if (!config || !config.data || !config.data.length || !config.type) return null;
 
-  const { type, data, xAxisKey, yAxisKey, groupByKey } = config;
+  const { type, data, xAxisKey, yAxisKey } = config;
+  const effectiveGroupKey = config.groupByKey || config.groupKey;
 
-  // Extract unique groups if groupByKey is provided
-  const groups = groupByKey ? [...new Set(data.map(item => item[groupByKey]))].filter(g => g !== null && g !== undefined).sort((a, b) => {
+  // Extract unique groups if a group key is provided
+  const groups = effectiveGroupKey ? [...new Set(data.map(item => item[effectiveGroupKey]))].filter(g => g !== null && g !== undefined).sort((a, b) => {
     if (typeof a === 'number' && typeof b === 'number') return a - b;
     return String(a).localeCompare(String(b));
   }) : null;
@@ -814,7 +815,7 @@ function DynamicChart({ config }) {
             <Legend wrapperStyle={{ fontSize: '10px' }} />
             {groups ? (
                groups.map((group, idx) => (
-                 <Bar key={group} name={String(group)} dataKey={yAxisKey} data={data.filter(d => String(d[groupByKey]) === String(group))} fill={CHART_COLORS[idx % CHART_COLORS.length]} radius={[4, 4, 0, 0]} />
+                 <Bar key={group} name={String(group)} dataKey={yAxisKey} data={data.filter(d => String(d[effectiveGroupKey]) === String(group))} fill={CHART_COLORS[idx % CHART_COLORS.length]} radius={[4, 4, 0, 0]} />
                ))
             ) : (
                <Bar dataKey={yAxisKey} fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={60} />
@@ -831,7 +832,7 @@ function DynamicChart({ config }) {
             <Legend wrapperStyle={{ fontSize: '10px' }} />
             {groups ? (
                groups.map((group, idx) => (
-                 <Line key={group} name={String(group)} type="monotone" dataKey={yAxisKey} data={data.filter(d => String(d[groupByKey]) === String(group))} stroke={CHART_COLORS[idx % CHART_COLORS.length]} strokeWidth={2} dot={{ r: 3 }} />
+                 <Line key={group} name={String(group)} type="monotone" dataKey={yAxisKey} data={data.filter(d => String(d[effectiveGroupKey]) === String(group))} stroke={CHART_COLORS[idx % CHART_COLORS.length]} strokeWidth={2} dot={{ r: 3 }} />
                ))
             ) : (
                <Line type="monotone" dataKey={yAxisKey} stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }} activeDot={{ r: 6, fill: '#fff', stroke: '#ef4444' }} />
@@ -882,8 +883,8 @@ function DynamicChart({ config }) {
                groups.map((group, idx) => (
                  <Scatter 
                    key={group} 
-                   name={`${groupByKey}: ${group}`} 
-                   data={data.filter(d => String(d[groupByKey]) === String(group))} 
+                   name={`${effectiveGroupKey}: ${group}`} 
+                   data={data.filter(d => String(d[effectiveGroupKey]) === String(group))} 
                    fill={CHART_COLORS[idx % CHART_COLORS.length]} 
                  />
                ))
