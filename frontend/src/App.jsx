@@ -1046,6 +1046,7 @@ function AnalysisDashboard({ dataObj, raw, convId }) {
 function ChatMessage({ msg }) {
   const isUser = msg.role === 'user';
   const [showCode, setShowCode] = useState(false);
+  const [copied, setCopied] = useState(false);
   
   const attachments = (() => {
     if (Array.isArray(msg.attachments)) return msg.attachments;
@@ -1092,14 +1093,30 @@ function ChatMessage({ msg }) {
               
               {pythonAttachment && (
                 <div className="pt-2">
-                  <button 
-                    onClick={() => setShowCode(!showCode)}
-                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-secondary hover:text-white transition-colors"
-                  >
-                    <Code size={12} />
-                    {showCode ? 'Hide Analysis Code' : 'Show Analysis Code'}
-                    {showCode ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                  </button>
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => setShowCode(!showCode)}
+                      className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-secondary hover:text-white transition-colors"
+                    >
+                      <Code size={12} />
+                      {showCode ? 'Hide Analysis Code' : 'Show Analysis Code'}
+                      {showCode ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    </button>
+
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(pythonAttachment.code);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+                        copied ? 'text-emerald-400' : 'text-foreground/40 hover:text-white'
+                      }`}
+                    >
+                      {copied ? <Check size={12} /> : <Copy size={12} />}
+                      {copied ? 'Copied!' : 'Copy Code'}
+                    </button>
+                  </div>
                   
                   <AnimatePresence>
                     {showCode && (
