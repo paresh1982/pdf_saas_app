@@ -378,15 +378,19 @@ function SiteFooter({ setView }) {
           ))}
         </div>
       </div>
+
+      <div className="hidden md:flex flex-col items-center">
+        <span className="text-[8px] font-black text-foreground/20 uppercase tracking-[0.3em] text-center leading-relaxed">
+          <span>DOCJOCKEY PRO • AGENTIC EXTRACTION</span>
+          <br/>
+          <span>© 2026 DOCJOCKEY</span>
+        </span>
+      </div>
       
       <div className="flex items-center gap-6">
         <a href="mailto:connect@docjockey.com" className="text-[9px] font-black text-secondary/40 hover:text-secondary uppercase tracking-[0.2em] transition-colors">
           CONNECT@DOCJOCKEY.COM
         </a>
-        <span className="text-[8px] font-black text-foreground/20 uppercase tracking-[0.3em] flex flex-col items-end">
-          <span>DOCJOCKEY PRO • AGENTIC EXTRACTION</span>
-          <span>© 2026 DOCJOCKEY</span>
-        </span>
       </div>
     </footer>
   );
