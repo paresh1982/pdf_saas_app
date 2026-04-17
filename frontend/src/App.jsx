@@ -788,39 +788,8 @@ function DynamicTable({ data, raw, convId, isNested = false }) {
     </div>
   );
 }
-// ─── Visual Intelligence: Math Logic ─────────────────────
-/**
- * Simple Linear Regression (Least Squares Method)
- * Returns entry/exit points for a mathematical trend line.
- */
-const getRegressionPoints = (points, xKey, yKey) => {
-  if (!points || points.length < 2) return null;
-  
-  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, n = 0;
-  points.forEach(p => {
-    const x = parseFloat(p[xKey]);
-    const y = parseFloat(p[yKey]);
-    if (!isNaN(x) && !isNaN(y)) {
-      sumX += x; sumY += y; sumXY += x * y; sumX2 += x * x; n++;
-    }
-  });
-
-  if (n < 2) return null;
-  const denominator = (n * sumX2 - sumX * sumX);
-  if (Math.abs(denominator) < 0.000001) return null; // Avoid vertical line issues
-
-  const slope = (n * sumXY - sumX * sumY) / denominator;
-  const intercept = (sumY - slope * sumX) / n;
-  
-  const xValues = points.map(p => parseFloat(p[xKey])).filter(v => !isNaN(v));
-  const minX = Math.min(...xValues);
-  const maxX = Math.max(...xValues);
-
-  return [
-    { [xKey]: minX, [yKey]: slope * minX + intercept, isTrend: true },
-    { [xKey]: maxX, [yKey]: slope * maxX + intercept, isTrend: true }
-  ];
-};
+// ─── Visual Intelligence: Chart Restoration ─────────────────────
+// Removed trend line experiment for stability.
 
 // ─── Dynamic Visual Chart (Recharts) ─────────────────────
 const CHART_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
@@ -974,35 +943,14 @@ function DynamicChart({ config }) {
             />
             <Legend wrapperStyle={{ fontSize: '9px', paddingTop: '10px' }} />
             {groups ? (
-               groups.map((group, idx) => {
-                 const groupData = data.filter(d => String(d[effectiveGroupKey]) === String(group));
-                 const color = CHART_COLORS[idx % CHART_COLORS.length];
-                 const trend = (config.trendLine || config.trendLines) ? getRegressionPoints(groupData, xAxisKey, yAxisKey) : null;
-                 
-                 return (
-                   <React.Fragment key={group}>
-                     <Scatter 
-                       name={`${effectiveGroupKey}: ${group}`} 
-                       data={groupData} 
-                       fill={color} 
-                     />
-                     {trend && (
-                       <Line 
-                         data={trend} 
-                         dataKey={yAxisKey} 
-                         stroke={color} 
-                         strokeWidth={1.5} 
-                         strokeDasharray="4 4" 
-                         dot={false} 
-                         activeDot={false} 
-                         legendType="none"
-                         tooltipType="none"
-                         connectNulls
-                       />
-                     )}
-                   </React.Fragment>
-                 );
-               })
+               groups.map((group, idx) => (
+                  <Scatter 
+                    key={group} 
+                    name={`${effectiveGroupKey}: ${group}`} 
+                    data={data.filter(d => String(d[effectiveGroupKey]) === String(group))} 
+                    fill={CHART_COLORS[idx % CHART_COLORS.length]} 
+                  />
+               ))
             ) : (
                <Scatter name={yAxisKey} data={data} fill="#ef4444" />
             )}

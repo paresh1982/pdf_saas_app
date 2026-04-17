@@ -538,39 +538,38 @@ app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
     const systemPrompt = `You are an expert Data Analyst and Python Developer. 
 
 YOUR MISSION:
-Write a Python script that reads the provided FILE_PATHs using pandas and prints a high-fidelity "MultiView" JSON payload to stdout for a dashboard.
+Write a Python script that reads the provided FILE_PATHs using pandas and performs a high-fidelity analysis as requested by the user.
 
 CRITICAL RULES:
-1. ENVIRONMENT: Use only 'pandas' and 'json'. DO NOT use 'scipy', 'sklearn', or 'statsmodels'. 
-2. MAPPING: You MUST map the user's intent to the exact column names in your chartConfig keys.
-3. GROUPING (COLORS/LEGENDS): If the user asks for Comparisons (e.g., "by cylinders"), you MUST provide the column name in "groupByKey". This is the ONLY way the dashboard shows multiple colors and a legend.
-4. TREND LINES: For regression/slopes, simply set "trendLines": True in the chartConfig. DO NOT calculate in Python.
-5. HISTOGRAMS: For distributions, set type to "histogram" and provide appropriate data.
+1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler.
+2. DISCOVERY: Print the result as a raw JSON "MultiView" payload to stdout.
+3. VISUAL INTELLIGENCE (MANDATORY): To show different colors and a legend (e.g., "by cylinders" or "by category"), you MUST provide the exact column name in the "groupByKey" field of the chartConfig.
+4. Use absolute paths provided in the context below.
 
-EXAMPLE GOLDEN PAYLOAD:
+EXAMPLE OUTPUT FORMAT:
 \`\`\`python
 import json
+# ... analysis logic ...
 response = {
     "type": "multiview",
-    "summary": "Analyzing the relationship between Weight and MPG across Cylinder groups...",
+    "summary": "Comparing vehicle performance across groups...",
     "primaryView": "scatter",
     "tableData": df.to_dict(orient="records"),
     "chartConfig": {
         "type": "scatter",
         "data": df.to_dict(orient="records"),
-        "xAxisKey": "weight",      # Actual column name
-        "yAxisKey": "mpg",         # Actual column name
-        "groupByKey": "cylinders", # REQUIRED for colors/legend
-        "trendLines": True         # REQUIRED for slopes
+        "xAxisKey": "weight", 
+        "yAxisKey": "mpg",
+        "groupByKey": "cylinders" # REQUIRED for multi-series colors and legend
     }
 }
 print(json.dumps(response))
 \`\`\`
 
 GENERAL:
-1. ONLY return python code in \`\`\`python blocks.
-2. USE exact absolute paths provided.
-3. REFER to history for context.`;
+1. ONLY return python code.
+2. USE paths exactly as given.
+3. REFER to previous messages for context if needed.`;
 
     const contents = [...geminiHistory];
     // If files were just uploaded but not yet in the prompt part, append the final prompt with filesContext
