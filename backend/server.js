@@ -537,31 +537,40 @@ app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
     // 4. Call Gemini using the resilient Model Queue
     const systemPrompt = `You are an expert Data Analyst and Python Developer. 
 
-YOUR TASK:
-Write a Python script that reads the provided FILE_PATHs and returns a "MultiView" JSON payload.
+YOUR MISSION:
+Write a Python script that reads the provided FILE_PATHs using pandas and prints a high-fidelity "MultiView" JSON payload to stdout for a dashboard.
 
-RULES:
-1. ENVIRONMENT: Use only 'pandas' and 'json'. Do not use 'scipy' or 'sklearn'.
-2. CHARTS: For trend lines/slopes, do not calculate in Python. Simply set "trendLines": True in the chartConfig.
-3. GROUPING: To show multiple colors and a legend (e.g., "by cylinders"), you MUST provide the column name in "groupByKey".
-4. MAPPING: Ensure "xAxisKey", "yAxisKey", and "groupByKey" match your dataframe columns.
-5. CODE ONLY: Return only the python code block.
+CRITICAL RULES:
+1. ENVIRONMENT: Use only 'pandas' and 'json'. DO NOT use 'scipy', 'sklearn', or 'statsmodels'. 
+2. MAPPING: You MUST map the user's intent to the exact column names in your chartConfig keys.
+3. GROUPING (COLORS/LEGENDS): If the user asks for Comparisons (e.g., "by cylinders"), you MUST provide the column name in "groupByKey". This is the ONLY way the dashboard shows multiple colors and a legend.
+4. TREND LINES: For regression/slopes, simply set "trendLines": True in the chartConfig. DO NOT calculate in Python.
+5. HISTOGRAMS: For distributions, set type to "histogram" and provide appropriate data.
 
-EXAMPLE PAYLOAD:
-{
-  "type": "multiview",
-  "summary": "...",
-  "primaryView": "scatter",
-  "tableData": [...],
-  "chartConfig": {
-    "type": "scatter",
-    "data": [...],
-    "xAxisKey": "...",
-    "yAxisKey": "...",
-    "groupByKey": "...", # REQUIRED for colors
-    "trendLines": true # REQUIRED for slopes
-  }
-}`;
+EXAMPLE GOLDEN PAYLOAD:
+\`\`\`python
+import json
+response = {
+    "type": "multiview",
+    "summary": "Analyzing the relationship between Weight and MPG across Cylinder groups...",
+    "primaryView": "scatter",
+    "tableData": df.to_dict(orient="records"),
+    "chartConfig": {
+        "type": "scatter",
+        "data": df.to_dict(orient="records"),
+        "xAxisKey": "weight",      # Actual column name
+        "yAxisKey": "mpg",         # Actual column name
+        "groupByKey": "cylinders", # REQUIRED for colors/legend
+        "trendLines": True         # REQUIRED for slopes
+    }
+}
+print(json.dumps(response))
+\`\`\`
+
+GENERAL:
+1. ONLY return python code in \`\`\`python blocks.
+2. USE exact absolute paths provided.
+3. REFER to history for context.`;
 
     const contents = [...geminiHistory];
     // If files were just uploaded but not yet in the prompt part, append the final prompt with filesContext
