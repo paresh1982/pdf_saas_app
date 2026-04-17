@@ -383,8 +383,9 @@ function SiteFooter({ setView }) {
         <a href="mailto:connect@docjockey.com" className="text-[9px] font-black text-secondary/40 hover:text-secondary uppercase tracking-[0.2em] transition-colors">
           CONNECT@DOCJOCKEY.COM
         </a>
-        <span className="text-[8px] font-black text-foreground/20 uppercase tracking-[0.3em]">
-          © 2026 DOCJOCKEY
+        <span className="text-[8px] font-black text-foreground/20 uppercase tracking-[0.3em] flex flex-col items-end">
+          <span>DOCJOCKEY PRO • AGENTIC EXTRACTION</span>
+          <span>© 2026 DOCJOCKEY</span>
         </span>
       </div>
     </footer>
@@ -1965,13 +1966,6 @@ function ChatInputArea({
         </button>
       </div>
 
-      {!isEmbedded && (
-        <div className="flex justify-center mt-6">
-          <span className="text-[10px] text-foreground/10 font-black uppercase tracking-[0.5em] select-none">
-            DocJockey Pro • Agentic Extraction • 2026
-          </span>
-        </div>
-      )}
     </div>
   );
 }
