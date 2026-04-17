@@ -379,11 +379,9 @@ function SiteFooter({ setView }) {
         </div>
       </div>
 
-      <div className="hidden md:flex flex-col items-center">
-        <span className="text-[8px] font-black text-foreground/20 uppercase tracking-[0.3em] text-center leading-relaxed">
-          <span>DOCJOCKEY PRO • AGENTIC EXTRACTION</span>
-          <br/>
-          <span>© 2026 DOCJOCKEY</span>
+      <div className="hidden md:flex items-center justify-center flex-1">
+        <span className="text-[8px] font-black text-foreground/20 uppercase tracking-[0.3em] whitespace-nowrap">
+          DOCJOCKEY PRO • AGENTIC EXTRACTION &nbsp; | &nbsp; © 2026 DOCJOCKEY
         </span>
       </div>
       
