@@ -1091,64 +1091,64 @@ function BulkMergerView({ setView }) {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-8 md:p-16 max-w-5xl mx-auto w-full min-h-screen"
+      className="p-4 md:p-10 max-w-5xl mx-auto w-full min-h-screen"
     >
-      <div className="mb-12">
-        <button onClick={() => setView('dashboard')} className="text-[10px] font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.3em] mb-6 flex items-center gap-2 transition-colors">
+      <div className="mb-6">
+        <button onClick={() => setView('dashboard')} className="text-[10px] font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.3em] mb-4 flex items-center gap-2 transition-colors">
           ← Back to Dashboard
         </button>
-        <div className="flex items-center gap-4 mb-4">
-           <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary">
-              <Shuffle size={24} />
+        <div className="flex items-center gap-4 mb-2">
+           <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+              <Shuffle size={20} />
            </div>
            <div>
-              <h2 className="text-3xl font-black tracking-tight text-white uppercase italic">Bulk Excel/CSV Merger</h2>
-              <p className="text-foreground/40 text-[10px] font-black uppercase tracking-widest mt-1">Enterprise Power Engine • 100k+ Row Capacity</p>
+              <h2 className="text-2xl font-black tracking-tight text-white uppercase italic">Bulk Excel/CSV Merger</h2>
+              <p className="text-foreground/40 text-[9px] font-black uppercase tracking-widest mt-0.5">Enterprise Power Engine • 100k+ Row Capacity</p>
            </div>
         </div>
-        <div className="w-20 h-1 bg-secondary rounded-full mb-8" />
+        <div className="w-16 h-1 bg-secondary rounded-full mb-6" />
       </div>
 
-      <div className="glass-panel p-8 min-h-[400px] flex flex-col">
+      <div className="glass-panel p-6 min-h-[350px] flex flex-col">
         {stage === 'selection' && (
           <div className="flex-1 flex flex-col">
-            <div className="mb-8 p-4 bg-secondary/5 border border-secondary/20 rounded-2xl flex items-start gap-4">
-               <Bot size={20} className="text-secondary shrink-0 mt-1" />
-               <p className="text-sm text-foreground/80 leading-relaxed font-medium">
-                 Welcome to the **Bulk Merger**. This tool is designed for massive datasets. You can upload up to 10 files (CSV or Excel) and I will merge them into a single high-performance output using our enterprise backend.
+            <div className="mb-6 p-3.5 bg-secondary/5 border border-secondary/20 rounded-2xl flex items-start gap-4">
+               <Bot size={18} className="text-secondary shrink-0 mt-0.5" />
+               <p className="text-xs text-foreground/80 leading-relaxed font-medium">
+                 Welcome to the **Bulk Merger**. This tool is designed for massive datasets (Up to 10 files). I will merge them into a single high-performance output.
                </p>
             </div>
 
             <div 
               onClick={() => document.getElementById('bulk-file-input').click()}
-              className="flex-1 border-2 border-dashed border-white/10 hover:border-secondary/40 rounded-3xl p-12 cursor-pointer transition-all text-center group bg-white/2 flex flex-col items-center justify-center"
+              className="flex-1 border-2 border-dashed border-white/10 hover:border-secondary/40 rounded-3xl p-8 cursor-pointer transition-all text-center group bg-white/2 flex flex-col items-center justify-center"
             >
               <input id="bulk-file-input" type="file" multiple accept=".csv, .xlsx, .xls" className="hidden" onChange={handleFileDrop} />
-              <div className="w-20 h-20 bg-secondary/10 text-secondary rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform mb-6">
-                <Plus size={40} />
+              <div className="w-14 h-14 bg-secondary/10 text-secondary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform mb-4">
+                <Plus size={32} />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Stage Your Files</h3>
-              <p className="text-sm text-foreground/40 font-medium">Drag & drop your spreadsheets here (Max 10 files)</p>
+              <h3 className="text-lg font-bold text-white mb-1">Stage Your Files</h3>
+              <p className="text-[11px] text-foreground/40 font-medium italic">Drag & drop your spreadsheets here (Max 10 files)</p>
             </div>
 
             {files.length > 0 && (
-              <div className="mt-8 space-y-3">
-                <div className="flex items-center justify-between mb-4">
+              <div className="mt-6 space-y-2">
+                <div className="flex items-center justify-between mb-2">
                   <p className="text-[10px] font-black text-secondary uppercase tracking-widest">{files.length} Files Staged</p>
                   <button onClick={() => setFiles([])} className="text-[10px] font-black text-red-500 uppercase tracking-widest">Clear All</button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {files.map((f, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 bg-white/5 border border-white/5 rounded-xl">
-                      <FileSpreadsheet size={16} className="text-secondary" />
-                      <span className="text-[11px] font-medium truncate flex-1">{f.name}</span>
-                      <span className="text-[9px] font-black text-foreground/20 uppercase">{(f.size / 1024).toFixed(0)} KB</span>
+                    <div key={i} className="flex items-center gap-2.5 p-2 bg-white/5 border border-white/5 rounded-xl">
+                      <FileSpreadsheet size={14} className="text-secondary" />
+                      <span className="text-[10px] font-medium truncate flex-1">{f.name}</span>
+                      <span className="text-[8px] font-black text-foreground/20 uppercase">{(f.size / 1024).toFixed(0)} KB</span>
                     </div>
                   ))}
                 </div>
                 <button 
                   onClick={startAnalysis}
-                  className="w-full mt-8 py-5 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-secondary/20 hover:brightness-110 transition-all"
+                  className="w-full mt-6 py-4 bg-secondary text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-secondary/20 hover:brightness-110 transition-all"
                 >
                   Start AI Configuration →
                 </button>
