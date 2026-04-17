@@ -789,10 +789,18 @@ function DynamicTable({ data, raw, convId, isNested = false }) {
 }
 
 // ─── Dynamic Visual Chart (Recharts) ─────────────────────
+const CHART_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
+
 function DynamicChart({ config }) {
   if (!config || !config.data || !config.data.length || !config.type) return null;
 
-  const { type, data, xAxisKey, yAxisKey } = config;
+  const { type, data, xAxisKey, yAxisKey, groupByKey } = config;
+
+  // Extract unique groups if groupByKey is provided
+  const groups = groupByKey ? [...new Set(data.map(item => item[groupByKey]))].filter(g => g !== null && g !== undefined).sort((a, b) => {
+    if (typeof a === 'number' && typeof b === 'number') return a - b;
+    return String(a).localeCompare(String(b));
+  }) : null;
 
   const renderChart = () => {
     switch (type) {
@@ -804,7 +812,13 @@ function DynamicChart({ config }) {
             <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
             <Tooltip formatter={formatValue} cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
             <Legend wrapperStyle={{ fontSize: '10px' }} />
-            <Bar dataKey={yAxisKey} fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={60} />
+            {groups ? (
+               groups.map((group, idx) => (
+                 <Bar key={group} name={String(group)} dataKey={yAxisKey} data={data.filter(d => String(d[groupByKey]) === String(group))} fill={CHART_COLORS[idx % CHART_COLORS.length]} radius={[4, 4, 0, 0]} />
+               ))
+            ) : (
+               <Bar dataKey={yAxisKey} fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={60} />
+            )}
           </BarChart>
         );
       case 'line':
@@ -815,7 +829,13 @@ function DynamicChart({ config }) {
             <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
             <Tooltip formatter={formatValue} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
             <Legend wrapperStyle={{ fontSize: '10px' }} />
-            <Line type="monotone" dataKey={yAxisKey} stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }} activeDot={{ r: 6, fill: '#fff', stroke: '#ef4444' }} />
+            {groups ? (
+               groups.map((group, idx) => (
+                 <Line key={group} name={String(group)} type="monotone" dataKey={yAxisKey} data={data.filter(d => String(d[groupByKey]) === String(group))} stroke={CHART_COLORS[idx % CHART_COLORS.length]} strokeWidth={2} dot={{ r: 3 }} />
+               ))
+            ) : (
+               <Line type="monotone" dataKey={yAxisKey} stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }} activeDot={{ r: 6, fill: '#fff', stroke: '#ef4444' }} />
+            )}
           </LineChart>
         );
       case 'area':
@@ -833,11 +853,43 @@ function DynamicChart({ config }) {
         return (
           <ScatterChart margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey={xAxisKey} type="category" allowDuplicatedCategory={false} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} />
-            <YAxis dataKey={yAxisKey} type="number" stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
-            <Tooltip formatter={formatValue} cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
-            <Legend wrapperStyle={{ fontSize: '10px' }} />
-            <Scatter name={yAxisKey} data={data} fill="#ef4444" />
+            <XAxis 
+              dataKey={xAxisKey} 
+              type="number" 
+              name={xAxisKey}
+              domain={['auto', 'auto']}
+              stroke="rgba(255,255,255,0.4)" 
+              fontSize={10} 
+              tickLine={false} 
+            />
+            <YAxis 
+              dataKey={yAxisKey} 
+              type="number" 
+              name={yAxisKey}
+              domain={['auto', 'auto']}
+              stroke="rgba(255,255,255,0.4)" 
+              fontSize={10} 
+              tickLine={false} 
+              axisLine={false} 
+            />
+            <Tooltip 
+              cursor={{ strokeDasharray: '3 3' }} 
+              contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} 
+              itemStyle={{ fontWeight: 'bold' }} 
+            />
+            <Legend wrapperStyle={{ fontSize: '9px', paddingTop: '10px' }} />
+            {groups ? (
+               groups.map((group, idx) => (
+                 <Scatter 
+                   key={group} 
+                   name={`${groupByKey}: ${group}`} 
+                   data={data.filter(d => String(d[groupByKey]) === String(group))} 
+                   fill={CHART_COLORS[idx % CHART_COLORS.length]} 
+                 />
+               ))
+            ) : (
+               <Scatter name={yAxisKey} data={data} fill="#ef4444" />
+            )}
           </ScatterChart>
         );
       case 'pie':
@@ -845,9 +897,9 @@ function DynamicChart({ config }) {
           <PieChart>
             <Tooltip formatter={formatValue} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
             <Legend wrapperStyle={{ fontSize: '10px' }} />
-            <Pie data={data} dataKey={yAxisKey} nameKey={xAxisKey} cx="50%" cy="50%" outerRadius={120} fill="#ef4444" label>
+            <Pie data={data} dataKey={yAxisKey} nameKey={xAxisKey} cx="50%" cy="50%" outerRadius={80} fill="#ef4444" label={{ fontSize: 10, fill: 'rgba(255,255,255,0.5)' }}>
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7'][index % 6]} />
+                <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
               ))}
             </Pie>
           </PieChart>
