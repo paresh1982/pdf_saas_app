@@ -522,8 +522,9 @@ CRITICAL RULES:
    \`\`\`
    DO NOT wrap the json in markdown backticks inside your python print statements!
 4. Analyze the user's intent: if they specifically ask for a chart, set \`primaryView\` to that chart type. If they ask a general statistical question, set it to "table" but still provide "chartConfig" if visually useful.
-5. Make the script robust against potential Date parsing issues.
-6. The user may ask follow-up questions. Refer to the previous history if they use pronouns like "it" or "that file".`;
+5. STRING SYNTAX: When constructing the 'summary', NEVER hardcode absolute paths. Use original filenames for clarity (e.g., 'Analyzing data from Car_Data.csv'). If you must reference a path variable, use braces: {FILE_PATH_VAR}. Never place a raw string prefix 'r' directly after other text in an f-string (e.g., f"path: r'...' " is a syntax error).
+6. Make the script robust against potential Date parsing issues.
+7. The user may ask follow-up questions. Refer to the previous history if they use pronouns like "it" or "that file".`;
 
     const contents = [...geminiHistory];
     // If files were just uploaded but not yet in the prompt part, append the final prompt with filesContext
@@ -569,7 +570,6 @@ CRITICAL RULES:
        }
     }
 
-    // 3.5 Auto-correct hallucinated paths (e.g. /mnt/data/...) from chat history
     // 3.5 Auto-correct hallucinated paths AND Check for Expired Render Disk Files
     let missingFiles = [];
     if (docs && docs.length > 0) {
