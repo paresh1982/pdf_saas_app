@@ -1,3 +1,14 @@
+// ─── Browser Global Resilience Layer (Headless Fix) ─────────
+if (typeof global.DOMMatrix === 'undefined') {
+  global.DOMMatrix = class DOMMatrix { constructor() {} };
+}
+if (typeof global.ImageData === 'undefined') {
+  global.ImageData = class ImageData { constructor() { this.data = new Uint8ClampedArray(0); } };
+}
+if (typeof global.Path2D === 'undefined') {
+  global.Path2D = class Path2D { constructor() {} };
+}
+
 // ─── Rescue Logger ──────────────────────────────────────
 process.on('uncaughtException', (err) => {
   console.error('💥 FATAL CRASH (Uncaught Exception):', err.stack);
