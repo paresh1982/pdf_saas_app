@@ -856,7 +856,7 @@ function DynamicChart({ config }) {
   };
 
   return (
-    <div className="w-full h-[320px] mt-4">
+    <div className="w-full h-[220px] mt-2">
       <ResponsiveContainer width="100%" height="100%">
         {renderChart()}
       </ResponsiveContainer>
