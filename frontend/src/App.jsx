@@ -664,12 +664,12 @@ function renderContent(text, convId) {
     return (
       <div key={i} className="prose prose-sm max-w-none prose-invert font-medium">
         {cleanPart.split('\n').map((line, j) => {
-          if (line.startsWith('### ')) return <h3 key={j} className="text-base font-black text-white mt-6 mb-2 uppercase tracking-tight">{line.replace('### ', '')}</h3>;
-          if (line.startsWith('## ')) return <h2 key={j} className="text-lg font-black text-white mt-8 mb-3 uppercase tracking-tighter">{line.replace('## ', '')}</h2>;
-          if (line.startsWith('# ')) return <h1 key={j} className="text-2xl font-black text-white mt-10 mb-4 uppercase tracking-tighter">{line.replace('# ', '')}</h1>;
-          if (line.startsWith('- ') || line.startsWith('* ')) return <li key={j} className="text-sm text-foreground/80 ml-4 mb-1 list-disc font-medium">{line.replace(/^[-*] /, '')}</li>;
-          if (line.trim() === '') return <div key={j} className="h-4" />;
-          return <p key={j} className="text-sm text-foreground/80 leading-relaxed mb-3">{line}</p>;
+          if (line.startsWith('### ')) return <h3 key={j} className="text-base font-black text-white mt-1 mb-1 uppercase tracking-tight">{line.replace('### ', '')}</h3>;
+          if (line.startsWith('## ')) return <h2 key={j} className="text-lg font-black text-white mt-2 mb-1.5 uppercase tracking-tighter">{line.replace('## ', '')}</h2>;
+          if (line.startsWith('# ')) return <h1 key={j} className="text-2xl font-black text-white mt-3 mb-2 uppercase tracking-tighter">{line.replace('# ', '')}</h1>;
+          if (line.startsWith('- ') || line.startsWith('* ')) return <li key={j} className="text-sm text-foreground/80 ml-4 mb-0.5 list-disc font-medium">{line.replace(/^[-*] /, '')}</li>;
+          if (line.trim() === '') return <div key={j} className="h-1" />;
+          return <p key={j} className="text-sm text-foreground/80 leading-relaxed mb-1.5">{line}</p>;
         })}
       </div>
     );
@@ -736,7 +736,7 @@ function DynamicTable({ data, raw, convId, isNested = false }) {
   };
 
   return (
-    <div className={`${isNested ? '' : 'my-2 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl'}`}>
+    <div className={`${isNested ? '' : 'my-1 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl'}`}>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-5 py-3 border-b border-white/5 bg-white/2 gap-4">
         <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em] flex items-center gap-2">
           <Zap size={14} className="fill-primary/20" /> Structured Extraction • {data.length} records found
@@ -883,7 +883,7 @@ function AnalysisDashboard({ dataObj, raw, convId }) {
   const hasTable = !!dataObj.tableData;
 
   return (
-    <div className="my-2 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
+    <div className="my-1 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
       <div className="px-5 py-3 border-b border-white/5 bg-white/2">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
           <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em] flex items-center gap-2">
@@ -976,11 +976,11 @@ function ChatMessage({ msg }) {
           {isUser ? (
             <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{msg.content}</p>
           ) : (
-            <div className="space-y-2.5">
+            <div className="space-y-1">
               <div className="font-outfit">{renderContent(msg.content, msg.conversation_id)}</div>
               
               {pythonAttachment && (
-                <div className="pt-2 border-t border-white/5">
+                <div className="pt-2">
                   <button 
                     onClick={() => setShowCode(!showCode)}
                     className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-secondary hover:text-white transition-colors"
