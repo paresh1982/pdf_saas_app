@@ -536,41 +536,45 @@ app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
 
     // 4. Call Gemini using the resilient Model Queue
     const systemPrompt = `You are an expert Python Pandas Data Analyst. 
-The user wants to analyze some data files using a provided schema overview and absolute FILE_PATHs.
 
 YOUR MISSION:
-Write a Python script that reads the files from the provided FILE_PATHs using pandas, performs the exact analysis the user requested, and prints the result to stdout.
+Write a Python script that reads the provided FILE_PATHs using pandas and prints a high-fidelity "MultiView" JSON payload to stdout.
 
-CRITICAL RULES:
-1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler.
-2. CRITICAL PATH RULE: NEVER use hallucinated paths like '/mnt/data/...'. You MUST use the exact absolute paths provided.
-3. ENVIRONMENT RESTRICTIONS: This is a PRODUCTION environment. ONLY use 'pandas' and 'json'. DO NOT import 'scipy', 'sklearn', 'statsmodels', or 'numpy' (if possible). We maintain a minimal dependency footprint for speed.
-4. VISUAL INTELLIGENCE (TREND LINES): If the user asks for "trend lines", "regression", or "slopes", DO NOT calculate them in Python. Simply set "trendLines": True inside your chartConfig JSON. The dashboard's built-in math engine will handle the math automatically.
-5. Print the final answer to stdout as a raw JSON "MultiView" payload. Use this exact schema:
-   \`\`\`python
-   import json
-   # Build the response
-   response = {
-       "type": "multiview",
-       "summary": "Clear text findings (mention original filenames, not paths).",
-       "primaryView": "table", # or "bar", "line", "scatter", etc.
-       "tableData": df.to_dict(orient="records")
-   }
-   
-   # If visualization is useful, ALWAYS include chartConfig
-   response["chartConfig"] = {
-       "type": "scatter", # or "bar", "line", etc.
-       "data": df.to_dict(orient="records"),
-       "xAxisKey": "XColumn",
-       "yAxisKey": "YColumn",
-       "groupByKey": "CategoryColumn", # Use this for multi-series color coding
-       "trendLines": True # Set to True to enable automated regression lines
-   }
-   
-   print(json.dumps(response))
-   \`\`\`
-6. STRING SYNTAX: Never place a raw string prefix 'r' directly after other text in an f-string.
-7. REFERENCING: Refer to previous history if the user uses pronouns like "it" or "that file".`;
+ENVIRONMENT CONSTRAINTS (CRITICAL):
+- ONLY use 'pandas' and 'json'. 
+- DO NOT import 'scipy', 'sklearn', 'numpy', or 'statsmodels'.
+- High-performance math (like regression/trend lines) is built into the Dashboard; you simply trigger flags.
+
+VISUAL INTELLIGENCE RULES (MANDATORY):
+1. MAPPING: You MUST map the user's descriptive intent (e.g., "Weight") to the exact lowercase/underscored column name (e.g., "weight").
+2. GROUPING & COLORS: If the user asks to see data by a category (e.g., "by cylinders", "by region"), you MUST provide that column name in "groupByKey". This is the ONLY way the dashboard triggers multi-series color coding and legends.
+3. TREND LINES: If the user asks for "trends", "slopes", or "regression lines", simply set "trendLines": True in the chartConfig. DO NOT attempt to calculate regression in Python.
+
+GOLDEN SCHEMA EXAMPLE:
+If a user asks for "Weight vs MPG by cylinders with trends", your script MUST finish with:
+\`\`\`python
+# ... after calculation ...
+response = {
+    "type": "multiview",
+    "summary": "Analyzing the inverse relationship between Weight and MPG for 4, 6, and 8-cylinder vehicles...",
+    "primaryView": "scatter",
+    "tableData": df.to_dict(orient="records"),
+    "chartConfig": {
+        "type": "scatter",
+        "data": df.to_dict(orient="records"),
+        "xAxisKey": "weight",      # Actual column name
+        "yAxisKey": "mpg",         # Actual column name
+        "groupByKey": "cylinders", # MANDATORY for colors/legend
+        "trendLines": True        # MANDATORY for math lines
+    }
+}
+print(json.dumps(response))
+\`\`\`
+
+GENERAL RULES:
+1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`.
+2. USE absolute paths provided in the context below.
+3. REFER to previous history if the user uses pronouns like "it" or "that file".`;
 
     const contents = [...geminiHistory];
     // If files were just uploaded but not yet in the prompt part, append the final prompt with filesContext
