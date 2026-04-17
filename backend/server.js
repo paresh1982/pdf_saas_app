@@ -535,46 +535,33 @@ app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
     }));
 
     // 4. Call Gemini using the resilient Model Queue
-    const systemPrompt = `You are an expert Python Pandas Data Analyst. 
+    const systemPrompt = `You are an expert Data Analyst and Python Developer. 
 
-YOUR MISSION:
-Write a Python script that reads the provided FILE_PATHs using pandas and prints a high-fidelity "MultiView" JSON payload to stdout.
+YOUR TASK:
+Write a Python script that reads the provided FILE_PATHs and returns a "MultiView" JSON payload.
 
-ENVIRONMENT CONSTRAINTS (CRITICAL):
-- ONLY use 'pandas' and 'json'. 
-- DO NOT import 'scipy', 'sklearn', 'numpy', or 'statsmodels'.
-- High-performance math (like regression/trend lines) is built into the Dashboard; you simply trigger flags.
+RULES:
+1. ENVIRONMENT: Use only 'pandas' and 'json'. Do not use 'scipy' or 'sklearn'.
+2. CHARTS: For trend lines/slopes, do not calculate in Python. Simply set "trendLines": True in the chartConfig.
+3. GROUPING: To show multiple colors and a legend (e.g., "by cylinders"), you MUST provide the column name in "groupByKey".
+4. MAPPING: Ensure "xAxisKey", "yAxisKey", and "groupByKey" match your dataframe columns.
+5. CODE ONLY: Return only the python code block.
 
-VISUAL INTELLIGENCE RULES (MANDATORY):
-1. MAPPING: You MUST map the user's descriptive intent (e.g., "Weight") to the exact lowercase/underscored column name (e.g., "weight").
-2. GROUPING & COLORS: If the user asks to see data by a category (e.g., "by cylinders", "by region"), you MUST provide that column name in "groupByKey". This is the ONLY way the dashboard triggers multi-series color coding and legends.
-3. TREND LINES: If the user asks for "trends", "slopes", or "regression lines", simply set "trendLines": True in the chartConfig. DO NOT attempt to calculate regression in Python.
-
-GOLDEN SCHEMA EXAMPLE:
-If a user asks for "Weight vs MPG by cylinders with trends", your script MUST finish with:
-\`\`\`python
-# ... after calculation ...
-response = {
-    "type": "multiview",
-    "summary": "Analyzing the inverse relationship between Weight and MPG for 4, 6, and 8-cylinder vehicles...",
-    "primaryView": "scatter",
-    "tableData": df.to_dict(orient="records"),
-    "chartConfig": {
-        "type": "scatter",
-        "data": df.to_dict(orient="records"),
-        "xAxisKey": "weight",      # Actual column name
-        "yAxisKey": "mpg",         # Actual column name
-        "groupByKey": "cylinders", # MANDATORY for colors/legend
-        "trendLines": True        # MANDATORY for math lines
-    }
-}
-print(json.dumps(response))
-\`\`\`
-
-GENERAL RULES:
-1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`.
-2. USE absolute paths provided in the context below.
-3. REFER to previous history if the user uses pronouns like "it" or "that file".`;
+EXAMPLE PAYLOAD:
+{
+  "type": "multiview",
+  "summary": "...",
+  "primaryView": "scatter",
+  "tableData": [...],
+  "chartConfig": {
+    "type": "scatter",
+    "data": [...],
+    "xAxisKey": "...",
+    "yAxisKey": "...",
+    "groupByKey": "...", # REQUIRED for colors
+    "trendLines": true # REQUIRED for slopes
+  }
+}`;
 
     const contents = [...geminiHistory];
     // If files were just uploaded but not yet in the prompt part, append the final prompt with filesContext
