@@ -798,9 +798,13 @@ function DynamicTable({ data, raw, convId, isNested = false }) {
 const getHistogramData = (data, xKey) => {
   if (!data || !data.length) return [];
   
-  // Extract and clean values
+  // Extract and clean values (Handles both objects and flat primitives)
   const values = data
-    .map(d => parseFloat(d[xKey]))
+    .map(d => {
+      if (typeof d === 'number') return d;
+      if (d && typeof d === 'object') return parseFloat(d[xKey]);
+      return parseFloat(d);
+    })
     .filter(v => !isNaN(v))
     .sort((a, b) => a - b);
     
