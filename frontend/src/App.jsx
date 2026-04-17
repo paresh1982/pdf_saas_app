@@ -34,10 +34,15 @@ import {
   Database,
   Shuffle,
   Code,
-  ChevronUp
+  ChevronUp,
+  BarChart3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import {
+  ResponsiveContainer, BarChart, Bar, LineChart, Line, AreaChart, Area,
+  PieChart, Pie, Cell, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend
+} from 'recharts';
 
 const API = '/api';
 
@@ -638,10 +643,15 @@ function renderContent(text, convId) {
       const lang = part.match(/```(\w+)?/)?.[1] || '';
       const code = part.replace(/```\w*\n?/g, '').replace(/```$/g, '').trim();
 
-      // Try to render JSON as a table
+      // Try to render JSON as a table or multiview dashboard
       if (lang === 'json') {
         try {
           const parsed = JSON.parse(code);
+          
+          if (parsed && typeof parsed === 'object' && parsed.type === 'multiview') {
+             return <AnalysisDashboard key={i} dataObj={parsed} raw={code} convId={convId} />;
+          }
+
           const arr = Array.isArray(parsed) ? parsed : [parsed];
           if (arr.length > 0 && typeof arr[0] === 'object') {
             return <DynamicTable key={i} data={arr} raw={code} convId={convId} />;
@@ -674,7 +684,7 @@ function renderContent(text, convId) {
 }
 
 // ─── Dynamic Table (renders ANY JSON array) ──────────────
-function DynamicTable({ data, raw, convId }) {
+function DynamicTable({ data, raw, convId, isNested = false }) {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(null);
   if (!data || data.length === 0) return null;
@@ -723,7 +733,7 @@ function DynamicTable({ data, raw, convId }) {
   };
 
   return (
-    <div className="my-6 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
+    <div className={`${isNested ? '' : 'my-6 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl'}`}>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-6 py-4 border-b border-white/5 bg-white/2 gap-4">
         <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em] flex items-center gap-2">
           <Zap size={14} className="fill-primary/20" /> Structured Extraction • {data.length} records found
@@ -767,6 +777,152 @@ function DynamicTable({ data, raw, convId }) {
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── Dynamic Visual Chart (Recharts) ─────────────────────
+function DynamicChart({ config }) {
+  if (!config || !config.data || !config.data.length || !config.type) return null;
+
+  const { type, data, xAxisKey, yAxisKey } = config;
+
+  const renderChart = () => {
+    switch (type) {
+      case 'bar':
+        return (
+          <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
+            <Legend wrapperStyle={{ fontSize: '10px' }} />
+            <Bar dataKey={yAxisKey} fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={60} />
+          </BarChart>
+        );
+      case 'line':
+        return (
+          <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+            <Tooltip contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
+            <Legend wrapperStyle={{ fontSize: '10px' }} />
+            <Line type="monotone" dataKey={yAxisKey} stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }} activeDot={{ r: 6, fill: '#fff', stroke: '#ef4444' }} />
+          </LineChart>
+        );
+      case 'area':
+        return (
+          <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+            <Tooltip contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
+            <Legend wrapperStyle={{ fontSize: '10px' }} />
+            <Area type="monotone" dataKey={yAxisKey} stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} strokeWidth={2} />
+          </AreaChart>
+        );
+      case 'scatter':
+        return (
+          <ScatterChart margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+            <XAxis dataKey={xAxisKey} type="category" allowDuplicatedCategory={false} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} />
+            <YAxis dataKey={yAxisKey} type="number" stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+            <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#ef4444', fontWeight: 'bold' }} />
+            <Legend wrapperStyle={{ fontSize: '10px' }} />
+            <Scatter name={yAxisKey} data={data} fill="#ef4444" />
+          </ScatterChart>
+        );
+      case 'pie':
+        return (
+          <PieChart>
+            <Tooltip contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
+            <Legend wrapperStyle={{ fontSize: '10px' }} />
+            <Pie data={data} dataKey={yAxisKey} nameKey={xAxisKey} cx="50%" cy="50%" outerRadius={120} fill="#ef4444" label>
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7'][index % 6]} />
+              ))}
+            </Pie>
+          </PieChart>
+        );
+      default:
+        return <div className="p-4 text-center text-foreground/40 text-[10px] uppercase font-black tracking-widest">Unsupported chart type: {type}</div>;
+    }
+  };
+
+  return (
+    <div className="w-full h-[350px] mt-6">
+      <ResponsiveContainer width="100%" height="100%">
+        {renderChart()}
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ─── Analysis Dashboard (Multi-View) ──────────────────────────
+function AnalysisDashboard({ dataObj, raw, convId }) {
+  const [activeTab, setActiveTab] = useState(dataObj.primaryView === 'table' && dataObj.chartConfig ? 'chart' : (dataObj.chartConfig ? 'chart' : 'table'));
+
+  useEffect(() => {
+    if (dataObj.primaryView === 'table' && !dataObj.chartConfig) {
+      setActiveTab('table');
+    } else if (dataObj.primaryView && dataObj.primaryView !== 'table' && dataObj.chartConfig) {
+      setActiveTab('chart');
+    } else if (dataObj.chartConfig) {
+      setActiveTab('chart');
+    } else {
+      setActiveTab('table');
+    }
+  }, [dataObj]);
+
+  const hasChart = !!dataObj.chartConfig;
+  const hasTable = !!dataObj.tableData;
+
+  return (
+    <div className="my-6 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
+      <div className="px-6 py-4 border-b border-white/5 bg-white/2">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+          <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em] flex items-center gap-2">
+             <BarChart3 size={14} className="text-primary" /> Visual Intelligence Dashboard
+          </span>
+          <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
+             {hasTable && (
+               <button 
+                 onClick={() => setActiveTab('table')}
+                 className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                   activeTab === 'table' ? 'bg-secondary/20 text-secondary' : 'text-foreground/40 hover:text-white'
+                 }`}
+               >
+                 📑 Table Data
+               </button>
+             )}
+             {hasChart && (
+               <button 
+                 onClick={() => setActiveTab('chart')}
+                 className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                   activeTab === 'chart' ? 'bg-primary/20 text-primary' : 'text-foreground/40 hover:text-white'
+                 }`}
+               >
+                 📊 Chart View
+               </button>
+             )}
+          </div>
+        </div>
+        {dataObj.summary && (
+          <p className="text-sm text-white/80 leading-relaxed font-medium">
+            {dataObj.summary}
+          </p>
+        )}
+      </div>
+
+      <div className="p-2 sm:p-6 bg-black/20">
+         {activeTab === 'table' && hasTable && (
+            <DynamicTable data={dataObj.tableData} raw={JSON.stringify(dataObj.tableData, null, 2)} convId={convId} isNested={true} />
+         )}
+         {activeTab === 'chart' && hasChart && (
+            <DynamicChart config={dataObj.chartConfig} />
+         )}
       </div>
     </div>
   );

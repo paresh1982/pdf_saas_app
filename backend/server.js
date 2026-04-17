@@ -484,10 +484,30 @@ Write a Python script that reads the files from the provided FILE_PATHs using pa
 CRITICAL RULES:
 1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler before or after the code block.
 2. CRITICAL PATH RULE: NEVER use hallucinated or generic paths like '/mnt/data/...'. You MUST use the exact absolute paths provided in the "FILE_PATH:" lines below. Always use raw strings (e.g., r"C:\path\to\file"). If you use /mnt/data, the system will crash!
-3. Print the final answer to stdout. If the result is a DataFrame or tabular data, you MUST print it strictly as a raw JSON string array using: print(df.to_json(orient='records', date_format='iso')). DO NOT wrap the json in markdown backticks inside your python print statements!
-4. If the result is a simple calculation or single value, print a clear sentence explaining the result instead. Avoid plotting charts for now.
-4. Make the script robust against potential Date parsing issues.
-5. If the user asks a general question NOT requiring data analysis, still write a tiny script that prints the answer to stdout so the engine can display it correctly.
+3. Print the final answer to stdout. You MUST ALWAYS print the result as a raw JSON object string representing a "MultiView" payload. Use this exact schema:
+   \`\`\`python
+   import json
+   # Build the response
+   response = {
+       "type": "multiview",
+       "summary": "Clear, concise text explanation of the findings.",
+       "primaryView": "table", # or "bar", "line", "pie", "scatter", "area" if a chart is better
+       "tableData": df.to_dict(orient="records") # The data for the table
+   }
+   
+   # IMPORTANT: If the data can be visualized, include a chartConfig:
+   response["chartConfig"] = {
+       "type": "bar", # matching primaryView
+       "data": df.to_dict(orient="records"), # Aggegrated data best for a chart
+       "xAxisKey": "CategoryColumn",
+       "yAxisKey": "ValueColumn"
+   }
+   
+   print(json.dumps(response))
+   \`\`\`
+   DO NOT wrap the json in markdown backticks inside your python print statements!
+4. Analyze the user's intent: if they specifically ask for a chart, set \`primaryView\` to that chart type. If they ask a general statistical question, set it to "table" but still provide "chartConfig" if visually useful.
+5. Make the script robust against potential Date parsing issues.
 6. The user may ask follow-up questions. Refer to the previous history if they use pronouns like "it" or "that file".`;
 
     const contents = [...geminiHistory];
@@ -588,8 +608,10 @@ if os.path.exists(v_dir): sys.path.insert(0, v_dir)
                resolve(`❌ **Python Execution Error**:\n\`\`\`text\n${stderr || error.message}\n\`\`\``);
            } else {
                let outputText = (stdout || '').trim();
-               // Automatically wrap raw JSON arrays in markdown for the UI table renderer
-               if (outputText.startsWith('[') && outputText.endsWith(']')) {
+               // Automatically wrap raw JSON arrays OR JSON objects in markdown for the UI renderer
+               const isJsonObj = outputText.startsWith('{') && outputText.endsWith('}');
+               const isJsonArr = outputText.startsWith('[') && outputText.endsWith(']');
+               if (isJsonArr || isJsonObj) {
                    try {
                        JSON.parse(outputText);
                        outputText = `\n\`\`\`json\n${outputText}\n\`\`\`\n`;
