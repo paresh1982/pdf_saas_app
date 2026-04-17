@@ -791,6 +791,51 @@ function DynamicTable({ data, raw, convId, isNested = false }) {
 // ─── Visual Intelligence: Chart Restoration ─────────────────────
 // Removed trend line experiment for stability.
 
+/**
+ * Smart Binning Engine for Histograms
+ * Transforms raw numerical points into frequency bins.
+ */
+const getHistogramData = (data, xKey) => {
+  if (!data || !data.length) return [];
+  
+  // Extract and clean values
+  const values = data
+    .map(d => parseFloat(d[xKey]))
+    .filter(v => !isNaN(v))
+    .sort((a, b) => a - b);
+    
+  if (!values.length) return [];
+  
+  const min = values[0];
+  const max = values[values.length - 1];
+  const range = max - min;
+  
+  // Rule of thumb: ~15 bins or square root of N
+  const binCount = Math.min(20, Math.ceil(Math.sqrt(values.length)));
+  const binSize = range / binCount || 1;
+  
+  const bins = [];
+  for (let i = 0; i < binCount; i++) {
+    const start = min + (i * binSize);
+    const end = start + binSize;
+    bins.push({
+      binLabel: `${Math.round(start)}-${Math.round(end)}`,
+      frequency: 0,
+      start,
+      end
+    });
+  }
+  
+  values.forEach(v => {
+    let binIdx = Math.floor((v - min) / binSize);
+    if (binIdx >= binCount) binIdx = binCount - 1;
+    if (binIdx < 0) binIdx = 0;
+    bins[binIdx].frequency++;
+  });
+  
+  return bins;
+};
+
 // ─── Dynamic Visual Chart (Recharts) ─────────────────────
 const CHART_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
 
@@ -886,10 +931,11 @@ function DynamicChart({ config }) {
           </AreaChart>
         );
       case 'histogram':
+        const binnedData = getHistogramData(data, xAxisKey);
         return (
-          <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <BarChart data={binnedData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <XAxis dataKey="binLabel" stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
             <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
             <Tooltip 
               formatter={formatValue} 
@@ -902,27 +948,7 @@ function DynamicChart({ config }) {
               itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: 'bold' }} 
               labelStyle={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', marginBottom: '4px' }}
             />
-            <Bar dataKey={yAxisKey} fill="#ef4444" radius={[2, 2, 0, 0]} />
-          </BarChart>
-        );
-      case 'histogram':
-        return (
-          <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
-            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
-            <Tooltip 
-              formatter={formatValue} 
-              contentStyle={{ 
-                backgroundColor: 'rgba(10, 10, 10, 0.9)', 
-                borderColor: 'rgba(255,255,255,0.1)', 
-                borderRadius: '12px',
-                backdropFilter: 'blur(8px)'
-              }} 
-              itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: 'bold' }} 
-              labelStyle={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', marginBottom: '4px' }}
-            />
-            <Bar dataKey={yAxisKey} fill="#ef4444" radius={[2, 2, 0, 0]} />
+            <Bar dataKey="frequency" fill="#ef4444" radius={[2, 2, 0, 0]} />
           </BarChart>
         );
       case 'scatter':

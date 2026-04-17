@@ -545,6 +545,7 @@ CRITICAL RULES:
 2. DISCOVERY: Print the result as a raw JSON "MultiView" payload to stdout.
 3. VISUAL INTELLIGENCE (MANDATORY): To show different colors and a legend (e.g., "by cylinders" or "by category"), you MUST provide the exact column name in the "groupByKey" field of the chartConfig.
 4. Use absolute paths provided in the context below.
+5. HISTOGRAMS: For distributions, set type to "histogram". You can simply provide raw data points in the "data" array, and the Dashboard will automatically calculate the statistical bins for you.
 
 EXAMPLE OUTPUT FORMAT:
 \`\`\`python
