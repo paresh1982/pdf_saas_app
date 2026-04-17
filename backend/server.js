@@ -26,7 +26,10 @@ const { PDFDocument, rgb, degrees, StandardFonts } = pdflib;
 const archiver = require('archiver');
 const mammoth = require('mammoth');
 const pdfParse = require('pdf-parse');
-const { spawn } = require('child_process');
+const { spawn, exec, execSync } = require('child_process');
+
+// --- Cross-Platform Python Detection ---
+const PYTHON_CMD = process.platform === 'win32' ? 'python' : 'python3';
 
 // ─── Config ──────────────────────────────────────────────
 const app = express();
@@ -155,8 +158,9 @@ const upload = multer({
 app.get('/api/admin/env', async (req, res) => {
   try {
     const { execSync } = require('child_process');
-    const pythonVersion = execSync('python3 --version').toString().trim();
-    const pipList = execSync('python3 -m pip list').toString().trim();
+    // Check Python version cross-platform
+    const pythonVersion = execSync(`${PYTHON_CMD} --version`).toString().trim();
+    const pipList = execSync(`${PYTHON_CMD} -m pip list`).toString().trim();
     // Check for local vendor libs (Backend local)
     const vendorPath = path.join(__dirname, 'python_libs');
     const hasVendor = fs.existsSync(vendorPath);
@@ -602,8 +606,8 @@ if os.path.exists(v_dir): sys.path.insert(0, v_dir)
     fs.writeFileSync(tempScriptPath, bootstrap + pythonCode);
 
     const execPromise = new Promise((resolve) => {
-       // Use python3 to match the Merger logic and Render environment
-       exec(`python3 "${tempScriptPath}"`, { timeout: 45000 }, (error, stdout, stderr) => {
+       // Use cross-platform command (python on Windows, python3 on Linux)
+       exec(`${PYTHON_CMD} "${tempScriptPath}"`, { timeout: 45000 }, (error, stdout, stderr) => {
            if (error) {
                resolve(`❌ **Python Execution Error**:\n\`\`\`text\n${stderr || error.message}\n\`\`\``);
            } else {
@@ -1371,7 +1375,7 @@ If a file doesn't need mapping, don't include it in "mapping". Do not include ma
     fs.writeFileSync(configPath, JSON.stringify(config));
 
     const scriptPath = path.join(__dirname, 'scripts/batch_processor.py');
-    const pythonProcess = spawn('python3', [scriptPath, configPath], {
+    const pythonProcess = spawn(PYTHON_CMD, [scriptPath, configPath], {
       cwd: __dirname // Ensure script runs with backend/ as root
     });
 

@@ -351,48 +351,41 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
 // ─── Site Footer ──────────────────────────────────────────
 function SiteFooter({ setView }) {
   return (
-    <footer className="glass-panel border-t border-white/5 h-[88px] px-6 w-full relative overflow-hidden flex flex-col justify-center gap-4">
-      {/* Row 1: Footer Menu */}
-      <div className="flex justify-center gap-x-12">
-        {[
-          { label: 'ABOUT US', id: 'about' },
-          { label: 'PRIVACY POLICY', id: 'privacy' },
-          { label: 'DISCLAIMER', id: 'disclaimer' },
-          { label: 'CONTACT', id: 'contact' }
-        ].map(link => (
-          <button 
-            key={link.label} 
-            onClick={() => setView(link.id)}
-            className="text-[11px] font-black text-foreground/40 hover:text-secondary uppercase tracking-[0.3em] transition-all hover:scale-105"
-          >
-            {link.label}
-          </button>
-        ))}
+    <footer className="glass-panel border-t border-white/5 h-16 px-6 w-full relative overflow-hidden flex items-center justify-between">
+      <div className="flex items-center gap-6">
+        <button onClick={() => setView('dashboard')} className="flex items-center gap-2.5 group cursor-pointer transition-transform hover:scale-105 active:scale-95">
+          <LogoDJ size={18} className="group-hover:rotate-3 transition-transform" />
+          <div className="text-sm font-black tracking-tighter uppercase flex">
+            <span className="text-primary">DOC</span>
+            <span className="text-secondary">JOCKEY</span>
+          </div>
+        </button>
+        <div className="h-4 w-px bg-white/10 mx-2" />
+        <div className="flex gap-x-6">
+          {[
+            { label: 'ABOUT US', id: 'about' },
+            { label: 'PRIVACY', id: 'privacy' },
+            { label: 'DISCLAIMER', id: 'disclaimer' },
+            { label: 'CONTACT', id: 'contact' }
+          ].map(link => (
+            <button 
+              key={link.label} 
+              onClick={() => setView(link.id)}
+              className="text-[9px] font-black text-foreground/30 hover:text-secondary uppercase tracking-[0.2em] transition-all"
+            >
+              {link.label}
+            </button>
+          ))}
+        </div>
       </div>
-
-      {/* Row 2: Email | Logo + Text | Copyright */}
-      <div className="flex items-center justify-between w-full">
-        <div className="flex-1 text-left">
-          <a href="mailto:connect@docjockey.com" className="text-[11px] font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.2em] transition-colors">
-            CONNECT@DOCJOCKEY.COM
-          </a>
-        </div>
-        
-        <div className="flex-none flex justify-center">
-          <button onClick={() => setView('dashboard')} className="flex items-center gap-2.5 group cursor-pointer transition-transform hover:scale-105 active:scale-95">
-            <LogoDJ size={22} className="group-hover:rotate-3 transition-transform" />
-            <div className="text-lg font-black tracking-tighter uppercase flex">
-              <span className="text-primary">DOC</span>
-              <span className="text-secondary">JOCKEY</span>
-            </div>
-          </button>
-        </div>
-
-        <div className="flex-1 text-right">
-          <span className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em]">
-            © 2026 DOCJOCKEY. ALL RIGHTS RESERVED.
-          </span>
-        </div>
+      
+      <div className="flex items-center gap-6">
+        <a href="mailto:connect@docjockey.com" className="text-[9px] font-black text-secondary/40 hover:text-secondary uppercase tracking-[0.2em] transition-colors">
+          CONNECT@DOCJOCKEY.COM
+        </a>
+        <span className="text-[8px] font-black text-foreground/20 uppercase tracking-[0.3em]">
+          © 2026 DOCJOCKEY
+        </span>
       </div>
     </footer>
   );
@@ -1726,91 +1719,98 @@ export default function App() {
               ) : currentView === 'dashboard' ? (
                 messages.length === 0 ? (
                   /* Empty State / Welcome */
-                  <div className="h-full flex flex-col items-center justify-center p-8 pt-8 pb-12 min-h-screen">
+                  <div className="flex-1 flex flex-col items-center justify-center p-4 pt-8 pb-8 min-h-0">
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="text-center w-full max-w-screen-2xl px-4"
+                      className="text-center w-full max-w-screen-xl px-4"
                     >
-                      <div className="w-24 h-24 mb-6 shadow-2xl shadow-primary/10 flex items-center justify-center mx-auto transition-transform hover:scale-110 duration-500">
-                        <LogoDJ size={52} />
+                      <div className="w-16 h-16 mb-4 shadow-2xl shadow-primary/10 flex items-center justify-center mx-auto transition-transform hover:scale-110 duration-500">
+                        <LogoDJ size={36} />
                       </div>
-                      <h2 className="text-2xl font-black mb-2 tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
+                      <h2 className="text-base font-black mb-6 tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
                       
                       {/* --- Welcome State Mode Selection --- */}
-                      <div className="flex flex-col md:flex-row gap-6 max-w-4xl mx-auto mb-12">
+                      <div className="flex flex-col lg:flex-row gap-4 w-full max-w-screen-xl mx-auto mb-8">
                         {/* Master Extractor Card */}
                         <div 
                           onClick={() => setIsAnalysisMode(false)}
-                          className={`flex-1 p-8 rounded-[2.5rem] cursor-pointer transition-all duration-500 border-2 group ${
+                          className={`flex-1 p-4 rounded-2xl cursor-pointer transition-all duration-500 border-2 group ${
                             !isAnalysisMode 
-                            ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-105' 
+                            ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-[1.02]' 
                             : 'bg-surface/30 border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 hover:border-primary/30'
                           }`}
                         >
-                           <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all border ${
-                             !isAnalysisMode ? 'bg-primary text-white shadow-lg' : 'bg-surface border-white/10 text-foreground/40'
-                           }`}>
-                             <Layout size={32} />
+                           <div className="flex items-center gap-4">
+                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border shrink-0 ${
+                               !isAnalysisMode ? 'bg-primary text-white shadow-lg' : 'bg-surface border-white/10 text-foreground/40'
+                             }`}>
+                               <Layout size={24} />
+                             </div>
+                             <div className="text-left">
+                               <h3 className="text-sm font-black text-white uppercase tracking-tight mb-1">Master Extractor</h3>
+                               <p className="text-[10px] text-foreground/40 font-medium leading-tight uppercase tracking-widest hidden md:block">
+                                 Table detection • Batch merging
+                               </p>
+                             </div>
                            </div>
-                           <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Master Extractor</h3>
-                           <p className="text-xs text-foreground/40 font-medium leading-relaxed uppercase tracking-widest">
-                             Multimodal table detection • Batch merging • PDF to structured data
-                           </p>
                         </div>
 
                         {/* Data Analyst Card */}
                         <div 
                           onClick={() => setIsAnalysisMode(true)}
-                          className={`flex-1 p-8 rounded-[2.5rem] cursor-pointer transition-all duration-500 border-2 group ${
+                          className={`flex-1 p-4 rounded-2xl cursor-pointer transition-all duration-500 border-2 group ${
                             isAnalysisMode 
-                            ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-105' 
+                            ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-[1.02]' 
                             : 'bg-surface/30 border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 hover:border-primary/30'
                           }`}
                         >
-                           <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all border ${
-                             isAnalysisMode ? 'bg-primary text-white shadow-lg' : 'bg-surface border-white/10 text-foreground/40'
-                           }`}>
-                             <Zap size={32} fill={isAnalysisMode ? 'currentColor' : 'none'} />
+                           <div className="flex items-center gap-4">
+                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border shrink-0 ${
+                               isAnalysisMode ? 'bg-primary text-white shadow-lg' : 'bg-surface border-white/10 text-foreground/40'
+                             }`}>
+                               <Zap size={24} fill={isAnalysisMode ? 'currentColor' : 'none'} />
+                             </div>
+                             <div className="text-left">
+                               <h3 className="text-sm font-black text-white uppercase tracking-tight mb-1">Visual Analyst</h3>
+                               <p className="text-[10px] text-foreground/40 font-medium leading-tight uppercase tracking-widest hidden md:block">
+                                 Python engine • Visualization
+                               </p>
+                             </div>
                            </div>
-                           <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Visual Analyst</h3>
-                           <p className="text-xs text-foreground/40 font-medium leading-relaxed uppercase tracking-widest">
-                             Python engine • Data cleaning • Predictive analytics • Visualization
-                           </p>
                         </div>
                       </div>
 
-                      {/* --- Upload Mode Toggle (Restored) --- */}
                       {!isAnalysisMode && (
-                        <div className="flex bg-surface/50 p-1.5 rounded-2xl border border-white/5 mb-8 max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <div className="flex bg-surface/50 p-1 rounded-xl border border-white/5 mb-6 max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
                           <button 
                             onClick={() => { setUploadMode('single'); setAttachedFiles([]); }}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.1em] transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg' : 'text-foreground/30 hover:text-white'}`}
                           >
-                            <FileText size={14} /> Single document
+                            <FileText size={12} /> Single
                           </button>
                           <button 
                             onClick={() => { setUploadMode('multiple'); setAttachedFiles([]); }}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'multiple' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-foreground/30 hover:text-white'}`}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.1em] transition-all ${uploadMode === 'multiple' ? 'bg-primary text-white shadow-lg' : 'text-foreground/30 hover:text-white'}`}
                           >
-                            <Layout size={14} /> Batch processor
+                            <Layout size={12} /> Batch
                           </button>
                         </div>
                       )}
 
                       <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full max-w-screen-xl border-2 border-dashed border-white/5 hover:border-primary/20 rounded-[3rem] p-12 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-8"
+                        className="w-full max-w-screen-xl border-2 border-dashed border-white/5 hover:border-primary/20 rounded-2xl p-4 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-8"
                       >
-                        <div className="flex flex-col items-center gap-4">
-                          <div className="w-20 h-20 bg-primary/5 text-primary rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-inner">
-                            {uploadMode === 'single' ? <Paperclip size={36} /> : <Combine size={36} />}
+                        <div className="flex items-center justify-center gap-4">
+                          <div className="w-12 h-12 bg-primary/5 text-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10">
+                            {uploadMode === 'single' ? <Paperclip size={24} /> : <Combine size={24} />}
                           </div>
-                          <div>
-                            <p className="text-lg font-black text-white mb-1 uppercase tracking-[0.3em]">
+                          <div className="text-left">
+                            <p className="text-base font-black text-white uppercase tracking-[0.2em]">
                               {isAnalysisMode ? 'Drop Data File' : (uploadMode === 'single' ? 'Drop document' : 'Drop batch')}
                             </p>
-                            <p className="text-xs text-secondary font-black uppercase tracking-[0.4em] mb-4">
+                            <p className="text-[10px] text-secondary font-black uppercase tracking-[0.2em]">
                               {isAnalysisMode ? 'Excel / CSV Priority' : 'Ready for DocJockey Speed'}
                             </p>
                           </div>
@@ -1874,7 +1874,7 @@ export default function App() {
                 initial={{ y: 100 }}
                 animate={{ y: 0 }}
                 exit={{ y: 100 }}
-                className="sticky bottom-0 p-6 md:p-8 shrink-0 bg-background/80 backdrop-blur-xl border-t border-white/5 z-40"
+                className="sticky bottom-0 p-2 md:p-3 shrink-0 bg-background/80 backdrop-blur-xl border-t border-white/5 z-40"
               >
                 <div className="max-w-screen-2xl mx-auto">
                    <ChatInputArea 
@@ -1938,30 +1938,30 @@ function ChatInputArea({
       <div className="flex items-end gap-3 md:gap-4">
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="p-4 md:p-5 text-foreground/30 hover:text-white hover:bg-white/5 rounded-3xl transition-all shrink-0 border border-white/5 shadow-lg bg-surface/30"
+          className="p-2.5 md:p-3 text-foreground/30 hover:text-white hover:bg-white/5 rounded-xl transition-all shrink-0 border border-white/5 shadow-md bg-surface/30"
         >
-          <Paperclip size={24} />
+          <Paperclip size={18} />
           <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} />
         </button>
 
-        <div className="flex-1 bg-surface/50 border border-white/10 rounded-[2rem] focus-within:border-primary/40 transition-all overflow-hidden shadow-2xl">
+        <div className="flex-1 bg-surface/50 border border-white/10 rounded-2xl focus-within:border-primary/40 transition-all overflow-hidden shadow-xl">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={isAnalysisMode ? "e.g., Clean this data, plot revenue by region..." : (isEmbedded ? "Ask DocJockey to analyze or extract..." : "Send a message...")}
             rows={1}
-            className="w-full bg-transparent px-6 py-5 text-sm outline-none resize-none placeholder:text-foreground/20 max-h-56 leading-relaxed font-medium"
-            style={{ minHeight: '64px' }}
+            className="w-full bg-transparent px-4 py-3 text-sm outline-none resize-none placeholder:text-foreground/20 max-h-32 leading-relaxed font-medium"
+            style={{ minHeight: '44px' }}
           />
         </div>
 
         <button
           onClick={sendMessage}
           disabled={isLoading || (!inputText.trim() && attachedFiles.length === 0)}
-          className="p-5 md:p-6 red-gradient text-white rounded-[2rem] hover:brightness-110 transition-all disabled:opacity-20 disabled:grayscale disabled:cursor-not-allowed shrink-0 shadow-2xl shadow-primary/30 border border-white/10"
+          className="p-3 md:p-3.5 red-gradient text-white rounded-xl hover:brightness-110 transition-all disabled:opacity-20 disabled:grayscale disabled:cursor-not-allowed shrink-0 shadow-xl shadow-primary/30 border border-white/10"
         >
-          <Send size={24} />
+          <Send size={18} />
         </button>
       </div>
 

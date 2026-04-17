@@ -4,3 +4,4 @@ backend/uploads/
 backend/*.db
 frontend/dist
 .DS_Store
+backend/python_libs/
