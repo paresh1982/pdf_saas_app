@@ -905,6 +905,26 @@ function DynamicChart({ config }) {
             <Bar dataKey={yAxisKey} fill="#ef4444" radius={[2, 2, 0, 0]} />
           </BarChart>
         );
+      case 'histogram':
+        return (
+          <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+            <Tooltip 
+              formatter={formatValue} 
+              contentStyle={{ 
+                backgroundColor: 'rgba(10, 10, 10, 0.9)', 
+                borderColor: 'rgba(255,255,255,0.1)', 
+                borderRadius: '12px',
+                backdropFilter: 'blur(8px)'
+              }} 
+              itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: 'bold' }} 
+              labelStyle={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', marginBottom: '4px' }}
+            />
+            <Bar dataKey={yAxisKey} fill="#ef4444" radius={[2, 2, 0, 0]} />
+          </BarChart>
+        );
       case 'scatter':
         return (
           <ComposedChart margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>

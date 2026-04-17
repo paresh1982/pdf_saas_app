@@ -607,8 +607,13 @@ GENERAL:
        // Fallback: If AI just returned code without backticks or language tag
        const lines = aiText.split('\n');
        const hasPandas = lines.some(l => l.includes('import pandas') || l.includes('pd.'));
+       const isJSON = aiText.trim().startsWith('{') && aiText.trim().endsWith('}');
+       
        if (hasPandas) {
           pythonCode = aiText.trim();
+       } else if (isJSON) {
+          // JSON Leak Fix: Wrap raw JSON in a print script
+          pythonCode = `import json\nprint(json.dumps(${aiText.trim()}))`;
        } else {
           // If totally conversational, create a dummy print script
           pythonCode = `print("""${aiText.replace(/"/g, '\\"')}""")`;
