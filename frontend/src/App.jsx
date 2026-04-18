@@ -2138,6 +2138,8 @@ function HowItWorksView({ setView }) {
     { title: 'Bulk PDF Merger', desc: 'Combine unlimited files into a single unified document while preserving quality.' },
     { title: 'Intelligent Splitter', desc: 'Divide PDFs by custom ranges or split every page into individual files.' },
     { title: 'Optimized Compressor', desc: 'Reduce file size for scanned documents without losing text searchability.' },
+    { title: 'Enterprise Convertors', desc: 'High-speed translation between PDF, Word, and Excel while maintaining source layout integrity.' },
+    { title: 'Universal Page Organisers', desc: 'Rotate, reorder, or remove specific pages with a streamlined, high-performance visual interface.' },
     { title: 'A.I. Smart Redraft', desc: 'Re-generate entire documents with natural language instructions (e.g. "Change the date").' }
   ];
 
