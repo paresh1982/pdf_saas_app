@@ -29,5 +29,11 @@ NexGen is the professional, monetizable evolution of our original PDF Reader. It
 - **Documentation:** `gemini.md` (Blueprint)
 - **Status:** Architecture definition complete. Ready for frontend scaffolding.
 
+## Future Phase Roadmap
+1.  **Executive Reporting Engine:**
+    Implement Quarto-style Markdown/HTML reporting. Generate professional-grade summaries with embedded Python statistical visualizations and mathematical verification summaries.
+2.  **Advanced persistence:**
+    Transition from local storage to a robust PostgreSQL/Supabase layer for multi-user session persistence.
+
 ---
 *Derived and upgraded from the stable Proof-of-Concept at `c:\work folder\projects\pdf_reader`. NexGen focuses on performance, UI premiumness, and market-ready features.*
