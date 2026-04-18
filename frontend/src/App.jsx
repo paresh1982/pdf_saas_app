@@ -1839,7 +1839,7 @@ export default function App() {
               ) : currentView === 'dashboard' ? (
                 messages.length === 0 ? (
                   /* Empty State / Welcome */
-                  <div className="flex-1 flex flex-col items-center px-4 py-[20px] h-full overflow-hidden">
+                  <div className="flex-1 flex flex-col items-center px-4 py-[10px] h-full overflow-y-auto custom-scrollbar">
                     <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
