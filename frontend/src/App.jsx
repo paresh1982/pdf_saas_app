@@ -264,34 +264,38 @@ function SiteFooter({ setView }) {
           </div>
         </button>
         <div className="h-4 w-px bg-white/10 mx-2" />
-        <div className="flex gap-x-6">
+        <div className="flex items-center gap-x-4">
           {[
-            { label: 'ABOUT US', id: 'about' },
+            { label: 'ABOUT', id: 'about' },
             { label: 'PRIVACY', id: 'privacy' },
             { label: 'DISCLAIMER', id: 'disclaimer' },
             { label: 'CONTACT', id: 'contact' }
-          ].map(link => (
-            <button 
-              key={link.label} 
-              onClick={() => setView(link.id)}
-              className="text-[11px] font-black text-foreground/60 hover:text-secondary uppercase tracking-[0.2em] transition-all"
-            >
-              {link.label}
-            </button>
+          ].map((link, idx, arr) => (
+            <React.Fragment key={link.label}>
+              <button 
+                onClick={() => setView(link.id)}
+                className="text-[11px] font-black text-foreground/60 hover:text-secondary uppercase tracking-[0.2em] transition-all"
+              >
+                {link.label}
+              </button>
+              {idx < arr.length - 1 && (
+                <div className="h-3 w-px bg-white/10 self-center" />
+              )}
+            </React.Fragment>
           ))}
         </div>
       </div>
 
       <div className="hidden md:flex items-center justify-center flex-1">
-        <span className="text-[10px] font-black text-foreground/50 uppercase tracking-[0.3em] whitespace-nowrap">
-          DOCJOCKEY PRO • AGENTIC EXTRACTION &nbsp; | &nbsp; © 2026 DOCJOCKEY
-        </span>
-      </div>
-      
-      <div className="flex items-center gap-6">
         <a href="mailto:connect@docjockey.com" className="text-[11px] font-black text-secondary/80 hover:text-secondary uppercase tracking-[0.2em] transition-colors">
           CONNECT@DOCJOCKEY.COM
         </a>
+      </div>
+      
+      <div className="flex items-center gap-6">
+        <span className="text-[11px] font-black text-foreground/50 uppercase tracking-[0.3em] whitespace-nowrap">
+          DOCJOCKEY PRO • AGENTIC EXTRACTION &nbsp; | &nbsp; © 2026 DOCJOCKEY
+        </span>
       </div>
     </footer>
   );
@@ -1832,20 +1836,20 @@ export default function App() {
                     <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-center w-full max-w-screen-xl px-4 flex flex-col items-center gap-2 md:gap-3"
+                      className="text-center w-full max-w-screen-xl px-4 flex flex-col items-center gap-1.5 md:gap-2"
                     >
-                      <div className="w-20 h-20 md:w-24 md:h-24 shadow-2xl shadow-primary/20 flex items-center justify-center transition-transform hover:scale-105 duration-500 shrink-0 bg-white/5 rounded-3xl border border-white/10">
-                        <LogoDJ size={48} />
+                      <div className="w-16 h-16 md:w-20 md:h-20 shadow-2xl shadow-primary/20 flex items-center justify-center transition-transform hover:scale-105 duration-500 shrink-0 bg-white/5 rounded-3xl border border-white/10">
+                        <LogoDJ size={40} />
                       </div>
-                      <h2 className="text-xl md:text-3xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm leading-tight">Welcome to the DocJockey Master.</h2>
+                      <h2 className="text-xl md:text-2xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm leading-tight">Welcome to the DocJockey Master.</h2>
                       
-                      <p className="text-foreground/80 text-sm md:text-lg max-w-2xl mx-auto font-bold leading-relaxed">
+                      <p className="text-foreground/80 text-xs md:text-base max-w-2xl mx-auto font-bold leading-relaxed">
                         Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
                       </p>
 
                       <button
                         onClick={() => setCurrentView('howto')}
-                        className="text-[10px] md:text-[11px] font-black text-secondary hover:text-white uppercase tracking-[0.3em] transition-colors flex items-center gap-2 mx-auto group bg-white/5 px-4 py-2 rounded-full border border-white/5 hover:border-secondary/30"
+                        className="text-[10px] md:text-[10px] font-black text-secondary hover:text-white uppercase tracking-[0.3em] transition-colors flex items-center gap-2 mx-auto group bg-white/5 px-4 py-1.5 rounded-full border border-white/5 hover:border-secondary/30"
                       >
                         <HelpCircle size={12} className="group-hover:rotate-12 transition-transform" />
                         Click to know more
@@ -1855,7 +1859,7 @@ export default function App() {
                       <div className="flex flex-col md:flex-row gap-2 md:gap-4 w-full max-w-screen-xl mx-auto px-2 md:px-0">
                         <div 
                           onClick={() => setIsAnalysisMode(false)}
-                          className={`flex-1 px-6 py-4 md:px-8 md:py-5 rounded-3xl cursor-pointer transition-all duration-500 border-2 group ${
+                          className={`flex-1 px-4 py-3 md:px-6 md:py-4 rounded-3xl cursor-pointer transition-all duration-500 border-2 group ${
                             !isAnalysisMode 
                             ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-[1.02]' 
                             : 'bg-surface/30 border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 hover:border-primary/30'
@@ -1878,7 +1882,7 @@ export default function App() {
 
                         <div 
                           onClick={() => setIsAnalysisMode(true)}
-                          className={`flex-1 px-6 py-4 md:px-8 md:py-5 rounded-3xl cursor-pointer transition-all duration-500 border-2 group ${
+                          className={`flex-1 px-4 py-3 md:px-6 md:py-4 rounded-3xl cursor-pointer transition-all duration-500 border-2 group ${
                             isAnalysisMode 
                             ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-[1.02]' 
                             : 'bg-surface/30 border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 hover:border-primary/30'
@@ -1919,7 +1923,7 @@ export default function App() {
 
                       <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full max-w-screen-xl border-2 border-dashed border-white/10 hover:border-primary/40 rounded-3xl px-6 py-4 md:px-8 md:py-5 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto"
+                        className="w-full max-w-screen-xl border-2 border-dashed border-white/10 hover:border-primary/40 rounded-3xl px-6 py-3 md:px-6 md:py-4 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto"
                       >
                         <div className="flex items-center justify-center gap-6">
                           <div className="w-16 h-16 md:w-20 md:h-20 bg-primary/5 text-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-lg">
