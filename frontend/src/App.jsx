@@ -1659,8 +1659,15 @@ export default function App() {
   };
 
   const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
-    setAttachedFiles(prev => [...prev, ...files]);
+    const selected = Array.from(e.target.files);
+    if (!selected.length) return;
+
+    if (uploadMode === 'single' && !isAnalysisMode) {
+      // Enforce single file limit
+      setAttachedFiles([selected[0]]);
+    } else {
+      setAttachedFiles(prev => [...prev, ...selected]);
+    }
   };
 
   return (
@@ -1960,7 +1967,8 @@ export default function App() {
                             isEmbedded={true}
                             isAnalysisMode={isAnalysisMode}
                             setIsAnalysisMode={setIsAnalysisMode}
-                         />
+                             uploadMode={uploadMode}
+                          />
                       </div>
                     </motion.div>
                   </div>
@@ -2016,7 +2024,8 @@ export default function App() {
                       isLoading={isLoading}
                       isAnalysisMode={isAnalysisMode}
                       setIsAnalysisMode={setIsAnalysisMode}
-                   />
+                             uploadMode={uploadMode}
+                          />
                 </div>
               </motion.div>
             )}
@@ -2044,7 +2053,8 @@ function ChatInputArea({
   isLoading,
   isEmbedded = false,
   isAnalysisMode = false,
-  setIsAnalysisMode
+  setIsAnalysisMode,
+  uploadMode = 'single'
 }) {
   return (
     <div className="w-full">
@@ -2068,7 +2078,7 @@ function ChatInputArea({
           className="p-2.5 md:p-3 text-foreground/30 hover:text-white hover:bg-white/5 rounded-xl transition-all shrink-0 border border-white/5 shadow-md bg-surface/30"
         >
           <Paperclip size={18} />
-          <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} />
+          <input ref={fileInputRef} type="file" multiple={uploadMode === 'multiple' || isAnalysisMode} className="hidden" onChange={handleFileSelect} />
         </button>
 
         <div className="flex-1 bg-surface/50 border border-white/10 rounded-2xl focus-within:border-primary/40 transition-all overflow-hidden shadow-xl">
