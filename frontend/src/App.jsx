@@ -71,7 +71,7 @@ function PageContainer({ title, children }) {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-8 md:p-16 max-w-4xl mx-auto w-full min-h-[calc(100vh-160px)]"
+      className="p-4 md:p-12 lg:p-16 max-w-4xl mx-auto w-full min-h-[calc(100vh-160px)]"
     >
       <SectionTitle>{title}</SectionTitle>
       <div className="space-y-6 text-foreground/70 text-sm leading-relaxed font-medium">
@@ -303,18 +303,18 @@ function LogoDJ({ size = 20, className = "" }) {
 // ─── Site Header ──────────────────────────────────────────
 function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitle, currentView, setView }) {
   return (
-    <header className="h-16 shrink-0 z-50 glass-panel border-b border-white/5 px-6 flex items-center justify-between sticky top-0">
+    <header className="h-16 md:h-20 shrink-0 z-50 glass-panel border-b border-white/5 px-4 md:px-8 flex items-center justify-between sticky top-0 backdrop-blur-3xl">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setView('dashboard')}>
-          <LogoDJ size={22} className="group-hover:rotate-6 transition-transform" />
-          <div className="text-xl font-black tracking-tighter uppercase flex">
+          <LogoDJ size={isMobile ? 18 : 22} className="group-hover:rotate-6 transition-transform" />
+          <div className="text-lg md:text-xl font-black tracking-tighter uppercase flex">
             <span className="text-primary">DOC</span>
             <span className="text-secondary">JOCKEY</span>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-10">
+      <div className="flex items-center gap-4 md:gap-10">
         <nav className="hidden lg:flex items-center gap-8">
           {[
             { label: 'Home', id: 'dashboard' },
@@ -324,23 +324,23 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
             <button 
               key={link.label} 
               onClick={() => setView(link.id)}
-              className={`text-xs font-black uppercase tracking-widest transition-colors ${currentView === link.id ? 'text-secondary' : 'text-foreground/40 hover:text-white'}`}
+              className={`text-[10px] md:text-xs font-black uppercase tracking-widest transition-colors ${currentView === link.id ? 'text-secondary' : 'text-foreground/40 hover:text-white'}`}
             >
               {link.label}
             </button>
           ))}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
           <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary hover:text-white transition-all">
             Upgrade Pro
           </button>
-          <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold">
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold shrink-0">
             JD
           </div>
           {isMobile && (
-            <button onClick={onMenuClick} className="p-2 text-foreground/60">
-              <Menu size={20} />
+            <button onClick={onMenuClick} className="p-2.5 md:p-3 text-secondary bg-secondary/5 rounded-xl border border-secondary/10 active:scale-90 transition-transform">
+              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           )}
         </div>
@@ -630,7 +630,7 @@ function ToolModal({ tool, onClose }) {
 }
 
 // ─── Markdown-lite renderer ──────────────────────────────
-function renderContent(text, convId) {
+function renderContent(text, convId, isMobile = false) {
   if (!text) return null;
   const parts = text.split(/(```[\s\S]*?```)/g);
 
@@ -646,7 +646,7 @@ function renderContent(text, convId) {
           const parsed = JSON.parse(code);
           
           if (parsed && typeof parsed === 'object' && parsed.type === 'multiview') {
-             return <AnalysisDashboard key={i} dataObj={parsed} raw={code} convId={convId} />;
+             return <AnalysisDashboard key={i} dataObj={parsed} raw={code} convId={convId} isMobile={isMobile} />;
           }
 
           const arr = Array.isArray(parsed) ? parsed : [parsed];
@@ -843,7 +843,7 @@ const getHistogramData = (data, xKey) => {
 // ─── Dynamic Visual Chart (Recharts) ─────────────────────
 const CHART_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
 
-function DynamicChart({ config }) {
+function DynamicChart({ config, isMobile = false }) {
   if (!config || !config.data || !config.data.length || !config.type) return null;
 
   const { type, data, xAxisKey, yAxisKey } = config;
@@ -1033,7 +1033,7 @@ function DynamicChart({ config }) {
   };
 
   return (
-    <div className="w-full h-[220px] mt-2">
+    <div className={`w-full ${isMobile ? 'h-[280px]' : 'h-[350px] md:h-[400px]'} mt-4`}>
       <ResponsiveContainer width="100%" height="100%">
         {renderChart()}
       </ResponsiveContainer>
@@ -1042,7 +1042,7 @@ function DynamicChart({ config }) {
 }
 
 // ─── Analysis Dashboard (Multi-View) ──────────────────────────
-function AnalysisDashboard({ dataObj, raw, convId }) {
+function AnalysisDashboard({ dataObj, raw, convId, isMobile = false }) {
   const [activeTab, setActiveTab] = useState(dataObj.primaryView === 'table' && dataObj.chartConfig ? 'chart' : (dataObj.chartConfig ? 'chart' : 'table'));
 
   useEffect(() => {
@@ -1102,7 +1102,7 @@ function AnalysisDashboard({ dataObj, raw, convId }) {
             <DynamicTable data={dataObj.tableData} raw={JSON.stringify(dataObj.tableData, null, 2)} convId={convId} isNested={true} />
          )}
          {activeTab === 'chart' && hasChart && (
-            <DynamicChart config={dataObj.chartConfig} />
+            <DynamicChart config={dataObj.chartConfig} isMobile={isMobile} />
          )}
       </div>
     </div>
@@ -1110,7 +1110,7 @@ function AnalysisDashboard({ dataObj, raw, convId }) {
 }
 
 // ─── Chat Message Bubble ─────────────────────────────────
-function ChatMessage({ msg }) {
+function ChatMessage({ msg, isMobile = false }) {
   const isUser = msg.role === 'user';
   const [showCode, setShowCode] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -1156,7 +1156,7 @@ function ChatMessage({ msg }) {
             <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{msg.content}</p>
           ) : (
             <div className="space-y-1">
-              <div className="font-outfit">{renderContent(msg.content, msg.conversation_id)}</div>
+              <div className="font-outfit">{renderContent(msg.content, msg.conversation_id, isMobile)}</div>
               
               {pythonAttachment && (
                 <div className="pt-2">
@@ -1763,6 +1763,18 @@ export default function App() {
       />
 
       <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile Sidebar Backdrop */}
+        <AnimatePresence>
+          {isMobile && sidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55]"
+            />
+          )}
+        </AnimatePresence>
 
         {/* ─── Sidebar Layer ─── */}
         <AnimatePresence mode="wait">
@@ -1778,10 +1790,10 @@ export default function App() {
               `}
             >
               {/* Sidebar Header (Internal) - New Chat Button */}
-              <div className="p-4 shrink-0 border-b border-white/5">
+              <div className="p-3 md:p-4 shrink-0 border-b border-white/5">
                 <button
                   onClick={() => handleAction(newChat)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-4 red-gradient rounded-2xl text-[10px] font-black text-white shadow-xl shadow-primary/20 hover:brightness-110 transition-all uppercase tracking-[0.2em]"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 md:py-4 red-gradient rounded-xl md:rounded-2xl text-[10px] font-black text-white shadow-xl shadow-primary/20 hover:brightness-110 transition-all uppercase tracking-[0.2em]"
                 >
                   <Plus size={16} /> New Chat
                 </button>
@@ -1914,19 +1926,19 @@ export default function App() {
               ) : currentView === 'dashboard' ? (
                 messages.length === 0 ? (
                   /* Empty State / Welcome */
-                  <div className="flex-1 flex flex-col items-center justify-center p-4 pt-8 pb-8 min-h-0">
+                  <div className="flex-1 flex flex-col items-center justify-start p-4 pt-12 min-h-0 overflow-y-auto">
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="text-center w-full max-w-screen-xl px-4"
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-center w-full max-w-screen-xl px-4 flex flex-col items-center gap-6 md:gap-10"
                     >
-                      <div className="w-16 h-16 mb-4 shadow-2xl shadow-primary/10 flex items-center justify-center mx-auto transition-transform hover:scale-110 duration-500">
+                      <div className="w-16 h-16 shadow-2xl shadow-primary/10 flex items-center justify-center transition-transform hover:scale-110 duration-500 shrink-0">
                         <LogoDJ size={36} />
                       </div>
-                      <h2 className="text-base font-black mb-6 tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
+                      <h2 className="text-base font-black tracking-tight uppercase">Welcome to the DocJockey Master.</h2>
                       
                       {/* --- Welcome State Mode Selection --- */}
-                      <div className="flex flex-col lg:flex-row gap-4 w-full max-w-screen-xl mx-auto mb-8">
+                      <div className="flex flex-col md:flex-row gap-3 md:gap-6 w-full max-w-screen-xl mx-auto px-2 md:px-0">
                         {/* Master Extractor Card */}
                         <div 
                           onClick={() => setIsAnalysisMode(false)}
@@ -1977,7 +1989,7 @@ export default function App() {
                       </div>
 
                       {!isAnalysisMode && (
-                        <div className="flex bg-surface/50 p-1 rounded-xl border border-white/5 mb-6 max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <div className="flex bg-surface/50 p-1 rounded-xl border border-white/5 max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
                           <button 
                             onClick={() => { setUploadMode('single'); setAttachedFiles([]); }}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.1em] transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg' : 'text-foreground/30 hover:text-white'}`}
@@ -1995,7 +2007,7 @@ export default function App() {
 
                       <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full max-w-screen-xl border-2 border-dashed border-white/5 hover:border-primary/20 rounded-2xl p-4 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto mb-8"
+                        className="w-full max-w-screen-xl border-2 border-dashed border-white/5 hover:border-primary/20 rounded-2xl p-4 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto"
                       >
                         <div className="flex items-center justify-center gap-4">
                           <div className="w-12 h-12 bg-primary/5 text-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10">
@@ -2013,7 +2025,7 @@ export default function App() {
                       </div>
 
                       {/* --- Welcome State Dialogue Box (Embedded) --- */}
-                      <div className="max-w-screen-xl mx-auto mb-8">
+                      <div className="w-full max-w-screen-xl mx-auto pb-12">
                          {/* Reusable Input Block */}
                          <ChatInputArea 
                             inputText={inputText}
@@ -2033,9 +2045,9 @@ export default function App() {
                     </motion.div>
                   </div>
                 ) : (
-                  <div className="max-w-screen-2xl mx-auto p-4 space-y-4 py-4">
+                  <div className="max-w-screen-2xl mx-auto p-2 md:p-6 space-y-4 py-4">
                     {messages.map((msg, i) => (
-                      <ChatMessage key={i} msg={msg} />
+                      <ChatMessage key={i} msg={msg} isMobile={isMobile} />
                     ))}
                     {isLoading && (
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4">
