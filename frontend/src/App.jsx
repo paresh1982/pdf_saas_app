@@ -1851,11 +1851,7 @@ export default function App() {
                         </div>
                       </div>
 
-                      <h2 className="text-lg md:text-xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm leading-tight">Welcome to the DocJockey Master.</h2>
-                      
-                      <p className="text-foreground/60 text-[10px] md:text-xs max-w-2xl mx-auto font-black uppercase tracking-widest leading-relaxed">
-                        Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
-                      </p>
+                      <h2 className="text-lg md:text-xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm leading-tight">Welcome to the DocJockey.</h2>
 
                       <button
                         onClick={() => setCurrentView('howto')}
