@@ -355,8 +355,8 @@ function SiteFooter({ setView }) {
     <footer className="glass-panel border-t border-white/5 h-16 px-6 w-full relative overflow-hidden flex items-center justify-between">
       <div className="flex items-center gap-6">
         <button onClick={() => setView('dashboard')} className="flex items-center gap-2.5 group cursor-pointer transition-transform hover:scale-105 active:scale-95">
-          <LogoDJ size={18} className="group-hover:rotate-3 transition-transform" />
-          <div className="text-sm font-black tracking-tighter uppercase flex">
+          <LogoDJ size={22} className="group-hover:rotate-3 transition-transform" />
+          <div className="text-base font-black tracking-tighter uppercase flex">
             <span className="text-primary">DOC</span>
             <span className="text-secondary">JOCKEY</span>
           </div>
@@ -372,7 +372,7 @@ function SiteFooter({ setView }) {
             <button 
               key={link.label} 
               onClick={() => setView(link.id)}
-              className="text-[9px] font-black text-foreground/30 hover:text-secondary uppercase tracking-[0.2em] transition-all"
+              className="text-[11px] font-black text-foreground/60 hover:text-secondary uppercase tracking-[0.2em] transition-all"
             >
               {link.label}
             </button>
@@ -381,13 +381,13 @@ function SiteFooter({ setView }) {
       </div>
 
       <div className="hidden md:flex items-center justify-center flex-1">
-        <span className="text-[8px] font-black text-foreground/20 uppercase tracking-[0.3em] whitespace-nowrap">
+        <span className="text-[10px] font-black text-foreground/50 uppercase tracking-[0.3em] whitespace-nowrap">
           DOCJOCKEY PRO • AGENTIC EXTRACTION &nbsp; | &nbsp; © 2026 DOCJOCKEY
         </span>
       </div>
       
       <div className="flex items-center gap-6">
-        <a href="mailto:connect@docjockey.com" className="text-[9px] font-black text-secondary/40 hover:text-secondary uppercase tracking-[0.2em] transition-colors">
+        <a href="mailto:connect@docjockey.com" className="text-[11px] font-black text-secondary/80 hover:text-secondary uppercase tracking-[0.2em] transition-colors">
           CONNECT@DOCJOCKEY.COM
         </a>
       </div>
