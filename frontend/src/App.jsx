@@ -1845,13 +1845,11 @@ export default function App() {
                       animate={{ opacity: 1, y: 0 }}
                       className="text-center w-full max-w-screen-xl px-4 flex-1 flex flex-col items-center gap-5"
                     >
-                      <div className="flex flex-col items-center">
                         <div className="w-14 h-14 md:w-16 md:h-16 shadow-2xl shadow-primary/20 flex items-center justify-center transition-transform hover:scale-105 duration-500 shrink-0 bg-white/5 rounded-2xl border border-white/10">
                           <LogoDJ size={40} />
                         </div>
-                      </div>
 
-                      <h2 className="text-lg md:text-xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm leading-tight">Welcome to the DocJockey.</h2>
+                      <h2 className="text-lg md:text-xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm leading-tight m-0">Welcome to the DocJockey.</h2>
 
                       <button
                         onClick={() => setCurrentView('howto')}
