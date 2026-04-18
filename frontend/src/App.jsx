@@ -1828,31 +1828,31 @@ export default function App() {
               ) : currentView === 'dashboard' ? (
                 messages.length === 0 ? (
                   /* Empty State / Welcome */
-                  <div className="flex-1 flex flex-col items-center justify-start p-4 pt-4 min-h-0 overflow-y-auto">
+                  <div className="flex-1 flex flex-col items-center justify-start p-2 md:p-3 pt-3 min-h-0 overflow-y-auto">
                     <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-center w-full max-w-screen-xl px-4 flex flex-col items-center gap-4 md:gap-5"
+                      className="text-center w-full max-w-screen-xl px-4 flex flex-col items-center gap-2 md:gap-3"
                     >
-                      <div className="w-24 h-24 shadow-2xl shadow-primary/20 flex items-center justify-center transition-transform hover:scale-105 duration-500 shrink-0 bg-white/5 rounded-3xl border border-white/10">
-                        <LogoDJ size={56} />
+                      <div className="w-20 h-20 md:w-24 md:h-24 shadow-2xl shadow-primary/20 flex items-center justify-center transition-transform hover:scale-105 duration-500 shrink-0 bg-white/5 rounded-3xl border border-white/10">
+                        <LogoDJ size={48} />
                       </div>
-                      <h2 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm">Welcome to the DocJockey Master.</h2>
+                      <h2 className="text-xl md:text-3xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm leading-tight">Welcome to the DocJockey Master.</h2>
                       
-                      <p className="text-foreground/60 text-sm max-w-sm mx-auto font-medium leading-relaxed">
+                      <p className="text-foreground/80 text-sm md:text-lg max-w-2xl mx-auto font-bold leading-relaxed">
                         Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
                       </p>
 
                       <button
                         onClick={() => setCurrentView('howto')}
-                        className="text-[10px] font-black text-secondary hover:text-white uppercase tracking-[0.3em] transition-colors flex items-center gap-2 mx-auto group"
+                        className="text-[10px] md:text-[11px] font-black text-secondary hover:text-white uppercase tracking-[0.3em] transition-colors flex items-center gap-2 mx-auto group bg-white/5 px-4 py-2 rounded-full border border-white/5 hover:border-secondary/30"
                       >
-                        <HelpCircle size={14} className="group-hover:rotate-12 transition-transform" />
+                        <HelpCircle size={12} className="group-hover:rotate-12 transition-transform" />
                         Click to know more
                       </button>
 
                       {/* --- Welcome State Mode Selection --- */}
-                      <div className="flex flex-col md:flex-row gap-3 md:gap-6 w-full max-w-screen-xl mx-auto px-2 md:px-0">
+                      <div className="flex flex-col md:flex-row gap-2 md:gap-4 w-full max-w-screen-xl mx-auto px-2 md:px-0">
                         <div 
                           onClick={() => setIsAnalysisMode(false)}
                           className={`flex-1 px-6 py-4 md:px-8 md:py-5 rounded-3xl cursor-pointer transition-all duration-500 border-2 group ${
