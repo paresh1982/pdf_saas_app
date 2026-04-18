@@ -35,7 +35,8 @@ import {
   Shuffle,
   Code,
   ChevronUp,
-  BarChart3
+  BarChart3,
+  ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -165,105 +166,6 @@ function ContactView() {
         </div>
       </div>
     </PageContainer>
-  );
-}
-
-function HowItWorksView({ setView }) {
-  const steps = [
-    {
-      number: '01',
-      title: 'AI Chat Engine',
-      color: 'primary',
-      desc: 'The main workspace. Upload any PDF, image, Word, or Excel file and type your command in the input box. The AI engine reads the document natively—no pre-processing needed. Ask it to extract, summarize, or analyze. Results appear as structured JSON, tables, or readable text.',
-      tips: ['Attach multiple files in a single message', 'Ask it to extract all line items from an invoice', 'Request a summary of a legal document']
-    },
-    {
-      number: '02',
-      title: 'Single Document vs Batch Processor',
-      color: 'secondary',
-      desc: 'Use the toggle at the top of the upload zone to switch modes. Single Document processes one file at a time with focused extraction. Batch Processor stages multiple files for simultaneous analysis, ideal for processing a full month of invoices in one pass.',
-      tips: ['Batch mode supports mixed file types', 'Each file in a batch gets its own AI analysis context', 'Results are consolidated in the chat thread']
-    },
-    {
-      number: '03',
-      title: 'Merge PDF',
-      color: 'primary',
-      desc: 'Combine multiple PDF files into a single unified document. Select files from the tool modal, arrange them in order, and the engine produces a merged PDF ready for download. Useful for combining monthly reports, multi-part contracts, or assembled portfolios.',
-      tips: ['Supports unlimited files per merge', 'Preserves original page quality', 'Output filename is auto-generated with timestamp']
-    },
-    {
-      number: '04',
-      title: 'Split PDF',
-      color: 'secondary',
-      desc: 'Divide a PDF into smaller parts. Leave the page range blank to split every page into an individual file, or specify custom ranges (e.g. 1-3, 5, 8-10) to extract specific sections. Output is packaged as a ZIP archive for easy download.',
-      tips: ['Leave range blank = one file per page', 'Custom ranges: 1-3, 5, 8-10', 'ZIP archive delivered on completion']
-    },
-    {
-      number: '05',
-      title: 'Compress PDF',
-      color: 'primary',
-      desc: 'Reduce the file size of a PDF without significant quality loss. Useful for email attachments, portal uploads with size limits, or archiving large scanned documents. The engine optimizes embedded images and streams automatically.',
-      tips: ['Ideal for scanned invoices and reports', 'Preserves text layer and searchability', 'File size reduction varies by content type']
-    },
-    {
-      number: '06',
-      title: 'PDF ↔ Word / Excel Conversion',
-      color: 'secondary',
-      desc: 'Convert between formats seamlessly. PDF to Word extracts structured text and layout into an editable DOCX. PDF to Excel converts tabular data into spreadsheet rows. Excel to PDF renders your spreadsheet for print or archive. Word to PDF converts DOCX to a professional PDF.',
-      tips: ['AI-assisted table detection for PDF→Excel', 'Preserves heading hierarchy in PDF→Word', 'Excel output includes proper column headers']
-    },
-    {
-      number: '07',
-      title: 'A.I. Smart Redraft',
-      color: 'primary',
-      desc: 'Upload any document and provide natural language instructions. The AI re-generates the document incorporating your changes — update an invoice date, rename a vendor, change terms, or restructure content — and delivers a clean, professionally formatted output.',
-      tips: ['Instructions like: Change invoice date to 2024-12-01', 'Update vendor name to ABC Corp', 'Rewrite Section 3 in formal tone']
-    },
-    {
-      number: '08',
-      title: 'Rotate & Organize Pages',
-      color: 'secondary',
-      desc: 'Rotate pages to 90°, 180°, or 270° to correct scanned documents. Organize Pages lets you reorder pages by specifying a new sequence (e.g. 2, 1, 3) — perfect for rearranging chapters or correcting assembly errors in a compiled report.',
-      tips: ['Rotate: 90°, 180°, or 270°', 'Reorder: specify new sequence like 2,1,3,5,4', 'Results are instant single-file downloads']
-    },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="p-8 md:p-16 max-w-4xl mx-auto w-full min-h-[calc(100vh-160px)]"
-    >
-      <div className="mb-12">
-        <button onClick={() => setView('dashboard')} className="text-[10px] font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.3em] mb-6 flex items-center gap-2 transition-colors">
-          ← Back to Dashboard
-        </button>
-        <h2 className="text-3xl font-black tracking-tight text-white mb-2 uppercase italic">How DocJockey Works</h2>
-        <div className="w-20 h-1 red-gradient rounded-full mb-4" />
-        <p className="text-foreground/50 text-sm font-medium">A complete guide to every feature, in the order you'll use them.</p>
-      </div>
-
-      <div className="space-y-8">
-        {steps.map((step) => (
-          <div key={step.number} className={`glass-panel p-6 border-white/10 hover:border-${step.color}/30 transition-all group`}>
-            <div className="flex items-start gap-6">
-              <div className={`shrink-0 w-12 h-12 rounded-2xl bg-${step.color}/10 flex items-center justify-center`}>
-                <span className={`text-${step.color} text-xs font-black`}>{step.number}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-white font-black uppercase tracking-tight mb-3">{step.title}</h3>
-                <p className="text-foreground/60 text-sm leading-relaxed mb-4">{step.desc}</p>
-                <div className="space-y-1">
-                  {step.tips.map((tip, i) => (
-                    <p key={i} className={`text-[10px] font-black text-${step.color}/60 uppercase tracking-widest`}>→ {tip}</p>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </motion.div>
   );
 }
 
@@ -1937,6 +1839,18 @@ export default function App() {
                       </div>
                       <h2 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm">Welcome to the DocJockey Master.</h2>
                       
+                      <p className="text-foreground/60 text-sm max-w-sm mx-auto font-medium leading-relaxed">
+                        Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
+                      </p>
+
+                      <button
+                        onClick={() => setCurrentView('howto')}
+                        className="text-[10px] font-black text-secondary hover:text-white uppercase tracking-[0.3em] transition-colors flex items-center gap-2 mx-auto group"
+                      >
+                        <HelpCircle size={14} className="group-hover:rotate-12 transition-transform" />
+                        Click to know more
+                      </button>
+
                       {/* --- Welcome State Mode Selection --- */}
                       <div className="flex flex-col md:flex-row gap-3 md:gap-6 w-full max-w-screen-xl mx-auto px-2 md:px-0">
                         <div 
@@ -2173,3 +2087,155 @@ function ChatInputArea({
     </div>
   );
 }
+// ─── Expanded "How It Works" Documentation Page ─────────────
+function HowItWorksView({ setView }) {
+  const pillars = [
+    {
+      id: 'chat',
+      title: 'Agentic Chat Window',
+      subtitle: 'Multimodal AI Extraction',
+      color: 'primary',
+      desc: 'The primary interaction layer where humans and AI collaborate on documents. Unlike legacy OCR software, DocJockey understands natural language. Simply talk to your documents to extract value.',
+      features: [
+        'Native Multimodal Intelligence: No templates required. The AI sees layouts like a human expert.',
+        'Conversational Logic: Ask for specific items, summaries, or legal clause interpretations.',
+        'Multi-File Context: Attach 10 invoices and ask for the "Total across all vendors".',
+        'Hand-Scan Resilience: Optimized for real-world documents (crumpled, scanned, or photographed).'
+      ],
+      pros: ['Zero Template Setup', 'Instant Retrieval', 'Audit-Ready Precision']
+    },
+    {
+      id: 'analyst',
+      title: 'Visual Data Analyst Engine',
+      subtitle: 'Python-Powered Statistical Core',
+      color: 'secondary',
+      desc: 'Activate "Visual Analyst" mode to engage the heavy-duty analytical engine. This mode connects your documents to a secure Python execution environment for deep statistical processing and visualization.',
+      features: [
+        'Mathematical Verification: Automatically cross-checks line items against totals to find discrepancies.',
+        'Dynamic Charting: Transforms thousands of rows into interactive bar, pie, and line charts instantly.',
+        'Trend Detection: Identify spending patterns or vendor pricing shifts over multiple years.',
+        'Anomaly Detection: Spot duplicate invoices or unusual billing spikes without manual review.'
+      ],
+      pros: ['Error Detection', 'Visual Clarity', 'Mathematical Certainty']
+    },
+    {
+      id: 'export',
+      title: 'Enterprise Excel/CSV Export',
+      subtitle: 'Financial Systems Integration',
+      color: 'primary',
+      desc: 'The bridge between unstructured PDFs and your professional accounting workflow. Our export engine formats data specifically for systems like SAP, Tally, Zoho, and Microsoft Dynamics.',
+      features: [
+        'High-Fidelity Schemas: Every extraction fits a detailed 10-column procurement structure.',
+        'Smart Binning: Automatically groups multiple invoices by Date, Vendor, or Category.',
+        'Accounting-Ready: Outputs clean CSV/Excel with proper data types for instant import.',
+        'PDF-to-Excel Links: (Pro) Every row in Excel can link directly back to the source PDF page.'
+      ],
+      pros: ['Tally/SAP Compatible', 'Bulk Consolidation', 'Zero Data Entry']
+    }
+  ];
+
+  const secondaryTools = [
+    { title: 'Bulk PDF Merger', desc: 'Combine unlimited files into a single unified document while preserving quality.' },
+    { title: 'Intelligent Splitter', desc: 'Divide PDFs by custom ranges or split every page into individual files.' },
+    { title: 'Optimized Compressor', desc: 'Reduce file size for scanned documents without losing text searchability.' },
+    { title: 'A.I. Smart Redraft', desc: 'Re-generate entire documents with natural language instructions (e.g. "Change the date").' }
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-8 md:p-16 max-w-5xl mx-auto w-full min-h-[calc(100vh-160px)]"
+    >
+      <div className="mb-16">
+        <button 
+          onClick={() => setView('dashboard')} 
+          className="text-[10px] font-black text-secondary/60 hover:text-secondary uppercase tracking-[0.3em] mb-8 flex items-center gap-2 transition-colors font-sans"
+        >
+          <ArrowLeft size={14} /> Back to Dashboard
+        </button>
+        <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-white mb-4 uppercase italic drop-shadow-lg">How DocJockey Works</h2>
+        <div className="w-32 h-1.5 red-gradient rounded-full mb-6" />
+        <p className="text-foreground/50 text-base font-medium max-w-2xl leading-relaxed">
+          The NexGen AI toolkit designed to turn unstructured physical documents into high-fidelity enterprise data with agentic speed.
+        </p>
+      </div>
+
+      {/* Main Pillars */}
+      <div className="space-y-12 mb-20">
+        {pillars.map((pillar, idx) => (
+          <div key={pillar.id} className="relative">
+            <div className={`absolute -left-6 top-10 text-[10rem] font-black opacity-[0.03] select-none -z-10 text-${pillar.color}`}>
+              0{idx + 1}
+            </div>
+            <div className={`glass-panel p-8 md:p-10 border-${pillar.color}/20 hover:border-${pillar.color}/40 transition-all group overflow-hidden`}>
+              <div className="flex flex-col md:flex-row gap-10 md:gap-16">
+                <div className="flex-1">
+                  <span className={`text-[10px] font-black uppercase tracking-[0.4em] text-${pillar.color}/80 mb-2 block`}>
+                    {pillar.subtitle}
+                  </span>
+                  <h3 className="text-2xl md:text-3xl font-black text-white uppercase italic tracking-tighter mb-6">
+                    {pillar.title}
+                  </h3>
+                  <p className="text-foreground/70 text-base leading-relaxed mb-8">
+                    {pillar.desc}
+                  </p>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {pillar.pros.map(pro => (
+                      <div key={pro} className={`bg-${pillar.color}/5 rounded-xl px-4 py-3 border border-${pillar.color}/10 flex items-center gap-3`}>
+                        <div className={`w-1.5 h-1.5 rounded-full bg-${pillar.color}`} />
+                        <span className="text-[10px] font-black text-white uppercase tracking-widest">{pro}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="md:w-px md:h-auto bg-white/5" />
+
+                <div className="flex-1 space-y-4">
+                  <span className="text-[10px] font-black text-foreground/30 uppercase tracking-[0.3em] block mb-2">Core Capabilities:</span>
+                  {pillar.features.map((feature, i) => (
+                    <div key={i} className="flex gap-4">
+                      <div className={`mt-1.5 w-1.5 h-1.5 rounded-full bg-${pillar.color}/40 shrink-0`} />
+                      <p className="text-sm text-foreground/50 leading-relaxed font-medium">{feature}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Secondary Tools */}
+      <div className="mb-20">
+        <h4 className="text-lg font-black text-white uppercase tracking-widest mb-10 text-center flex items-center justify-center gap-6">
+          <div className="h-px w-20 bg-white/5" />
+          Native PDF Toolkit
+          <div className="h-px w-20 bg-white/5" />
+        </h4>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {secondaryTools.map(tool => (
+            <div key={tool.title} className="glass-panel p-6 border-white/5 hover:border-white/20 transition-all text-center">
+              <h5 className="text-xs font-black text-white uppercase tracking-tight mb-3 italic">{tool.title}</h5>
+              <p className="text-[11px] text-foreground/40 leading-relaxed font-medium">{tool.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="text-center pb-12">
+        <button 
+          onClick={() => setView('dashboard')}
+          className="px-10 py-4 red-gradient rounded-full text-white text-[10px] font-black uppercase tracking-[0.4em] hover:brightness-110 transition-all shadow-2xl shadow-primary/20"
+        >
+          Get Started with DocJockey
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+// Set global axios default
+axios.defaults.headers.common['X-User-ID'] = UID;
