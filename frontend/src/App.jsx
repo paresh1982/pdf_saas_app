@@ -1926,11 +1926,11 @@ export default function App() {
               ) : currentView === 'dashboard' ? (
                 messages.length === 0 ? (
                   /* Empty State / Welcome */
-                  <div className="flex-1 flex flex-col items-center justify-start p-4 pt-12 min-h-0 overflow-y-auto">
+                  <div className="flex-1 flex flex-col items-center justify-start p-4 pt-4 min-h-0 overflow-y-auto">
                     <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-center w-full max-w-screen-xl px-4 flex flex-col items-center gap-6 md:gap-10"
+                      className="text-center w-full max-w-screen-xl px-4 flex flex-col items-center gap-4 md:gap-5"
                     >
                       <div className="w-24 h-24 shadow-2xl shadow-primary/20 flex items-center justify-center transition-transform hover:scale-105 duration-500 shrink-0 bg-white/5 rounded-3xl border border-white/10">
                         <LogoDJ size={56} />
@@ -1941,7 +1941,7 @@ export default function App() {
                       <div className="flex flex-col md:flex-row gap-3 md:gap-6 w-full max-w-screen-xl mx-auto px-2 md:px-0">
                         <div 
                           onClick={() => setIsAnalysisMode(false)}
-                          className={`flex-1 p-6 md:p-8 rounded-3xl cursor-pointer transition-all duration-500 border-2 group ${
+                          className={`flex-1 px-6 py-4 md:px-8 md:py-5 rounded-3xl cursor-pointer transition-all duration-500 border-2 group ${
                             !isAnalysisMode 
                             ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-[1.02]' 
                             : 'bg-surface/30 border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 hover:border-primary/30'
@@ -1964,7 +1964,7 @@ export default function App() {
 
                         <div 
                           onClick={() => setIsAnalysisMode(true)}
-                          className={`flex-1 p-6 md:p-8 rounded-3xl cursor-pointer transition-all duration-500 border-2 group ${
+                          className={`flex-1 px-6 py-4 md:px-8 md:py-5 rounded-3xl cursor-pointer transition-all duration-500 border-2 group ${
                             isAnalysisMode 
                             ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-[1.02]' 
                             : 'bg-surface/30 border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 hover:border-primary/30'
@@ -2005,7 +2005,7 @@ export default function App() {
 
                       <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full max-w-screen-xl border-2 border-dashed border-white/10 hover:border-primary/40 rounded-3xl p-6 md:p-8 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto"
+                        className="w-full max-w-screen-xl border-2 border-dashed border-white/10 hover:border-primary/40 rounded-3xl px-6 py-4 md:px-8 md:py-5 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto"
                       >
                         <div className="flex items-center justify-center gap-6">
                           <div className="w-16 h-16 md:w-20 md:h-20 bg-primary/5 text-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-lg">
@@ -2023,7 +2023,7 @@ export default function App() {
                       </div>
 
                       {/* --- Welcome State Dialogue Box (Embedded) --- */}
-                      <div className="w-full max-w-screen-xl mx-auto pb-12">
+                      <div className="w-full max-w-screen-xl mx-auto pb-4">
                          {/* Reusable Input Block */}
                          <ChatInputArea 
                             inputText={inputText}
