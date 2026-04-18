@@ -1795,7 +1795,7 @@ export default function App() {
                   }
                 ].map(category => category.tools.length > 0 && (
                   <div key={category.title} className="mb-6">
-                    <p className="px-3 text-[10px] font-black text-secondary uppercase tracking-[0.2em] mb-2">{category.title}</p>
+                    <p className="px-3 text-xs md:text-[11px] font-black text-secondary uppercase tracking-[0.2em] mb-2">{category.title}</p>
                     <div className="grid grid-cols-2 gap-2">
                       {category.tools.map(tool => (
                         <button
@@ -1806,7 +1806,7 @@ export default function App() {
                           <div className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${tool.id === 'new' ? 'red-gradient text-white shadow-lg shadow-primary/20' : 'bg-surface/50 text-foreground/30 group-hover:text-secondary group-hover:bg-secondary/10 border border-white/5'}`}>
                             <tool.icon size={16} />
                           </div>
-                          <span className="text-[9px] font-black uppercase tracking-tight text-center leading-tight text-foreground/40 group-hover:text-white transition-colors px-1">
+                          <span className="text-[11px] font-black uppercase tracking-tight text-center leading-tight text-foreground/40 group-hover:text-white transition-colors px-1">
                             {tool.label}
                           </span>
                         </button>
