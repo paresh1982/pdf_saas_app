@@ -2215,11 +2215,12 @@ function HowItWorksView({ setView }) {
           Native PDF Toolkit
           <div className="h-px w-20 bg-white/5" />
         </h4>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="space-y-4 max-w-3xl mx-auto">
           {secondaryTools.map(tool => (
-            <div key={tool.title} className="glass-panel p-6 border-white/5 hover:border-white/20 transition-all text-center">
-              <h5 className="text-xs font-black text-white uppercase tracking-tight mb-3 italic">{tool.title}</h5>
-              <p className="text-[11px] text-foreground/40 leading-relaxed font-medium">{tool.desc}</p>
+            <div key={tool.title} className="glass-panel p-6 md:p-8 border-white/5 hover:border-white/20 transition-all flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+              <h5 className="text-sm md:text-lg font-black text-white uppercase tracking-tighter shrink-0 md:w-48 italic">{tool.title}</h5>
+              <div className="hidden md:block w-px h-8 bg-white/10" />
+              <p className="text-sm md:text-base text-foreground/50 leading-relaxed font-medium flex-1">{tool.desc}</p>
             </div>
           ))}
         </div>
@@ -2228,7 +2229,7 @@ function HowItWorksView({ setView }) {
       <div className="text-center pb-12">
         <button 
           onClick={() => setView('dashboard')}
-          className="px-10 py-4 red-gradient rounded-full text-white text-[10px] font-black uppercase tracking-[0.4em] hover:brightness-110 transition-all shadow-2xl shadow-primary/20"
+          className="px-12 py-5 red-gradient rounded-full text-white text-sm md:text-base font-black uppercase tracking-[0.4em] hover:brightness-110 transition-all shadow-2xl shadow-primary/20"
         >
           Get Started with DocJockey
         </button>
