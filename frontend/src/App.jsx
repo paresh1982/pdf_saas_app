@@ -1899,9 +1899,9 @@ export default function App() {
                                <Zap size={22} fill={isAnalysisMode ? 'currentColor' : 'none'} />
                              </div>
                              <div className="text-left">
-                               <h3 className="text-base font-black text-white uppercase tracking-tight mb-0">Visual Analyst</h3>
+                               <h3 className="text-base font-black text-white uppercase tracking-tight mb-0">Analysis Engine</h3>
                                <p className="text-[10px] text-foreground/40 font-black leading-tight uppercase tracking-widest hidden md:block">
-                                 Python engine • Visualization
+                                 Data . Visualisation . Reasoning
                                </p>
                              </div>
                            </div>
