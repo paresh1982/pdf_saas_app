@@ -1839,18 +1839,19 @@ export default function App() {
               ) : currentView === 'dashboard' ? (
                 messages.length === 0 ? (
                   /* Empty State / Welcome */
-                  <div className="flex-1 flex flex-col items-center p-4 md:p-6 h-full overflow-hidden">
+                  <div className="flex-1 flex flex-col items-center px-4 py-[20px] h-full overflow-hidden">
                     <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-center w-full max-w-screen-xl px-4 flex-1 flex flex-col items-center justify-between h-full py-4"
+                      className="text-center w-full max-w-screen-xl px-4 flex-1 flex flex-col items-center gap-5"
                     >
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-12 h-12 md:w-14 md:h-14 shadow-2xl shadow-primary/20 flex items-center justify-center transition-transform hover:scale-105 duration-500 shrink-0 bg-white/5 rounded-2xl border border-white/10">
-                          <LogoDJ size={32} />
+                      <div className="flex flex-col items-center">
+                        <div className="w-14 h-14 md:w-16 md:h-16 shadow-2xl shadow-primary/20 flex items-center justify-center transition-transform hover:scale-105 duration-500 shrink-0 bg-white/5 rounded-2xl border border-white/10">
+                          <LogoDJ size={40} />
                         </div>
-                        <h2 className="text-lg md:text-xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm leading-tight">Welcome to the DocJockey Master.</h2>
                       </div>
+
+                      <h2 className="text-lg md:text-xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm leading-tight">Welcome to the DocJockey Master.</h2>
                       
                       <p className="text-foreground/60 text-[10px] md:text-xs max-w-2xl mx-auto font-black uppercase tracking-widest leading-relaxed">
                         Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
@@ -1932,11 +1933,11 @@ export default function App() {
 
                       <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full max-w-screen-xl border-2 border-dashed border-white/10 hover:border-primary/40 rounded-2xl px-6 py-4 md:px-6 md:py-6 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto"
+                        className="w-full max-w-screen-xl border-2 border-dashed border-white/10 hover:border-primary/40 rounded-2xl px-6 py-3 md:px-6 md:py-4 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto"
                       >
                         <div className="flex items-center justify-center gap-4">
-                          <div className="w-12 h-12 md:w-14 md:h-14 bg-primary/5 text-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-lg">
-                            {uploadMode === 'single' ? <Paperclip size={24} /> : <Combine size={24} />}
+                          <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/5 text-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-lg">
+                            {uploadMode === 'single' ? <Paperclip size={20} /> : <Combine size={20} />}
                           </div>
                           <div className="text-left">
                             <p className="text-base md:text-lg font-black text-white uppercase tracking-[0.2em]">
@@ -1950,7 +1951,7 @@ export default function App() {
                       </div>
 
                       {/* --- Welcome State Dialogue Box (Embedded) --- */}
-                      <div className="w-full max-w-screen-xl mx-auto pb-1">
+                      <div className="w-full max-w-screen-xl mx-auto mt-auto">
                          {/* Reusable Input Block */}
                          <ChatInputArea 
                             inputText={inputText}
