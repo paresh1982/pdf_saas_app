@@ -205,7 +205,7 @@ function LogoDJ({ size = 20, className = "" }) {
 // ─── Site Header ──────────────────────────────────────────
 function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitle, currentView, setView }) {
   return (
-    <header className="h-16 md:h-20 shrink-0 z-50 glass-panel border-b border-white/5 px-4 md:px-8 flex items-center justify-between sticky top-0 backdrop-blur-3xl">
+    <header className="h-[44px] md:h-[60px] shrink-0 z-50 glass-panel border-b border-white/5 px-4 md:px-8 flex items-center justify-between sticky top-0 backdrop-blur-3xl">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setView('dashboard')}>
           <LogoDJ size={isMobile ? 18 : 22} className="group-hover:rotate-6 transition-transform" />
@@ -254,7 +254,7 @@ function SiteHeader({ onMenuClick, sidebarOpen, isMobile, activeConvId, convTitl
 // ─── Site Footer ──────────────────────────────────────────
 function SiteFooter({ setView }) {
   return (
-    <footer className="glass-panel border-t border-white/5 h-16 px-6 w-full relative overflow-hidden flex items-center justify-center md:justify-start gap-4 md:gap-6">
+    <footer className="glass-panel border-t border-white/5 h-[44px] px-6 w-full relative overflow-hidden flex items-center justify-center md:justify-start gap-4 md:gap-6">
       {/* 1. Logo */}
       <button onClick={() => setView('dashboard')} className="flex items-center gap-2.5 group cursor-pointer transition-transform hover:scale-105 active:scale-95 shrink-0">
         <LogoDJ size={22} className="group-hover:rotate-3 transition-transform" />
