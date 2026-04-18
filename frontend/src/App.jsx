@@ -1832,8 +1832,8 @@ export default function App() {
 
         {/* ─── Main Content Area ─── */}
         <main className="flex-1 flex flex-col min-w-0 bg-background relative overflow-hidden">
-          <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
-            <div className="flex-1">
+          <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col h-full">
+            <div className="flex-1 h-full">
               {currentView === 'bulk-merger' ? (
                 <BulkMergerView setView={setCurrentView} />
               ) : currentView === 'dashboard' ? (
@@ -1843,17 +1843,14 @@ export default function App() {
                     <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-center w-full max-w-screen-xl px-4 flex-1 flex flex-col items-center"
+                      className="text-center w-full max-w-screen-xl px-4 flex-1 flex flex-col items-center justify-between h-full py-4"
                     >
-                      <div className="flex-grow" />
                       <div className="flex flex-col items-center gap-2">
                         <div className="w-12 h-12 md:w-14 md:h-14 shadow-2xl shadow-primary/20 flex items-center justify-center transition-transform hover:scale-105 duration-500 shrink-0 bg-white/5 rounded-2xl border border-white/10">
                           <LogoDJ size={32} />
                         </div>
                         <h2 className="text-lg md:text-xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm leading-tight">Welcome to the DocJockey Master.</h2>
                       </div>
-                      
-                      <div className="flex-grow" />
                       
                       <p className="text-foreground/60 text-[10px] md:text-xs max-w-2xl mx-auto font-black uppercase tracking-widest leading-relaxed">
                         Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
@@ -1866,8 +1863,6 @@ export default function App() {
                         <HelpCircle size={10} className="group-hover:rotate-12 transition-transform" />
                         Click to know more
                       </button>
-
-                      <div className="flex-grow" />
 
                       {/* --- Welcome State Mode Selection --- */}
                       <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full max-w-screen-xl mx-auto px-2 md:px-0">
@@ -1918,8 +1913,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="flex-grow" />
-
                       {!isAnalysisMode && (
                         <div className="flex bg-surface/50 p-1 rounded-2xl border border-white/10 min-w-[280px] md:min-w-[360px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500 shadow-lg shadow-black/40">
                           <button 
@@ -1936,8 +1929,6 @@ export default function App() {
                           </button>
                         </div>
                       )}
-
-                      <div className="flex-grow" />
 
                       <div
                         onClick={() => fileInputRef.current?.click()}
@@ -1957,8 +1948,6 @@ export default function App() {
                           </div>
                         </div>
                       </div>
-
-                      <div className="flex-grow" />
 
                       {/* --- Welcome State Dialogue Box (Embedded) --- */}
                       <div className="w-full max-w-screen-xl mx-auto pb-1">
