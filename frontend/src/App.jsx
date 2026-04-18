@@ -1839,50 +1839,55 @@ export default function App() {
               ) : currentView === 'dashboard' ? (
                 messages.length === 0 ? (
                   /* Empty State / Welcome */
-                  <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 min-h-0 overflow-y-auto">
+                  <div className="flex-1 flex flex-col items-center p-4 md:p-6 h-full overflow-hidden">
                     <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-center w-full max-w-screen-xl px-4 flex flex-col items-center gap-6 md:gap-8"
+                      className="text-center w-full max-w-screen-xl px-4 flex-1 flex flex-col items-center"
                     >
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-16 h-16 md:w-20 md:h-20 shadow-2xl shadow-primary/20 flex items-center justify-center transition-transform hover:scale-105 duration-500 shrink-0 bg-white/5 rounded-3xl border border-white/10">
-                          <LogoDJ size={40} />
+                      <div className="flex-grow" />
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 md:w-14 md:h-14 shadow-2xl shadow-primary/20 flex items-center justify-center transition-transform hover:scale-105 duration-500 shrink-0 bg-white/5 rounded-2xl border border-white/10">
+                          <LogoDJ size={32} />
                         </div>
-                        <h2 className="text-xl md:text-3xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm leading-tight">Welcome to the DocJockey Master.</h2>
+                        <h2 className="text-lg md:text-xl font-black tracking-tighter uppercase italic text-white drop-shadow-sm leading-tight">Welcome to the DocJockey Master.</h2>
                       </div>
                       
-                      <p className="text-foreground/80 text-xs md:text-base max-w-2xl mx-auto font-bold leading-relaxed opacity-60">
+                      <div className="flex-grow" />
+                      
+                      <p className="text-foreground/60 text-[10px] md:text-xs max-w-2xl mx-auto font-black uppercase tracking-widest leading-relaxed">
                         Navigate through your document workflows with agentic speed. Analyze, extract, and convert with ease.
                       </p>
 
                       <button
                         onClick={() => setCurrentView('howto')}
-                        className="text-[10px] md:text-[11px] font-black text-secondary hover:text-white uppercase tracking-[0.3em] transition-colors flex items-center gap-2 mx-auto group bg-white/5 px-4 py-2 rounded-full border border-white/5 hover:border-secondary/30"
+                        className="text-[9px] font-black text-secondary hover:text-white uppercase tracking-[0.3em] transition-colors flex items-center gap-2 mx-auto group bg-white/5 px-3 py-1 rounded-full border border-white/5 hover:border-secondary/30"
                       >
-                        <HelpCircle size={12} className="group-hover:rotate-12 transition-transform" />
+                        <HelpCircle size={10} className="group-hover:rotate-12 transition-transform" />
                         Click to know more
                       </button>
 
+                      <div className="flex-grow" />
+
                       {/* --- Welcome State Mode Selection --- */}
-                      <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full max-w-screen-xl mx-auto px-2 md:px-0">
+                      <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full max-w-screen-xl mx-auto px-2 md:px-0">
                         <div 
                           onClick={() => setIsAnalysisMode(false)}
-                          className={`flex-1 px-6 py-6 md:px-8 md:py-8 rounded-3xl cursor-pointer transition-all duration-500 border-2 group ${
+                          className={`flex-1 px-4 py-3 md:px-5 md:py-4 rounded-2xl cursor-pointer transition-all duration-500 border-2 group ${
                             !isAnalysisMode 
-                            ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-[1.02]' 
+                            ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-[1.01]' 
                             : 'bg-surface/30 border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 hover:border-primary/30'
                           }`}
                         >
-                           <div className="flex items-center gap-6">
-                             <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center transition-all border shrink-0 ${
+                           <div className="flex items-center gap-4">
+                             <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all border shrink-0 ${
                                !isAnalysisMode ? 'bg-primary text-white shadow-lg' : 'bg-surface border-white/10 text-foreground/40'
                              }`}>
-                               <Layout size={32} />
+                               <Layout size={22} />
                              </div>
                              <div className="text-left">
-                               <h3 className="text-lg font-black text-white uppercase tracking-tight mb-1">Master Extractor</h3>
-                               <p className="text-xs text-foreground/40 font-black leading-tight uppercase tracking-widest hidden md:block opacity-60">
+                               <h3 className="text-base font-black text-white uppercase tracking-tight mb-0">Master Extractor</h3>
+                               <p className="text-[10px] text-foreground/40 font-black leading-tight uppercase tracking-widest hidden md:block">
                                  Table detection • Batch merging
                                </p>
                              </div>
@@ -1891,21 +1896,21 @@ export default function App() {
 
                         <div 
                           onClick={() => setIsAnalysisMode(true)}
-                          className={`flex-1 px-6 py-6 md:px-8 md:py-8 rounded-3xl cursor-pointer transition-all duration-500 border-2 group ${
+                          className={`flex-1 px-4 py-3 md:px-5 md:py-4 rounded-2xl cursor-pointer transition-all duration-500 border-2 group ${
                             isAnalysisMode 
-                            ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-[1.02]' 
+                            ? 'bg-primary/10 border-primary shadow-2xl shadow-primary/20 scale-[1.01]' 
                             : 'bg-surface/30 border-white/5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 hover:border-primary/30'
                           }`}
                         >
-                           <div className="flex items-center gap-6">
-                             <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center transition-all border shrink-0 ${
+                           <div className="flex items-center gap-4">
+                             <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all border shrink-0 ${
                                isAnalysisMode ? 'bg-primary text-white shadow-lg' : 'bg-surface border-white/10 text-foreground/40'
                              }`}>
-                               <Zap size={32} fill={isAnalysisMode ? 'currentColor' : 'none'} />
+                               <Zap size={22} fill={isAnalysisMode ? 'currentColor' : 'none'} />
                              </div>
                              <div className="text-left">
-                               <h3 className="text-lg font-black text-white uppercase tracking-tight mb-1">Visual Analyst</h3>
-                               <p className="text-xs text-foreground/40 font-black leading-tight uppercase tracking-widest hidden md:block opacity-60">
+                               <h3 className="text-base font-black text-white uppercase tracking-tight mb-0">Visual Analyst</h3>
+                               <p className="text-[10px] text-foreground/40 font-black leading-tight uppercase tracking-widest hidden md:block">
                                  Python engine • Visualization
                                </p>
                              </div>
@@ -1913,41 +1918,47 @@ export default function App() {
                         </div>
                       </div>
 
+                      <div className="flex-grow" />
+
                       {!isAnalysisMode && (
-                        <div className="flex bg-surface/50 p-1.5 rounded-2xl border border-white/10 min-w-[280px] md:min-w-[400px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500 shadow-lg shadow-black/40">
+                        <div className="flex bg-surface/50 p-1 rounded-2xl border border-white/10 min-w-[280px] md:min-w-[360px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500 shadow-lg shadow-black/40">
                           <button 
                             onClick={() => { setUploadMode('single'); setAttachedFiles([]); }}
-                            className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl text-xs md:text-sm font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg' : 'text-foreground/30 hover:text-white'}`}
+                            className={`flex-1 flex items-center justify-center gap-3 py-2 rounded-xl text-xs md:text-sm font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'single' ? 'bg-primary text-white shadow-lg' : 'text-foreground/30 hover:text-white'}`}
                           >
-                            <FileText size={16} /> Single
+                            <FileText size={14} /> Single
                           </button>
                           <button 
                             onClick={() => { setUploadMode('multiple'); setAttachedFiles([]); }}
-                            className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl text-xs md:text-sm font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'multiple' ? 'bg-primary text-white shadow-lg' : 'text-foreground/30 hover:text-white'}`}
+                            className={`flex-1 flex items-center justify-center gap-3 py-2 rounded-xl text-xs md:text-sm font-black uppercase tracking-[0.2em] transition-all ${uploadMode === 'multiple' ? 'bg-primary text-white shadow-lg' : 'text-foreground/30 hover:text-white'}`}
                           >
-                            <Layout size={16} /> Batch
+                            <Layout size={14} /> Batch
                           </button>
                         </div>
                       )}
 
+                      <div className="flex-grow" />
+
                       <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full max-w-screen-xl border-2 border-dashed border-white/10 hover:border-primary/40 rounded-3xl px-6 py-6 md:px-8 md:py-10 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto"
+                        className="w-full max-w-screen-xl border-2 border-dashed border-white/10 hover:border-primary/40 rounded-2xl px-6 py-4 md:px-6 md:py-6 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto"
                       >
-                        <div className="flex items-center justify-center gap-6">
-                          <div className="w-16 h-16 md:w-20 md:h-20 bg-primary/5 text-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-lg">
-                            {uploadMode === 'single' ? <Paperclip size={36} /> : <Combine size={36} />}
+                        <div className="flex items-center justify-center gap-4">
+                          <div className="w-12 h-12 md:w-14 md:h-14 bg-primary/5 text-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-lg">
+                            {uploadMode === 'single' ? <Paperclip size={24} /> : <Combine size={24} />}
                           </div>
                           <div className="text-left">
-                            <p className="text-xl md:text-3xl font-black text-white uppercase tracking-[0.2em]">
+                            <p className="text-base md:text-lg font-black text-white uppercase tracking-[0.2em]">
                               {isAnalysisMode ? 'Drop Data File' : (uploadMode === 'single' ? 'Drop document' : 'Drop batch')}
                             </p>
-                            <p className="text-xs md:text-sm text-secondary font-black uppercase tracking-[0.2em] mt-1 opacity-80">
+                            <p className="text-[10px] text-secondary font-black uppercase tracking-[0.2em] mt-0 opacity-80">
                               {isAnalysisMode ? 'Excel / CSV Priority' : 'Ready for DocJockey Speed'}
                             </p>
                           </div>
                         </div>
                       </div>
+
+                      <div className="flex-grow" />
 
                       {/* --- Welcome State Dialogue Box (Embedded) --- */}
                       <div className="w-full max-w-screen-xl mx-auto pb-1">
