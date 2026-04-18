@@ -2130,7 +2130,7 @@ function HowItWorksView({ setView }) {
         'Accounting-Ready: Outputs clean CSV/Excel with proper data types for instant import.',
         'PDF-to-Excel Links: (Pro) Every row in Excel can link directly back to the source PDF page.'
       ],
-      pros: ['Tally/SAP Compatible', 'Bulk Consolidation', 'Zero Data Entry']
+      pros: ['Universal Export Ready', 'Bulk Consolidation', 'Zero Data Entry']
     }
   ];
 
@@ -2177,7 +2177,7 @@ function HowItWorksView({ setView }) {
                   <h3 className="text-2xl md:text-3xl font-black text-white uppercase italic tracking-tighter mb-6">
                     {pillar.title}
                   </h3>
-                  <p className="text-foreground/70 text-base leading-relaxed mb-8">
+                  <p className="text-foreground/70 text-lg leading-relaxed mb-8 font-medium">
                     {pillar.desc}
                   </p>
                   
@@ -2185,7 +2185,7 @@ function HowItWorksView({ setView }) {
                     {pillar.pros.map(pro => (
                       <div key={pro} className={`bg-${pillar.color}/5 rounded-xl px-4 py-3 border border-${pillar.color}/10 flex items-center gap-3`}>
                         <div className={`w-1.5 h-1.5 rounded-full bg-${pillar.color}`} />
-                        <span className="text-[10px] font-black text-white uppercase tracking-widest">{pro}</span>
+                        <span className="text-xs font-black text-white uppercase tracking-widest">{pro}</span>
                       </div>
                     ))}
                   </div>
@@ -2194,11 +2194,11 @@ function HowItWorksView({ setView }) {
                 <div className="md:w-px md:h-auto bg-white/5" />
 
                 <div className="flex-1 space-y-4">
-                  <span className="text-[10px] font-black text-foreground/30 uppercase tracking-[0.3em] block mb-2">Core Capabilities:</span>
+                  <span className="text-xs font-black text-foreground/30 uppercase tracking-[0.3em] block mb-2">Core Capabilities:</span>
                   {pillar.features.map((feature, i) => (
                     <div key={i} className="flex gap-4">
-                      <div className={`mt-1.5 w-1.5 h-1.5 rounded-full bg-${pillar.color}/40 shrink-0`} />
-                      <p className="text-sm text-foreground/50 leading-relaxed font-medium">{feature}</p>
+                      <div className={`mt-2 w-1.5 h-1.5 rounded-full bg-${pillar.color}/40 shrink-0`} />
+                      <p className="text-base text-foreground/60 leading-relaxed font-semibold">{feature}</p>
                     </div>
                   ))}
                 </div>
