@@ -2356,8 +2356,9 @@ const GET_BRANDED_HTML = (contentHtml) => `
         }
         h1, h2, h3 { color: white; font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; }
         h1 { font-size: 36px; margin: 0; }
-        h2 { font-size: 20px; color: var(--primary); margin-top: 40px; border-left: 4px solid var(--primary); padding-left: 15px; }
-        p, li { font-size: 16px; color: rgba(255,255,255,0.7); }
+        h2 { font-size: 20px; color: var(--primary); margin-top: 60px; margin-bottom: 20px; border-left: 4px solid var(--primary); padding-left: 15px; }
+        p, li { font-size: 16px; color: rgba(255,255,255,0.7); margin-bottom: 1.5em; }
+        li { margin-left: 20px; }
         .footer {
             margin-top: 80px;
             text-align: center;
