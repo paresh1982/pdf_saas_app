@@ -731,7 +731,7 @@ if (fs.existsSync(DIST_PATH)) {
   app.use(express.static(DIST_PATH));
   
   // Handle SPA routing - ALWAYS serve index.html for non-API routes
-  app.get('(.*)', (req, res) => {
+  app.get('/:path*', (req, res) => {
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(DIST_PATH, 'index.html'));
     }
