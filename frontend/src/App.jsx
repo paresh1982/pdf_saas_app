@@ -1954,6 +1954,19 @@ export default function App() {
 
                       {/* --- Welcome State Dialogue Box (Embedded) --- */}
                       <div className="w-full max-w-screen-xl mx-auto mt-auto">
+                         {attachedFiles.length > 0 && (
+                           <div className="flex flex-wrap gap-2 mb-4 px-2">
+                             {attachedFiles.map((file, i) => (
+                               <span key={i} className="flex items-center gap-3 text-[10px] font-black uppercase leading-none bg-primary/10 text-primary border border-primary/20 px-4 py-2.5 rounded-xl shadow-lg animate-in zoom-in duration-300">
+                                 <FileText size={14} />
+                                 {file.name}
+                                 <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} className="hover:text-white ml-2 transition-colors">
+                                   <X size={14} />
+                                 </button>
+                               </span>
+                             ))}
+                           </div>
+                         )}
                          <ReportingEngine activeConvId={activeConvId} isMobile={isMobile} />
                          {/* Reusable Input Block */}
                        <ChatInputArea 
@@ -2014,6 +2027,19 @@ export default function App() {
                 className="sticky bottom-0 p-2 md:p-3 shrink-0 bg-background/80 backdrop-blur-xl border-t border-white/5 z-40"
               >
                 <div className="max-w-screen-2xl mx-auto">
+                   {attachedFiles.length > 0 && (
+                     <div className="flex flex-wrap gap-2 mb-4 px-2">
+                       {attachedFiles.map((file, i) => (
+                         <span key={i} className="flex items-center gap-3 text-[10px] font-black uppercase leading-none bg-primary/10 text-primary border border-primary/20 px-4 py-2.5 rounded-xl shadow-lg">
+                           <FileText size={14} />
+                           {file.name}
+                           <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} className="hover:text-white ml-2 transition-colors">
+                             <X size={14} />
+                           </button>
+                         </span>
+                       ))}
+                     </div>
+                   )}
                    <ChatInputArea 
                       inputText={inputText}
                       setInputText={setInputText}
@@ -2060,20 +2086,6 @@ function ChatInputArea({
 }) {
   return (
     <div className="w-full">
-      {attachedFiles.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {attachedFiles.map((file, i) => (
-            <span key={i} className="flex items-center gap-3 text-[10px] font-black uppercase leading-none bg-primary/10 text-primary border border-primary/20 px-4 py-2.5 rounded-xl shadow-lg">
-              <FileText size={14} />
-              {file.name}
-              <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} className="hover:text-white ml-2 transition-colors">
-                <X size={14} />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
       <div className="flex items-end gap-3 md:gap-4">
         <button
           onClick={() => fileInputRef.current?.click()}

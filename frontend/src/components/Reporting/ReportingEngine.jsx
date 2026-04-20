@@ -58,18 +58,19 @@ export default function ReportingEngine({ activeConvId, isMobile, type = 'trigge
       <>
         <div className="w-full flex items-center gap-4 py-4 px-2 select-none">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
-          <div className="flex items-center gap-3">
-             <span className="text-[10px] font-black text-foreground/20 uppercase tracking-[0.3em]">OR</span>
+          <div className="flex-1 flex items-center gap-4">
              <button
                onClick={handleGenerate}
                disabled={isGenerating || !activeConvId}
                className={`
-                 group relative flex items-center gap-3 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all 
+                 group relative flex-1 flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all border
                  ${isGenerating 
-                   ? 'bg-white/5 text-foreground/40 cursor-wait' 
-                   : 'bg-secondary/10 text-secondary hover:bg-secondary hover:text-white shadow-lg shadow-secondary/5 border border-secondary/20'
+                   ? 'bg-white/5 text-foreground/40 cursor-wait border-white/5' 
+                   : (!activeConvId 
+                     ? 'bg-white/5 text-foreground/20 border-white/5 cursor-not-allowed opacity-50 shadow-inner' 
+                     : 'bg-secondary/20 text-secondary hover:bg-secondary hover:text-white shadow-lg shadow-secondary/10 border-secondary/30 active:scale-[0.98]'
+                   )
                  }
-                 disabled:opacity-20 disabled:grayscale
                `}
              >
                {isGenerating ? (
@@ -81,7 +82,15 @@ export default function ReportingEngine({ activeConvId, isMobile, type = 'trigge
                  ? 'Synthesizing...' 
                  : (!activeConvId ? 'Start Chat to Enable Reporting' : 'Generate Executive Report')
                }
+               
+               {/* Premium Glow Overlay */}
+               {!isGenerating && activeConvId && (
+                 <div className="absolute inset-0 bg-gradient-to-r from-secondary/0 via-white/5 to-secondary/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+               )}
              </button>
+             <span className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] flex items-center gap-4">
+               OR
+             </span>
           </div>
           <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
         </div>
