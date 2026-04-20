@@ -1967,12 +1967,14 @@ export default function App() {
                              ))}
                            </div>
                          )}
+                         {isAnalysisMode && (
                          <ReportingEngine 
                             activeConvId={activeConvId} 
                             isMobile={isMobile} 
                             sendMessage={sendMessage}
                             attachedFilesCount={attachedFiles.length}
                           />
+                         )}
                          {/* Reusable Input Block */}
                        <ChatInputArea 
                             inputText={inputText}
@@ -2045,12 +2047,16 @@ export default function App() {
                        ))}
                      </div>
                    )}
-                   <ReportingEngine 
-                      activeConvId={activeConvId} 
-                      isMobile={isMobile} 
-                      sendMessage={sendMessage}
-                      attachedFilesCount={attachedFiles.length}
-                   />
+                   {isAnalysisMode && (
+                     {isAnalysisMode && (
+                     <ReportingEngine 
+                        activeConvId={activeConvId} 
+                        isMobile={isMobile} 
+                        sendMessage={sendMessage}
+                        attachedFilesCount={attachedFiles.length}
+                     />
+                     )}
+                   )}
                    <ChatInputArea 
                       inputText={inputText}
                       setInputText={setInputText}
