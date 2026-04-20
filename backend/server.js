@@ -2381,7 +2381,6 @@ const GET_BRANDED_HTML = (contentHtml) => `
     <div class="container">
         <div class="header">
             <div>
-                <div class="report-label">Strategic Intelligence Result</div>
                 <h1>Executive Analysis Report</h1>
             </div>
         
