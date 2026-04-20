@@ -2204,15 +2204,17 @@ app.post('/api/export/pdf', async (req, res) => {
   }
 });
 
-// ─── Serve React Frontend (Production) ───────────────────
-const FRONTEND_DIR = path.join(__dirname, '../frontend/dist');
-if (fs.existsSync(FRONTEND_DIR)) {
-  console.log(`📦 Serving static frontend from: ${FRONTEND_DIR}`);
-  app.use(express.static(FRONTEND_DIR));
-  app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
-  });
-}
+// ─── Serve React Frontend (Rectified) ────────────────────
+const FRONTEND_DIR = path.resolve(process.cwd(), 'frontend', 'dist');
+console.log(`📦 [RECTIFIED] Serving from: ${FRONTEND_DIR}`);
+
+app.use(express.static(FRONTEND_DIR));
+
+// Failsafe catch-all for SPA
+app.get(/^(?!\/api\/|\/assets\/).*/, (req, res) => {
+  const indexPath = path.join(FRONTEND_DIR, 'index.html');
+  res.sendFile(indexPath);
+});
 
 // ─── Start Server ────────────────────────────────────────
 const startServer = async () => {
