@@ -682,6 +682,18 @@ if os.path.exists(v_dir): sys.path.insert(0, v_dir)
                    if (jsonMatch) {
                        let parsed = JSON.parse(jsonMatch[0]);
                        parsed = sanitizeAnalysisResponse(parsed, docs);
+                       
+                       // --- INTENT DETECTION (Refinement) ---
+                       const visualKeywords = ['plot', 'graph', 'chart', 'visual', 'visualise', 'trend', 'distribution', 'scatter', 'bar', 'histogram', 'line'];
+                       const userPrompt = (message || "").toLowerCase();
+                       const hasVisualIntent = visualKeywords.some(k => userPrompt.includes(k));
+                       
+                       if (hasVisualIntent) {
+                           parsed.primaryView = parsed.primaryView || "chart";
+                       } else {
+                           parsed.primaryView = "table"; 
+                       }
+                       
                        const cleanJson = JSON.stringify(parsed, null, 2);
                        outputText = outputText.replace(jsonMatch[0], `\n\`\`\`json\n${cleanJson}\n\`\`\`\n`);
                    } else {

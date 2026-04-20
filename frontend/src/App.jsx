@@ -957,22 +957,18 @@ function DynamicChart({ config, isMobile = false }) {
 
 // ─── Analysis Dashboard (Multi-View) ──────────────────────────
 function AnalysisDashboard({ dataObj, raw, convId, isMobile = false }) {
-  const [activeTab, setActiveTab] = useState(dataObj.primaryView === 'table' && dataObj.chartConfig ? 'chart' : (dataObj.chartConfig ? 'chart' : 'table'));
+  const hasChart = !!dataObj.chartConfig;
+  const hasTable = !!dataObj.tableData;
+  const [activeTab, setActiveTab] = useState(dataObj.primaryView === 'chart' && hasChart ? 'chart' : 'table');
 
+  // We respect the initial primaryView but allow user to switch manually
   useEffect(() => {
-    if (dataObj.primaryView === 'table' && !dataObj.chartConfig) {
-      setActiveTab('table');
-    } else if (dataObj.primaryView && dataObj.primaryView !== 'table' && dataObj.chartConfig) {
-      setActiveTab('chart');
-    } else if (dataObj.chartConfig) {
+    if (dataObj.primaryView === 'chart' && hasChart) {
       setActiveTab('chart');
     } else {
       setActiveTab('table');
     }
-  }, [dataObj]);
-
-  const hasChart = !!dataObj.chartConfig;
-  const hasTable = !!dataObj.tableData;
+  }, [dataObj, hasChart]);
 
   return (
     <div className="my-1 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
