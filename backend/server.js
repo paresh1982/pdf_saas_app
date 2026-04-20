@@ -2259,8 +2259,19 @@ const GET_BRANDED_HTML = (contentHtml) => `
     <title>Executive Analysis Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- AUTO-RENDERER FOR MARKDOWN CODE BLOCKS ---
+            // Finds markdown-style mermaid code blocks and converts them for rendering
+            document.querySelectorAll('pre code.language-mermaid').forEach(block => {
+                const pre = block.parentElement;
+                const mermaidDiv = document.createElement('div');
+                mermaidDiv.className = 'mermaid';
+                mermaidDiv.textContent = block.textContent;
+                pre.replaceWith(mermaidDiv);
+            });
+
             mermaid.initialize({ 
                 startOnLoad: true, 
                 theme: 'dark',
@@ -2275,6 +2286,7 @@ const GET_BRANDED_HTML = (contentHtml) => `
             });
         });
     </script>
+
     <style>
         :root {
             --primary: #e63639;
