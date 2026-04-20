@@ -2048,14 +2048,12 @@ export default function App() {
                      </div>
                    )}
                    {isAnalysisMode && (
-                     {isAnalysisMode && (
                      <ReportingEngine 
                         activeConvId={activeConvId} 
                         isMobile={isMobile} 
                         sendMessage={sendMessage}
                         attachedFilesCount={attachedFiles.length}
                      />
-                     )}
                    )}
                    <ChatInputArea 
                       inputText={inputText}
