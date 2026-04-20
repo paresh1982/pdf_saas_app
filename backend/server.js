@@ -730,8 +730,8 @@ if (fs.existsSync(DIST_PATH)) {
   console.log(`✅ [PROD] Serving Static Frontend from: ${DIST_PATH}`);
   app.use(express.static(DIST_PATH));
   
-  // Handle SPA routing - ALWAYS serve index.html for non-API routes
-  app.get('*', (req, res) => {
+  // Handle SPA routing - Bypasses path-to-regexp parser using manual Regex to prevent crash
+  app.get(/^(?!\/api).*/, (req, res) => {
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(DIST_PATH, 'index.html'));
     }
