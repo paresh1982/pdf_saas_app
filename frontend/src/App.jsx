@@ -973,33 +973,42 @@ function AnalysisDashboard({ dataObj, raw, convId, isMobile = false }) {
   return (
     <div className="my-1 bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
       <div className="px-5 py-3 border-b border-white/5 bg-white/2">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
-          <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em] flex items-center gap-2">
-             <BarChart3 size={14} className="text-primary" /> Visual Intelligence Dashboard
-          </span>
-          <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
-             {hasTable && (
-               <button 
-                 onClick={() => setActiveTab('table')}
-                 className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                   activeTab === 'table' ? 'bg-secondary/20 text-secondary' : 'text-foreground/40 hover:text-white'
-                 }`}
-               >
-                 📑 Table Data
-               </button>
-             )}
-             {hasChart && (
-               <button 
-                 onClick={() => setActiveTab('chart')}
-                 className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                   activeTab === 'chart' ? 'bg-primary/20 text-primary' : 'text-foreground/40 hover:text-white'
-                 }`}
-               >
-                 📊 Chart View
-               </button>
-             )}
+        {(hasTable || hasChart) && (
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+            <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em] flex items-center gap-2">
+               <BarChart3 size={14} className="text-primary" /> Visual Intelligence Dashboard
+            </span>
+            <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
+               {hasTable && (
+                 <button 
+                   onClick={() => setActiveTab('table')}
+                   className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                     activeTab === 'table' ? 'bg-secondary/20 text-secondary' : 'text-foreground/40 hover:text-white'
+                   }`}
+                 >
+                   📑 Table Data
+                 </button>
+               )}
+               {hasChart && (
+                 <button 
+                   onClick={() => setActiveTab('chart')}
+                   className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                     activeTab === 'chart' ? 'bg-primary/20 text-primary' : 'text-foreground/40 hover:text-white'
+                   }`}
+                 >
+                   📊 Chart View
+                 </button>
+               )}
+            </div>
           </div>
-        </div>
+        )}
+        {!hasTable && !hasChart && (
+          <div className="mb-4 flex items-center gap-2">
+             <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em] flex items-center gap-2">
+               <BarChart3 size={14} className="text-primary" /> Dataset Insight Profile
+             </span>
+          </div>
+        )}
         {dataObj.summary && (
           <p className="text-sm text-white/80 leading-relaxed font-medium">
             {dataObj.summary}

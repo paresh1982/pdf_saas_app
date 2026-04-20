@@ -39,7 +39,7 @@ export default function ReportingEngine({
         if (attachedFilesCount > 0 && sendMessage) {
             setIsBootstrapping(true);
             setIsGenerating(true); // Show progress immediately
-            sendMessage("Briefly summarize what this data is about and provide a meta-description (record count, columns, and purpose). DO NOT generate any charts or visual plots for this summary.");
+            sendMessage("Briefly summarize what this data is about and provide a meta-description (record count, columns, and purpose). DO NOT generate any charts, visual plots, or data tables for this summary. Focus strictly on the textual profile.");
             return;
         }
         alert("Please upload a file or start a chat first.");
