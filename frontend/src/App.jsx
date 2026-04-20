@@ -1587,19 +1587,20 @@ export default function App() {
   };
 
   // Send message
-  const sendMessage = async () => {
-    if (!inputText.trim() && attachedFiles.length === 0) return;
+    const sendMessage = async (customText = null) => {
+    const textToSend = typeof customText === 'string' ? customText : inputText;
+    if (!textToSend.trim() && attachedFiles.length === 0) return;
 
     setIsLoading(true);
     const formData = new FormData();
-    formData.append('message', inputText);
+    formData.append('message', textToSend);
     if (activeConvId) formData.append('conversation_id', activeConvId);
     attachedFiles.forEach(f => formData.append('files', f));
 
     // Optimistic UI: show user message immediately
     const tempUserMsg = {
       role: 'user',
-      content: inputText,
+      content: textToSend,
       attachments: attachedFiles.map(f => f.name),
       created_at: new Date().toISOString(),
     };

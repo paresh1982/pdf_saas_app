@@ -541,6 +541,11 @@ app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
 YOUR MISSION:
 Write a Python script that reads the provided FILE_PATHs using pandas and performs a high-fidelity analysis as requested by the user.
 
+
+- **TITLE EXTRACTION**: Analyze the chat history to see if the user specified a custom title for the report (e.g., 'Set title to Q1 Audit'). 
+- If found, start your response with '# TITLE: [Custom Title]'. 
+- If no title is requested, start with '# TITLE: Executive Analysis Report'.
+
 CRITICAL RULES:
 1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler.
 2. DISCOVERY: Print the result as a raw JSON "MultiView" payload to stdout.
@@ -674,7 +679,33 @@ if os.path.exists(v_dir): sys.path.insert(0, v_dir)
            if (error) {
                resolve(`❌ **Python Execution Error**:\n\`\`\`text\n${stderr || error.message}\n\`\`\``);
            } else {
-               let outputText = (stdout || '').trim();
+                               let outputText = (stdout || '').trim();
+
+                // --- TOTAL TECHNICAL PURGE (Short-Circuit Enforcement) ---
+                const magicSummaryKeyword = "[STRATEGIC_OVERVIEW_REQUEST]";
+                if (message && message.includes(magicSummaryKeyword)) {
+                    let finalProse = outputText;
+                    try {
+                        const jsonMatch = outputText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                        if (jsonMatch) {
+                            const parsed = JSON.parse(jsonMatch[0]);
+                            finalProse = parsed.summary || parsed.t || outputText;
+                            if (typeof finalProse === 'object') {
+                                finalProse = finalProse.summary || finalProse.t || JSON.stringify(finalProse);
+                            }
+                        }
+                    } catch (e) {
+                         console.error('Interceptor Error:', e);
+                    }
+                    
+                    finalProse = finalProse.replace(/\`\`\`json[\s\S]*?\`\`\`/gi, '');
+                    finalProse = finalProse.replace(/\`\`\`[\s\S]*?\`\`\`/gi, '');
+                    finalProse = finalProse.trim();
+                    
+                    resolve(`🔬 **Data Analysis Result**:\n\n${finalProse}`);
+                    return; 
+                }
+
                
                // --- INTEGRATED SANITIZATION LAYER ---
                try {
@@ -683,7 +714,9 @@ if os.path.exists(v_dir): sys.path.insert(0, v_dir)
                        let parsed = JSON.parse(jsonMatch[0]);
                        parsed = sanitizeAnalysisResponse(parsed, docs);
                        
-                       // --- INTENT DETECTION (Refinement) ---
+                       
+                
+                // --- INTENT DETECTION (Refinement) ---
                         const visualKeywords = ['plot', 'graph', 'chart', 'visual', 'visualise', 'trend', 'distribution', 'scatter', 'bar', 'histogram', 'line', 'view relationship', 'relationship', 'correlation', 'compare'];
                        const userPrompt = (message || "").toLowerCase();
                        const hasVisualIntent = visualKeywords.some(k => userPrompt.includes(k));
@@ -2245,18 +2278,23 @@ STRUCTURE:
 4. Strategic Insights: Potential risks or opportunities identifies in the documents.
 5. Final Verdict: Professional recommendation.
 
+
+- **TITLE EXTRACTION**: Analyze the chat history to see if the user specified a custom title for the report (e.g., 'Set title to Q1 Audit'). 
+- If found, start your response with '# TITLE: [Custom Title]'. 
+- If no title is requested, start with '# TITLE: Executive Analysis Report'.
+
 CRITICAL RULES:
 - Use "Analysis" terminology throughout. NEVER use "Audit".
 - NEVER mention "NexGen" or "DocJockey" in the body text or headers. Keep the text brand-neutral.
 - Use bold headers and professional enterprise-grade tone.
 - Use Markdown for the content to ensure compatibility with our processor.`;
 
-const GET_BRANDED_HTML = (contentHtml) => `
+const GET_BRANDED_HTML = (contentHtml, title = 'Executive Analysis Report') => `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Executive Analysis Report</title>
+    <title>${title}</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     
@@ -2381,7 +2419,7 @@ const GET_BRANDED_HTML = (contentHtml) => `
     <div class="container">
         <div class="header">
             <div>
-                <h1>Executive Analysis Report</h1>
+                <h1>${title}</h1>
             </div>
         
         <div class="content">
@@ -2425,9 +2463,19 @@ app.post('/api/generate-reporting-executive', async (req, res) => {
       EXECUTIVE_REPORT_PROMPT
     );
 
-    // 4. Render to Branded HTML
-    const contentHtml = markdownIt.render(reportMarkdown);
-    const fullHtml = GET_BRANDED_HTML(contentHtml);
+    // 4. Render to Branded HTML with Dynamic Title Extraction
+    let finalTitle = "Executive Analysis Report";
+    let processedMarkdown = reportMarkdown;
+    
+    const titleMatch = reportMarkdown.match(/^# TITLE:\s*(.*)/m);
+    if (titleMatch) {
+        finalTitle = titleMatch[1].trim();
+        // Remove the title line from the markdown body to avoid double content
+        processedMarkdown = reportMarkdown.replace(/^# TITLE:.*\n?/m, '').trim();
+    }
+
+    const contentHtml = markdownIt.render(processedMarkdown);
+    const fullHtml = GET_BRANDED_HTML(contentHtml, finalTitle);
 
     res.json({
       markdown: reportMarkdown,
