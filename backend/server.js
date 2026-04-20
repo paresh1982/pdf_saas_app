@@ -544,9 +544,9 @@ Write a Python script that reads the provided FILE_PATHs using pandas and perfor
 CRITICAL RULES:
 1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler.
 2. DISCOVERY: Print the result as a raw JSON "MultiView" payload to stdout.
-3. VISUAL INTELLIGENCE (MANDATORY): To show different colors and a legend (e.g., "by cylinders" or "by category"), you MUST provide the exact column name in the "groupByKey" field of the chartConfig.
-4. Use absolute paths provided in the context below.
-5. HISTOGRAMS: For distributions, set type to "histogram". You can simply provide raw data points in the "data" array, and the Dashboard will automatically calculate the statistical bins for you.
+3. VISUAL INTELLIGENCE: By default, provide a chartConfig for a visual dashboard. HOWEVER, if the user explicitly asks to avoid plots or charts, focus strictly on providing a high-fidelity 'summary' (brief idea about the data) and a 'tableData' view.
+4. META-ANALYTICS: For summaries, always include a 'Meta Data' section describing row/column counts and the inferred purpose of the dataset.
+5. Use absolute paths provided in the context below.
 
 EXAMPLE OUTPUT FORMAT:
 \`\`\`python

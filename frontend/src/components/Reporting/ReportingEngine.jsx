@@ -39,7 +39,7 @@ export default function ReportingEngine({
         if (attachedFilesCount > 0 && sendMessage) {
             setIsBootstrapping(true);
             setIsGenerating(true); // Show progress immediately
-            sendMessage("Perform a baseline analysis and prepare an executive audit report for these documents.");
+            sendMessage("Briefly summarize what this data is about and provide a meta-description (record count, columns, and purpose). DO NOT generate any charts or visual plots for this summary.");
             return;
         }
         alert("Please upload a file or start a chat first.");
