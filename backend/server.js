@@ -724,6 +724,22 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
   }
 });
 
+// ─── Production Static Serving ─────────────────────────────
+const DIST_PATH = path.join(__dirname, '..', 'frontend', 'dist');
+if (fs.existsSync(DIST_PATH)) {
+  console.log(`✅ [PROD] Serving Static Frontend from: ${DIST_PATH}`);
+  app.use(express.static(DIST_PATH));
+  
+  // Handle SPA routing - ALWAYS serve index.html for non-API routes
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(DIST_PATH, 'index.html'));
+    }
+  });
+} else {
+  console.warn(`⚠️ [PROD] Frontend 'dist' folder NOT found at: ${DIST_PATH}. Static serving disabled.`);
+}
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`🚀 DocJockey Backend running on port ${PORT}`);
