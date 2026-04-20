@@ -684,7 +684,7 @@ if os.path.exists(v_dir): sys.path.insert(0, v_dir)
                        parsed = sanitizeAnalysisResponse(parsed, docs);
                        
                        // --- INTENT DETECTION (Refinement) ---
-                       const visualKeywords = ['plot', 'graph', 'chart', 'visual', 'visualise', 'trend', 'distribution', 'scatter', 'bar', 'histogram', 'line'];
+                        const visualKeywords = ['plot', 'graph', 'chart', 'visual', 'visualise', 'trend', 'distribution', 'scatter', 'bar', 'histogram', 'line', 'view relationship', 'relationship', 'correlation', 'compare'];
                        const userPrompt = (message || "").toLowerCase();
                        const hasVisualIntent = visualKeywords.some(k => userPrompt.includes(k));
                        
