@@ -1956,7 +1956,6 @@ export default function App() {
                       <div className="w-full max-w-screen-xl mx-auto mt-auto">
                          <ReportingEngine activeConvId={activeConvId} isMobile={isMobile} />
                          {/* Reusable Input Block */}
-                         <ReportingEngine activeConvId={activeConvId} isMobile={isMobile} />
                        <ChatInputArea 
                             inputText={inputText}
                             setInputText={setInputText}

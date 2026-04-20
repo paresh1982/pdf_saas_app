@@ -75,9 +75,12 @@ export default function ReportingEngine({ activeConvId, isMobile, type = 'trigge
                {isGenerating ? (
                  <Loader2 size={14} className="animate-spin" />
                ) : (
-                 <Sparkles size={14} className="group-hover:rotate-12 transition-transform" />
+                 <Sparkles size={14} className={`${!activeConvId ? 'opacity-20' : 'group-hover:rotate-12 transition-transform text-secondary'}`} />
                )}
-               {isGenerating ? 'Synthesizing...' : 'Generate Executive Report'}
+               {isGenerating 
+                 ? 'Synthesizing...' 
+                 : (!activeConvId ? 'Start Chat to Enable Reporting' : 'Generate Executive Report')
+               }
              </button>
           </div>
           <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
