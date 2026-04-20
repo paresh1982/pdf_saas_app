@@ -1600,7 +1600,7 @@ export default function App() {
     // Optimistic UI: show user message immediately
     const tempUserMsg = {
       role: 'user',
-      content: textToSend,
+      content: textToSend.replace('[STRATEGIC_OVERVIEW_REQUEST] ', ''),
       attachments: attachedFiles.map(f => f.name),
       created_at: new Date().toISOString(),
     };
