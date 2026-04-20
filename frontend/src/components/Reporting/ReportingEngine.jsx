@@ -68,7 +68,7 @@ export default function ReportingEngine({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `DocJockey_Executive_Report_${Date.now()}.html`;
+    a.download = `DocJockey_Executive_Analysis_${Date.now()}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -174,7 +174,7 @@ function ReportPortal({ data, onClose, onDownload }) {
             <ShieldCheck size={26} />
           </div>
           <div>
-            <h2 className="text-xl font-black text-white uppercase italic tracking-tighter leading-none">Audit Portal</h2>
+            <h2 className="text-xl font-black text-white uppercase italic tracking-tighter leading-none">Analysis Portal</h2>
             <p className="text-[10px] text-secondary font-black uppercase tracking-[0.2em] mt-1 opacity-80">Phase 2: Executive Intelligence</p>
           </div>
         </div>
