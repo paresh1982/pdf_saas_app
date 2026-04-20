@@ -56,42 +56,48 @@ export default function ReportingEngine({ activeConvId, isMobile, type = 'trigge
   if (type === 'trigger') {
     return (
       <>
-        <div className="w-full flex items-center gap-4 py-4 px-2 select-none">
+        <div className="w-full flex items-center gap-4 py-4 px-2 select-none group/trigger">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
-          <div className="flex-1 flex items-center gap-4">
+          
+          <div className="flex-[4] flex items-center gap-6">
              <button
-               onClick={handleGenerate}
-               disabled={isGenerating || !activeConvId}
+               onClick={!activeConvId ? () => document.querySelector('textarea')?.focus() : handleGenerate}
+               disabled={isGenerating}
                className={`
-                 group relative flex-1 flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all border
+                 group relative flex-1 flex items-center justify-center gap-3 px-8 py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] transition-all border-2
                  ${isGenerating 
                    ? 'bg-white/5 text-foreground/40 cursor-wait border-white/5' 
                    : (!activeConvId 
-                     ? 'bg-white/5 text-foreground/20 border-white/5 cursor-not-allowed opacity-50 shadow-inner' 
-                     : 'bg-secondary/20 text-secondary hover:bg-secondary hover:text-white shadow-lg shadow-secondary/10 border-secondary/30 active:scale-[0.98]'
+                     ? 'bg-white/5 text-foreground/30 border-white/5 hover:border-white/20 hover:bg-white/10 active:scale-[0.98]' 
+                     : 'bg-secondary/20 text-secondary hover:bg-secondary hover:text-white shadow-2xl shadow-secondary/20 border-secondary/40 active:scale-[0.98]'
                    )
                  }
                `}
              >
                {isGenerating ? (
-                 <Loader2 size={14} className="animate-spin" />
+                 <Loader2 size={16} className="animate-spin" />
                ) : (
-                 <Sparkles size={14} className={`${!activeConvId ? 'opacity-20' : 'group-hover:rotate-12 transition-transform text-secondary'}`} />
+                 <Sparkles size={16} className={`transition-all ${!activeConvId ? 'opacity-30 group-hover:opacity-100' : 'group-hover:rotate-12 text-secondary'}`} />
                )}
                {isGenerating 
                  ? 'Synthesizing...' 
                  : (!activeConvId ? 'Start Chat to Enable Reporting' : 'Generate Executive Report')
                }
                
-               {/* Premium Glow Overlay */}
+               {/* Premium Shine Effect */}
                {!isGenerating && activeConvId && (
-                 <div className="absolute inset-0 bg-gradient-to-r from-secondary/0 via-white/5 to-secondary/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                )}
              </button>
-             <span className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] flex items-center gap-4">
-               OR
-             </span>
+
+             <div className="flex items-center gap-4 shrink-0">
+               <span className="text-[11px] font-black text-foreground/20 uppercase tracking-[0.4em] italic">
+                 OR
+               </span>
+               <div className="h-4 w-px bg-white/10" />
+             </div>
           </div>
+
           <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
         </div>
 
