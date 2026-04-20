@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import ReportingEngine from './components/Reporting/ReportingEngine';
 import {
   ResponsiveContainer, BarChart, Bar, LineChart, Line, AreaChart, Area,
   PieChart, Pie, Cell, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -1953,8 +1954,10 @@ export default function App() {
 
                       {/* --- Welcome State Dialogue Box (Embedded) --- */}
                       <div className="w-full max-w-screen-xl mx-auto mt-auto">
+                         <ReportingEngine activeConvId={activeConvId} isMobile={isMobile} />
                          {/* Reusable Input Block */}
-                         <ChatInputArea 
+                         <ReportingEngine activeConvId={activeConvId} isMobile={isMobile} />
+                       <ChatInputArea 
                             inputText={inputText}
                             setInputText={setInputText}
                             sendMessage={sendMessage}
