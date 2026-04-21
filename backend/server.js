@@ -542,6 +542,8 @@ Write a Python script that reads the provided FILE_PATHs using pandas and perfor
 - If found, start your response with '# TITLE: [Custom Title]'. 
 - If no title is requested, start with '# TITLE: Executive Analysis Report'.
 
+- **ALLOWED LIBRARIES**: You only have access to: \`pandas\`, \`openpyxl\`, \`numpy\`, \`matplotlib\`, \`seaborn\`, \`scipy\`. DO NOT attempt to use others.
+
 CRITICAL RULES:
 1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler.
 2. DISCOVERY: Print the result as a raw JSON "MultiView" payload to stdout.

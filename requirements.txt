@@ -15,6 +15,7 @@ urllib3
 # Image Processing (OCR Prep)
 Pillow
 
-# Data Visualization (Future Reporting)
+# Data Visualization (Advanced Stats)
 matplotlib
 seaborn
+scipy
