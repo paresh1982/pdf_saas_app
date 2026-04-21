@@ -552,6 +552,7 @@ CRITICAL RULES:
 3. VISUAL INTELLIGENCE: By default, provide a chartConfig for a visual dashboard. HOWEVER, if the user explicitly asks to avoid plots or charts, focus strictly on providing a high-fidelity 'summary' (brief idea about the data) and a 'tableData' view.
 4. META-ANALYTICS: For the VERY FIRST strategic summary/overview, include a 'Meta Data' section. For all follow-up questions in the chat history, OMIT this Meta Data section and answer the question directly.
 5. Use absolute paths provided in the context below.
+6. JSON SERIALIZATION: Pandas types (int64, float64, etc.) are NOT JSON serializable. You MUST convert any calculated values to native Python types (e.g., using \`int()\`, \`float()\`, or \`.tolist()\`) before putting them in the \`response\` dictionary.
 
 EXAMPLE OUTPUT FORMAT:
 \`\`\`python
