@@ -724,6 +724,16 @@ GENERAL:
 2. USE paths exactly as given.
 3. REFER to previous messages for context if needed.`;
 
+    // 2.5 Re-hydrate Conversation History (Crucial for Contextual Follow-ups)
+    const { rows: history } = await pool.query(
+      'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+      [convId]
+    );
+    const geminiHistory = history.map(h => ({
+      role: h.role === 'model' ? 'model' : 'user',
+      parts: [{ text: h.content }]
+    }));
+
     const contents = [...geminiHistory];
     // If files were just uploaded but not yet in the prompt part, append the final prompt with filesContext
     if (contents.length > 0) {
