@@ -546,7 +546,7 @@ CRITICAL RULES:
 1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler.
 2. DISCOVERY: Print the result as a raw JSON "MultiView" payload to stdout.
 3. VISUAL INTELLIGENCE: By default, provide a chartConfig for a visual dashboard. HOWEVER, if the user explicitly asks to avoid plots or charts, focus strictly on providing a high-fidelity 'summary' (brief idea about the data) and a 'tableData' view.
-4. META-ANALYTICS: For summaries, always include a 'Meta Data' section describing row/column counts and the inferred purpose of the dataset.
+4. META-ANALYTICS: For the VERY FIRST strategic summary/overview, include a 'Meta Data' section. For all follow-up questions in the chat history, OMIT this Meta Data section and answer the question directly.
 5. Use absolute paths provided in the context below.
 
 EXAMPLE OUTPUT FORMAT:
