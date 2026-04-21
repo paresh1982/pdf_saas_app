@@ -941,6 +941,33 @@ function DynamicChart({ config, isMobile = false }) {
             </Pie>
           </PieChart>
         );
+      case 'density':
+        return (
+          <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+            <Tooltip 
+              formatter={formatValue} 
+              contentStyle={{ 
+                backgroundColor: 'rgba(10, 10, 10, 0.9)', 
+                borderColor: 'rgba(255,255,255,0.1)', 
+                borderRadius: '12px',
+                backdropFilter: 'blur(8px)'
+              }} 
+              itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: 'bold' }} 
+              labelStyle={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', marginBottom: '4px' }}
+            />
+            <Legend wrapperStyle={{ fontSize: '10px' }} />
+            {groups ? (
+               groups.map((group, idx) => (
+                 <Area key={group} name={String(group)} type="monotone" dataKey={yAxisKey} data={data.filter(d => String(d[effectiveGroupKey]) === String(group))} stroke={CHART_COLORS[idx % CHART_COLORS.length]} fill={CHART_COLORS[idx % CHART_COLORS.length]} fillOpacity={0.1} strokeWidth={2} />
+               ))
+            ) : (
+               <Area type="monotone" dataKey={yAxisKey} stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} strokeWidth={2} />
+            )}
+          </AreaChart>
+        );
       default:
         return <div className="p-4 text-center text-foreground/40 text-[10px] uppercase font-black tracking-widest">Unsupported chart type: {type}</div>;
     }
