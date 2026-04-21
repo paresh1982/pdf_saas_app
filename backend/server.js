@@ -806,27 +806,42 @@ GENERAL:
                   message.includes("Briefly summarize what this data is about")
                 );
 
-                if (isMagicSummary) {
-                    let finalProse = outputText;
-                    try {
-                        const jsonMatch = outputText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-                        if (jsonMatch) {
-                            const parsed = JSON.parse(jsonMatch[0]);
-                            // If it's a strategic summary, we just want the text
-                            finalProse = parsed.summary || parsed.t || outputText;
-                            if (typeof finalProse === 'object') finalProse = finalProse.summary || finalProse.t || JSON.stringify(finalProse);
+                                 if (isMagicSummary) {
+                     let finalProse = outputText;
+                     try {
+                         // Extract text between quotes in summary: '...' OR just look for a JSON block
+                         const jsonMatch = outputText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                         if (jsonMatch) {
+                             // Try to safely extract just the summary content if it looks like a Python dict string
+                             const rawObj = jsonMatch[0];
+                             const summaryRegex = /['"]summary['"]\s*:\s*['"]([\s\S]*?)['"]\s*[,}]/;
+                             const match = rawObj.match(summaryRegex);
+                             if (match && match[1]) {
+                                 finalProse = match[1];
+                             } else {
+                                 // Fallback to JSON.parse if it's valid JSON
+                                 try {
+                                    const parsed = JSON.parse(rawObj.replace(/'/g, '"'));
+                                    finalProse = parsed.summary || parsed.t || rawObj;
+                                 } catch(e) {
+                                    finalProse = rawObj;
+                                 }
+                             }
+                         }
+                     } catch (e) {}
 
-                            // Also prepare a clean JSON for the frontend if it expects one
-                            const cleanParsed = { ...parsed, tableData: null, chartConfig: null, primaryView: "table" };
-                            const cleanJson = JSON.stringify(cleanParsed, null, 2);
-                            outputText = outputText.replace(jsonMatch[0], `\n\`\`\`json\n${cleanJson}\n\`\`\`\n`);
-                        }
-                    } catch (e) {}
+                     const scrubbedProse = (typeof finalProse === 'string' ? finalProse : JSON.stringify(finalProse))
+                        .replace(/\\n/g, '\n') // Unescape newlines
+                        .replace(/[{}'"]/g, '') // Remove remaining JSON braces/quotes
+                        .replace(/summary\s*:\s*/g, '') // Remove summary key
+                        .replace(/meta_description[\s\S]*/gi, '') // Remove meta description content
+                        .replace(/^Id\s+SepalLengthCm[\s\S]*?\n\n/gi, '') // Remove Iris-specific headers
+                        .replace(/^\s*\d+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+[\s\S]*?\n\n/gi, '') // Remove numeric rows
+                        .trim();
 
-                    const cleanProse = typeof finalProse === 'string' ? finalProse : JSON.stringify(finalProse);
-                    resolve(`🔬 **Data Analysis Result**:\n\n${cleanProse.replace(/\`\`\`json[\s\S]*?\`\`\`/gi, '').replace(/\`\`\`[\s\S]*?\`\`\`/gi, '').trim()}`);
-                    return; 
-                }
+                     resolve(`?? **Data Analysis Result**:\n\n${scrubbedProse}`);
+                     return; 
+                 }
 
                 // --- INTEGRATED SANITIZATION & INTENT DETECTION ---
                 try {
@@ -1003,3 +1018,4 @@ app.listen(PORT, () => {
   console.log(`🚀 DocJockey Backend running on port ${PORT}`);
   initDB();
 });
+
