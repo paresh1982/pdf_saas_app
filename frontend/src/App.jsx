@@ -969,10 +969,10 @@ function DynamicChart({ config, isMobile = false }) {
       case 'box':
       case 'boxplot':
         return (
-          <ComposedChart data={data} layout="vertical" margin={{ top: 20, right: 30, left: 40, bottom: 10 }}>
+          <ComposedChart data={data} layout="horizontal" margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
             <XAxis type="number" stroke="rgba(255,255,255,0.4)" fontSize={10} tickFormatter={formatAxisTick} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
-            <YAxis type="category" dataKey="group" stroke="rgba(255,255,255,0.4)" fontSize={10} width={60} tickLine={false} axisLine={false} />
+            <YAxis type="number" stroke="rgba(255,255,255,0.4)" fontSize={10} tickFormatter={formatAxisTick} tickLine={false} axisLine={false} />
             <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} formatter={formatValue} contentStyle={{ backgroundColor: '#000', borderRadius: '12px', border: 'none' }} />
             <Bar dataKey="min" stackId="b" fill="transparent" />
             <Bar dataKey="q1" stackId="b" fill="rgba(239, 68, 68, 0.4)" />
@@ -2335,5 +2335,6 @@ function HowItWorksView({ setView }) {
 
 // Set global axios default
 axios.defaults.headers.common['X-User-ID'] = UID;
+
 
 
