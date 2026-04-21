@@ -98,6 +98,162 @@ const pool = new Pool({
 });
 
 // ─── UI Decorators & Privacy Filters ──────────────────────
+const EXECUTIVE_REPORT_PROMPT = `You are the Lead Data Analyst for an Enterprise Intelligence Suite.
+Your task is to synthesize a high-fidelity Executive Analysis Report based on the provided document context and chat history.
+
+STRUCTURE:
+1. Executive Analysis: High-level purpose and scope of this investigation.
+2. Data Description: Provide a detailed profile of the data (what it is about, record counts, active columns, and the specific business context).
+3. Key Findings: Present mission-critical insights derived from the data. 
+   - Embed Mermaid.js visualizations (pie charts, bar charts, or xy charts) ONLY for the most important findings. 
+   - Do NOT generate plots for every variable; focus only on the core results.
+4. Strategic Insights: Potential risks or opportunities identifies in the documents.
+5. Final Verdict: Professional recommendation.
+
+- **TITLE EXTRACTION**: Analyze the chat history to see if the user specified a custom title for the report (e.g., "Set title to Q1 Audit"). 
+- If found, start your response with \`# TITLE: [Custom Title]\`. 
+- If no title is requested, start with \`# TITLE: Executive Analysis Report\`.
+
+CRITICAL RULES:
+- Use "Analysis" terminology throughout. NEVER use "Audit".
+- NEVER mention "NexGen" or "DocJockey" in the body text or headers. Keep the text brand-neutral.
+- Use bold headers and professional enterprise-grade tone.
+- Use Markdown for the content to ensure compatibility with our processor.`;
+
+const GET_BRANDED_HTML = (contentHtml, title = 'Executive Analysis Report') => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>${title}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            mermaid.initialize({ 
+                startOnLoad: true, 
+                theme: 'dark',
+                themeVariables: {
+                    primaryColor: '#e63639',
+                    primaryTextColor: '#fff',
+                    primaryBorderColor: '#e63639',
+                    lineColor: '#e63639',
+                    secondaryColor: '#1da5a2',
+                    tertiaryColor: '#1c1517'
+                }
+            });
+        });
+    </script>
+    <style>
+        :root {
+            --primary: #e63639;
+            --secondary: #1da5a2;
+            --bg: #0b0c10;
+            --text: #e2e8eb;
+            --surface: #1c1517;
+        }
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            line-height: 1.6; 
+            color: var(--text); 
+            background: var(--bg); 
+            margin: 0;
+            padding: 40px;
+            position: relative;
+        }
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 15vw;
+            color: rgba(255, 255, 255, 0.03);
+            font-weight: 900;
+            pointer-events: none;
+            user-select: none;
+            white-space: nowrap;
+            z-index: 1000;
+            letter-spacing: 0.5em;
+        }
+        .container { 
+            max-width: 900px; 
+            margin: 0 auto; 
+            background: var(--surface);
+            padding: 60px;
+            border-radius: 24px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            z-index: 1;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 60px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 30px;
+        }
+        .analysis-badge {
+            background: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            font-weight: 900;
+            border-radius: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .report-label {
+            font-size: 10px;
+            font-weight: 900;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+        h1, h2, h3 { color: white; font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; }
+        h1 { font-size: 36px; margin: 0; }
+        h2 { font-size: 20px; color: var(--primary); margin-top: 40px; border-left: 4px solid var(--primary); padding-left: 15px; }
+        p, li { font-size: 16px; color: rgba(255,255,255,0.7); }
+        .footer {
+            margin-top: 80px;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 40px;
+            font-size: 10px;
+            font-weight: 900;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(0,0,0,0.2); border-radius: 12px; overflow: hidden; }
+        th { background: rgba(255,255,255,0.05); color: var(--primary); text-align: left; padding: 12px; font-size: 12px; text-transform: uppercase; font-weight: 900; }
+        td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 14px; }
+        .mermaid { background: rgba(0,0,0,0.3); padding: 20px; border-radius: 16px; margin: 20px 0; border: 1px solid rgba(255,255,255,0.05); }
+    </style>
+</head>
+<body>
+    <div class="watermark">DOCJOCKEY</div>
+    <div class="container">
+        <div class="header">
+            <div>
+                <div class="report-label">Strategic Intelligence Result</div>
+                <h1>${title}</h1>
+            </div>
+            <div class="analysis-badge">Confidential Analysis</div>
+        </div>
+        
+        <div class="content">
+            ${contentHtml}
+        </div>
+
+        <div class="footer">
+            Generated by DocJockey AI • Enterprise-Grade Intelligence • Confidential
+        </div>
+    </div>
+</body>
+</html>
+`;
 /**
  * Sanitizes the analysis response to hide internal server paths.
  * Replaces full paths with original filenames or generic labels.
@@ -512,49 +668,36 @@ app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
     let filesContext = "";
     for (const doc of docs) {
       const filePath = path.join(__dirname, 'uploads', doc.filename);
-      if (fs.existsSync(filePath)) {
-        // Prepare a pseudo-file object for getSchemaContext
-        const pseudoFile = { path: filePath, originalname: doc.original_name };
-        const schema = await getSchemaContext(pseudoFile);
-        if (schema) filesContext += schema + "\n\n";
-      }
+      filesContext += `File: ${doc.original_name}\nInternal Path: ${filePath}\n\n`;
     }
 
-    // 3. Fetch Message History
-    const { rows: history } = await pool.query(
-      'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
-      [convId]
-    );
-    
-    // Map history to Gemini format (ignoring the temporary Analyst message being built)
-    const geminiHistory = history.map(h => ({
-      role: h.role === 'model' ? 'model' : 'user',
-      parts: [{ text: h.content }]
-    }));
+    const systemPrompt = `You are a world-class Data Analyst.
+Turn the uploaded CSV into high-fidelity visual and strategic intelligence.
 
-    // 4. Call Gemini using the resilient Model Queue
-    const systemPrompt = `You are an expert Data Analyst and Python Developer. 
+DISCOVERY MANDATE:
+Before performing any analysis, you MUST include 'print(df.head().to_string())'. 
+This ensures you use the EXACT column names as they appear in the file.
 
-YOUR MISSION:
-Write a Python script that reads the provided FILE_PATHs using pandas and performs a high-fidelity analysis as requested by the user.
+CHART REQUIREMENTS:
+- DENSITY: chart_type='density'. data must be a JSON list of ~50 smooth KDE points: {"x": value, "y": density}. Use scipy.stats.gaussian_kde.
+- BOXPLOT: chart_type='boxplot'. data must be grouped quartiles: {"group": "Name", "min": val, "q1": val, "median": val, "q3": val, "max": val}.
+- PRECISION: All numerical results MUST use exactly 2 decimal places. No commas in years or numbers (e.g., 2024.00, not 2,024).
 
-
-- **TITLE EXTRACTION**: Analyze the chat history to see if the user specified a custom title for the report (e.g., 'Set title to Q1 Audit'). 
-- If found, start your response with '# TITLE: [Custom Title]'. 
-- If no title is requested, start with '# TITLE: Executive Analysis Report'.
-
-- **ALLOWED LIBRARIES**: You have access to: \`pandas\`, \`openpyxl\`, \`numpy\`, \`matplotlib\`, \`seaborn\`, \`scipy\`. Standard libs like \`json\`, \`base64\`, \`io\`, and \`math\` are allowed.
-- **NO STATIC PLOTS**: DO NOT use \`matplotlib.savefig\`, \`base64\`, or \`io.BytesIO\` to generate plot images. Our system uses a high-performance frontend engine. 
-- **CHART DATA**: Provide ONLY raw numerical data points in the \`chartConfig.data\` array for the frontend to render.
-
-CRITICAL RULES:
-1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler.
-2. DISCOVERY: Print the result as a raw JSON "MultiView" payload to stdout.
-3. VISUAL INTELLIGENCE: By default, provide a chartConfig for a visual dashboard. HOWEVER, if the user explicitly asks to avoid plots or charts, focus strictly on providing a high-fidelity 'summary' (brief idea about the data) and a 'tableData' view.
-4. META-ANALYTICS: For the VERY FIRST strategic summary/overview, include a 'Meta Data' section. For all follow-up questions in the chat history, OMIT this Meta Data section and answer the question directly.
-5. Use absolute paths provided in the context below.
-6. JSON SERIALIZATION: Pandas types (int64, float64, etc.) are NOT JSON serializable. You MUST convert any calculated values to native Python types (e.g., using \`int()\`, \`float()\`, or \`.tolist()\`) before putting them in the \`response\` dictionary.
-7. NUMPY 2.0 COMPATIBILITY: DO NOT use deprecated aliases like \`np.float_\`, \`np.int_\`, or \`np.bool_\`. These were REMOVED in NumPy 2.0. Use native \`float\`, \`int\`, \`bool\`, or explicit \`np.float64\`, \`np.int64\`.
+OUTPUT SCHEMA:
+Return Python code that creates a 'response' dictionary:
+{
+    "type": "multiview",
+    "summary": "Professional analysis text...",
+    "primaryView": "chart_type",
+    "chartConfig": {
+        "type": "chart_type",
+        "data": [...],
+        "xAxisKey": "...",
+        "yAxisKey": "...",
+        "groupByKey": "..."
+    }
+}
+Cast all numpy types to native float/int before json.dumps() to avoid serialization errors.
 
 EXAMPLE OUTPUT FORMAT:
 \`\`\`python
@@ -646,19 +789,31 @@ GENERAL:
            } else {
                 let outputText = (stdout || '').trim();
 
-                // --- TOTAL TECHNICAL PURGE ---
-                const magicSummaryKeyword = "[STRATEGIC_OVERVIEW_REQUEST]";
-                if (message && message.includes(magicSummaryKeyword)) {
+                // --- TOTAL TECHNICAL PURGE & MAGIC SUMMARY INTERCEPT ---
+                const isMagicSummary = message && (
+                  message.includes("[STRATEGIC_OVERVIEW_REQUEST]") || 
+                  message.includes("Briefly summarize what this data is about")
+                );
+
+                if (isMagicSummary) {
                     let finalProse = outputText;
                     try {
                         const jsonMatch = outputText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
                         if (jsonMatch) {
                             const parsed = JSON.parse(jsonMatch[0]);
+                            // If it's a strategic summary, we just want the text
                             finalProse = parsed.summary || parsed.t || outputText;
                             if (typeof finalProse === 'object') finalProse = finalProse.summary || finalProse.t || JSON.stringify(finalProse);
+
+                            // Also prepare a clean JSON for the frontend if it expects one
+                            const cleanParsed = { ...parsed, tableData: null, chartConfig: null, primaryView: "table" };
+                            const cleanJson = JSON.stringify(cleanParsed, null, 2);
+                            outputText = outputText.replace(jsonMatch[0], `\n\`\`\`json\n${cleanJson}\n\`\`\`\n`);
                         }
                     } catch (e) {}
-                    resolve(`🔬 **Data Analysis Result**:\n\n${finalProse.replace(/\`\`\`json[\s\S]*?\`\`\`/gi, '').replace(/\`\`\`[\s\S]*?\`\`\`/gi, '').trim()}`);
+
+                    const cleanProse = typeof finalProse === 'string' ? finalProse : JSON.stringify(finalProse);
+                    resolve(`🔬 **Data Analysis Result**:\n\n${cleanProse.replace(/\`\`\`json[\s\S]*?\`\`\`/gi, '').replace(/\`\`\`[\s\S]*?\`\`\`/gi, '').trim()}`);
                     return; 
                 }
 
@@ -702,6 +857,91 @@ GENERAL:
     res.json({ response: finalResult, conversation_id: convId, python_code: pythonCode });
   } catch (err) {
     res.status(500).json({ error: 'Analysis execution failed', details: err.message });
+  }
+});
+
+// ─── EXECUTIVE REPORTING ENDPOINT (Phase 2 - Concrete Resilience) ──────────
+// Triple-mounted to bridge proxy/routing inconsistencies across environments.
+app.post(['/api/generate-reporting-executive', '/api/reporting-executive', '/generate-reporting-executive'], async (req, res) => {
+  try {
+    const { conversation_id } = req.body;
+    if (!conversation_id) return res.status(400).json({ error: 'conversation_id is required' });
+
+    // 1. Fetch History
+    const { rows: history } = await pool.query(
+      'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+      [conversation_id]
+    );
+
+    // 2. Fetch Active Documents
+    const { rows: docs } = await pool.query(
+      'SELECT filename, original_name FROM documents WHERE conversation_id = $1',
+      [conversation_id]
+    );
+
+    let docContext = "";
+    for (const doc of docs) {
+      const filePath = path.join(__dirname, 'uploads', doc.filename);
+      docContext += `File: ${doc.original_name}\nInternal Path: ${filePath}\n\n`;
+    }
+
+    const geminiHistory = history.map(h => ({
+      role: h.role === 'model' ? 'model' : 'user',
+      parts: [{ text: h.content }]
+    }));
+
+    // Construct synthesis prompt
+    const synthesisContents = [
+      ...geminiHistory,
+      {
+        role: 'user',
+        parts: [{ 
+          text: `GENERATE EXECUTIVE ANALYSIS REPORT. 
+                 DOCUMENT CONTEXT:
+                 ${docContext}
+                 
+                 CHRONOLOGICAL CONTEXT:
+                 Previously, we discussed the above documents. 
+                 Use the EXECUTIVE_REPORT_PROMPT rules to synthesize a final overview. 
+                 Return ONLY high-fidelity Markdown.` 
+        }]
+      }
+    ];
+
+    console.log(`🚀 [REPORT] Synthesizing executive report for Conv: ${conversation_id}...`);
+    const reportMarkdown = await callGemini(synthesisContents, EXECUTIVE_REPORT_PROMPT);
+    
+    // 3. Render to Branded HTML with Dynamic Title Extraction
+    let finalTitle = "Executive Analysis Report";
+    let processedMarkdown = reportMarkdown;
+    
+    const titleMatch = reportMarkdown.match(/^# TITLE:\s*(.*)/m);
+    if (titleMatch) {
+        finalTitle = titleMatch[1].trim();
+        // Remove the title line from the markdown body to avoid double content
+        processedMarkdown = reportMarkdown.replace(/^# TITLE:.*\n?/m, '').trim();
+    }
+
+    const contentHtml = markdownIt.render(processedMarkdown);
+    const finalHtml = GET_BRANDED_HTML(contentHtml, finalTitle);
+
+    res.json({ 
+      success: true, 
+      html: finalHtml,
+      metadata: {
+        conversation_id,
+        finalTitle,
+        timestamp: new Date().toISOString(),
+        document_count: docs.length
+      }
+    });
+
+  } catch (err) {
+    console.error('❌ [REPORT] Failed to generate reporting:', err);
+    res.status(500).json({ 
+      error: 'Reporting synthesis failed', 
+      details: err.message 
+    });
   }
 });
 

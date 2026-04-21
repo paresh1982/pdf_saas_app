@@ -580,11 +580,8 @@ function renderContent(text, convId, isMobile = false) {
     const cleanPart = part.replace(/\*\*\*/g, '').replace(/\*\*/g, '');
     
     return (
-      <div key={i} className="prose prose-sm max-w-none prose-invert font-medium">
+      <div key={i} className="my-2">
         {cleanPart.split('\n').map((line, j) => {
-          if (line.startsWith('### ')) return <h3 key={j} className="text-base font-black text-white mt-1 mb-1 uppercase tracking-tight">{line.replace('### ', '')}</h3>;
-          if (line.startsWith('## ')) return <h2 key={j} className="text-lg font-black text-white mt-2 mb-1.5 uppercase tracking-tighter">{line.replace('## ', '')}</h2>;
-          if (line.startsWith('# ')) return <h1 key={j} className="text-2xl font-black text-white mt-3 mb-2 uppercase tracking-tighter">{line.replace('# ', '')}</h1>;
           if (line.startsWith('- ') || line.startsWith('* ')) return <li key={j} className="text-sm text-foreground/80 ml-4 mb-0.5 list-disc font-medium">{line.replace(/^[-*] /, '')}</li>;
           if (line.trim() === '') return <div key={j} className="h-1" />;
           return <p key={j} className="text-sm text-foreground/80 leading-relaxed mb-1.5">{line}</p>;
@@ -598,10 +595,17 @@ function renderContent(text, convId, isMobile = false) {
 const formatValue = (val) => {
   if (val === null || val === undefined) return '—';
   if (typeof val === 'number') {
-    return val.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    // 2-decimal precision, no comma separators
+    return val.toFixed(2);
   }
   if (typeof val === 'object') return JSON.stringify(val);
   return String(val);
+};
+
+// Tick Formatter for Chart Axes
+const formatAxisTick = (val) => {
+  if (typeof val === 'number') return val.toFixed(2);
+  return val;
 };
 
 // ─── Dynamic Table (renders ANY JSON array) ──────────────
@@ -775,8 +779,8 @@ function DynamicChart({ config, isMobile = false }) {
         return (
           <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
-            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={false} />
             <Tooltip 
               formatter={formatValue} 
               cursor={{ fill: 'rgba(255,255,255,0.05)' }} 
@@ -804,8 +808,8 @@ function DynamicChart({ config, isMobile = false }) {
         return (
           <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
-            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={false} />
             <Tooltip 
               formatter={formatValue} 
               contentStyle={{ 
@@ -831,8 +835,8 @@ function DynamicChart({ config, isMobile = false }) {
         return (
           <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
-            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={false} />
             <Tooltip 
               formatter={formatValue} 
               contentStyle={{ 
@@ -967,6 +971,21 @@ function DynamicChart({ config, isMobile = false }) {
                <Area type="monotone" dataKey={yAxisKey} stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} strokeWidth={2} />
             )}
           </AreaChart>
+        );
+      case 'box':
+      case 'boxplot':
+        return (
+          <ComposedChart data={data} layout="vertical" margin={{ top: 20, right: 30, left: 40, bottom: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+            <XAxis type="number" stroke="rgba(255,255,255,0.4)" fontSize={10} tickFormatter={formatAxisTick} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis type="category" dataKey="group" stroke="rgba(255,255,255,0.4)" fontSize={10} width={60} tickLine={false} axisLine={false} />
+            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} formatter={formatValue} contentStyle={{ backgroundColor: '#000', borderRadius: '12px', border: 'none' }} />
+            <Bar dataKey="min" stackId="b" fill="transparent" />
+            <Bar dataKey="q1" stackId="b" fill="rgba(239, 68, 68, 0.4)" />
+            <Bar dataKey="median" stackId="b" fill="#ef4444" stroke="#fff" strokeWidth={2} />
+            <Bar dataKey="q3" stackId="b" fill="rgba(239, 68, 68, 0.4)" />
+            <Bar dataKey="max" stackId="b" fill="transparent" />
+          </ComposedChart>
         );
       default:
         return <div className="p-4 text-center text-foreground/40 text-[10px] uppercase font-black tracking-widest">Unsupported chart type: {type}</div>;
