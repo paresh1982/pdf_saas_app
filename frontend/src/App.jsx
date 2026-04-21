@@ -849,7 +849,7 @@ function DynamicChart({ config, isMobile = false }) {
               labelStyle={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', marginBottom: '4px' }}
             />
             <Legend wrapperStyle={{ fontSize: '10px' }} />
-            <Area type="monotone" dataKey={yAxisKey} stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} strokeWidth={2} />
+            <Area type="monotone" name="Density" dataKey={yAxisKey} stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} strokeWidth={2} />
           </AreaChart>
         );
       case 'histogram':
@@ -968,7 +968,7 @@ function DynamicChart({ config, isMobile = false }) {
                  <Area key={group} name={String(group)} type="monotone" dataKey={yAxisKey} data={data.filter(d => String(d[effectiveGroupKey]) === String(group))} stroke={CHART_COLORS[idx % CHART_COLORS.length]} fill={CHART_COLORS[idx % CHART_COLORS.length]} fillOpacity={0.1} strokeWidth={2} />
                ))
             ) : (
-               <Area type="monotone" dataKey={yAxisKey} stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} strokeWidth={2} />
+               <Area type="monotone" name="Density" dataKey={yAxisKey} stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} strokeWidth={2} />
             )}
           </AreaChart>
         );
