@@ -475,6 +475,8 @@ async function getSchemaContext(file) {
 // ─── DATA ANALYSIS ENDPOINT (Phase 2) ───────────────
 app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
   try {
+    const { message, conversation_id } = req.body;
+    let convId = conversation_id;
     const cleanedMessage = message?.replace('[STRATEGIC_OVERVIEW_REQUEST] ', '') || message || '';
 
     if (!convId) {
