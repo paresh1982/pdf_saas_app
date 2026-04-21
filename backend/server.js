@@ -475,12 +475,11 @@ async function getSchemaContext(file) {
 // ─── DATA ANALYSIS ENDPOINT (Phase 2) ───────────────
 app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
   try {
-    const { message, conversation_id } = req.body;
-    let convId = conversation_id;
+    const cleanedMessage = message?.replace('[STRATEGIC_OVERVIEW_REQUEST] ', '') || message || '';
 
     if (!convId) {
       convId = 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-      const title = 'Data Analysis: ' + (message?.substring(0, 40) || 'New Session');
+      const title = 'Data Analysis: ' + (cleanedMessage.substring(0, 40) || 'New Session');
       await pool.query(
         'INSERT INTO conversations (id, user_id, title, type) VALUES ($1, $2, $3, $4)',
         [convId, req.userId, title, 'analysis']
@@ -489,7 +488,7 @@ app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
     
     await pool.query(
         'INSERT INTO messages (conversation_id, role, content, attachments) VALUES ($1, $2, $3, $4)',
-        [convId, 'user', message || '', JSON.stringify((req.files || []).map(f => f.originalname))]
+        [convId, 'user', cleanedMessage, JSON.stringify((req.files || []).map(f => f.originalname))]
     );
 
     // 1. Persist New Documents (if any)
