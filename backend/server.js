@@ -542,7 +542,9 @@ Write a Python script that reads the provided FILE_PATHs using pandas and perfor
 - If found, start your response with '# TITLE: [Custom Title]'. 
 - If no title is requested, start with '# TITLE: Executive Analysis Report'.
 
-- **ALLOWED LIBRARIES**: You only have access to: \`pandas\`, \`openpyxl\`, \`numpy\`, \`matplotlib\`, \`seaborn\`, \`scipy\`. DO NOT attempt to use others.
+- **ALLOWED LIBRARIES**: You have access to: \`pandas\`, \`openpyxl\`, \`numpy\`, \`matplotlib\`, \`seaborn\`, \`scipy\`. Standard libs like \`json\`, \`base64\`, \`io\`, and \`math\` are allowed.
+- **NO STATIC PLOTS**: DO NOT use \`matplotlib.savefig\`, \`base64\`, or \`io.BytesIO\` to generate plot images. Our system uses a high-performance frontend engine. 
+- **CHART DATA**: Provide ONLY raw numerical data points in the \`chartConfig.data\` array for the frontend to render.
 
 CRITICAL RULES:
 1. ONLY return valid Python code wrapped in \`\`\`python ... \`\`\`. Do NOT include any conversational filler.
