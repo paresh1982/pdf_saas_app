@@ -553,6 +553,7 @@ CRITICAL RULES:
 4. META-ANALYTICS: For the VERY FIRST strategic summary/overview, include a 'Meta Data' section. For all follow-up questions in the chat history, OMIT this Meta Data section and answer the question directly.
 5. Use absolute paths provided in the context below.
 6. JSON SERIALIZATION: Pandas types (int64, float64, etc.) are NOT JSON serializable. You MUST convert any calculated values to native Python types (e.g., using \`int()\`, \`float()\`, or \`.tolist()\`) before putting them in the \`response\` dictionary.
+7. NUMPY 2.0 COMPATIBILITY: DO NOT use deprecated aliases like \`np.float_\`, \`np.int_\`, or \`np.bool_\`. These were REMOVED in NumPy 2.0. Use native \`float\`, \`int\`, \`bool\`, or explicit \`np.float64\`, \`np.int64\`.
 
 EXAMPLE OUTPUT FORMAT:
 \`\`\`python
