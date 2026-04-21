@@ -1007,7 +1007,7 @@ function DynamicChart({ config, isMobile = false }) {
 // ─── Analysis Dashboard (Multi-View) ──────────────────────────
 function AnalysisDashboard({ dataObj, raw, convId, isMobile = false }) {
   const hasChart = !!dataObj.chartConfig;
-  const hasTable = !!dataObj.tableData;
+  const hasTable = !!dataObj.tableData || (!!dataObj.chartConfig && !!dataObj.chartConfig.data);
   const [activeTab, setActiveTab] = useState(dataObj.primaryView === 'chart' && hasChart ? 'chart' : 'table');
 
   // We respect the initial primaryView but allow user to switch manually
@@ -1067,7 +1067,7 @@ function AnalysisDashboard({ dataObj, raw, convId, isMobile = false }) {
 
       <div className="p-2 sm:p-4 bg-black/20">
          {activeTab === 'table' && hasTable && (
-            <DynamicTable data={dataObj.tableData} raw={JSON.stringify(dataObj.tableData, null, 2)} convId={convId} isNested={true} />
+            <DynamicTable data={dataObj.tableData || dataObj.chartConfig?.data} raw={JSON.stringify(dataObj.tableData, null, 2)} convId={convId} isNested={true} />
          )}
          {activeTab === 'chart' && hasChart && (
             <DynamicChart config={dataObj.chartConfig} isMobile={isMobile} />
@@ -2344,6 +2344,7 @@ function HowItWorksView({ setView }) {
 
 // Set global axios default
 axios.defaults.headers.common['X-User-ID'] = UID;
+
 
 
 

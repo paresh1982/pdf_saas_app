@@ -698,7 +698,7 @@ Return Python code that creates a 'response' dictionary:
         "groupByKey": "..."
     }
 }
-Cast all numpy types to native float/int before json.dumps() to avoid serialization errors.
+CRITICAL: NumPy 2.0+ is active. NEVER use np.float_, np.bool, or np.int (deprecated). Use np.float64, np.int64, or native Python float/int. Cast all results before json.dumps() to avoid serialization errors.
 
 EXAMPLE OUTPUT FORMAT:
 \`\`\`python
@@ -797,11 +797,32 @@ GENERAL:
        exec(`${PYTHON_CMD} "${tempScriptPath}"`, { timeout: 45000 }, (error, stdout, stderr) => {
            if (error) {
                resolve(`❌ **Python Execution Error**:\n\`\`\`text\n${stderr || error.message}\n\`\`\``);
-           } else {
-                let outputText = (stdout || '').trim();
+                                               } else {
+                 let stdoutText = (stdout || '').trim();
+                 
+                 // --- NUCLEAR TECHNICAL PURGE ---
+                 // 1. Extract JSON block (the only thing we truly value for structure)
+                 const jsonMatch = stdoutText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                 let jsonPart = jsonMatch ? jsonMatch[0] : null;
+                 
+                 // 2. Extract PROSE (The summary text)
+                 let rawProse = stdoutText;
+                 if (jsonPart) {
+                    // Remove the JSON from the prose to avoid double renditions
+                    rawProse = stdoutText.replace(jsonPart, '').trim();
+                 }
 
-                // --- TOTAL TECHNICAL PURGE & MAGIC SUMMARY INTERCEPT ---
-                const isMagicSummary = message && (
+                 // 3. Clean Prose (Remove dataframe heads, Id columns, dtype info)
+                 let cleanedProse = rawProse.split('\n').filter(line => {
+                    const l = line.trim();
+                    if (!l) return false;
+                    if (/^(Id|Sepal|Petal|index|Unnamed|Name:|dtype:)/i.test(l)) return false;
+                    if (/^\d+\s+[5-7]\.\d+\s+[2-4]\.\d+/.test(l)) return false; // Iris row pattern
+                    if (/^\d+\s+\d+\s+\d+/.test(l)) return false; // Generic table row pattern
+                    return true;
+                 }).join('\n').trim();
+
+                 const isMagicSummary = message && (
                   message.includes("[STRATEGIC_OVERVIEW_REQUEST]") || 
                   message.includes("Briefly summarize what this data is about")
                 );
@@ -1018,4 +1039,7 @@ app.listen(PORT, () => {
   console.log(`🚀 DocJockey Backend running on port ${PORT}`);
   initDB();
 });
+
+
+
 
