@@ -681,7 +681,7 @@ This ensures you use the EXACT column names as they appear in the file.
 CHART REQUIREMENTS:
 - DENSITY: chart_type='density'. data must be a JSON list of ~50 smooth KDE points: {"x": value, "y": density}. Use scipy.stats.gaussian_kde.
 - BOXPLOT: chart_type='boxplot'. data must be grouped quartiles: {"group": "Name", "min": val, "q1": val, "median": val, "q3": val, "max": val}.
-- LABELS: Always use descriptive keys for Y-axis data (e.g., use 'Density' for KDE data, 'Frequency' for histograms) to ensure professional visualization legends.
+- LABELS: Always use descriptive keys for Y-axis data (e.g., use 'Density' for KDE data, 'Frequency' for histograms) AND provide explicit 'xAxisLabel' and 'yAxisLabel' keys in the chartConfig for all plots.
 - PRECISION: All numerical results MUST use exactly 2 decimal places. No commas in years or numbers (e.g., 2024.00, not 2,024).
 
 OUTPUT SCHEMA:

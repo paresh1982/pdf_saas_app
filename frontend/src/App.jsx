@@ -777,10 +777,10 @@ function DynamicChart({ config, isMobile = false }) {
     switch (type) {
       case 'bar':
         return (
-          <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <BarChart data={data} margin={{ top: 10, right: 30, left: 20, bottom: 25 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
-            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={false} />
+            <XAxis dataKey={xAxisKey} label={{ value: config.xAxisLabel || xAxisKey, position: "insideBottom", offset: -10, fill: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: "bold" }} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis label={{ value: config.yAxisLabel || yAxisKey, angle: -90, position: "insideLeft", offset: 10, fill: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: "bold" }} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={false} />
             <Tooltip 
               formatter={formatValue} 
               cursor={{ fill: 'rgba(255,255,255,0.05)' }} 
@@ -806,10 +806,10 @@ function DynamicChart({ config, isMobile = false }) {
         );
       case 'line':
         return (
-          <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <LineChart data={data} margin={{ top: 10, right: 30, left: 20, bottom: 25 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
-            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={false} />
+            <XAxis dataKey={xAxisKey} label={{ value: config.xAxisLabel || xAxisKey, position: "insideBottom", offset: -10, fill: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: "bold" }} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis label={{ value: config.yAxisLabel || yAxisKey, angle: -90, position: "insideLeft", offset: 10, fill: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: "bold" }} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={false} />
             <Tooltip 
               formatter={formatValue} 
               contentStyle={{ 
@@ -833,10 +833,10 @@ function DynamicChart({ config, isMobile = false }) {
         );
       case 'area':
         return (
-          <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 10, right: 30, left: 20, bottom: 25 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
-            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={false} />
+            <XAxis dataKey={xAxisKey} label={{ value: config.xAxisLabel || xAxisKey, position: "insideBottom", offset: -10, fill: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: "bold" }} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis label={{ value: config.yAxisLabel || yAxisKey, angle: -90, position: "insideLeft", offset: 10, fill: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: "bold" }} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} tickFormatter={formatAxisTick} axisLine={false} />
             <Tooltip 
               formatter={formatValue} 
               contentStyle={{ 
@@ -855,10 +855,10 @@ function DynamicChart({ config, isMobile = false }) {
       case 'histogram':
         const binnedData = getHistogramData(data, xAxisKey);
         return (
-          <BarChart data={binnedData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <BarChart data={binnedData} margin={{ top: 10, right: 30, left: 20, bottom: 25 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
             <XAxis dataKey="binLabel" stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
-            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+            <YAxis label={{ value: config.yAxisLabel || yAxisKey, angle: -90, position: "insideLeft", offset: 10, fill: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: "bold" }} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
             <Tooltip 
               formatter={formatValue} 
               contentStyle={{ 
@@ -875,21 +875,15 @@ function DynamicChart({ config, isMobile = false }) {
         );
       case 'scatter':
         return (
-          <ComposedChart margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <ComposedChart margin={{ top: 10, right: 30, left: 20, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis 
-              dataKey={xAxisKey} 
-              type="number" 
-              name={xAxisKey}
+            <XAxis dataKey={xAxisKey} type="number" name={config.xAxisLabel || xAxisKey} label={{ value: config.xAxisLabel || xAxisKey, position: "insideBottom", offset: -10, fill: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: "bold" }}
               domain={['auto', 'auto']}
               stroke="rgba(255,255,255,0.4)" 
               fontSize={10} 
               tickLine={false} 
             />
-            <YAxis 
-              dataKey={yAxisKey} 
-              type="number" 
-              name={yAxisKey}
+            <YAxis dataKey={yAxisKey} type="number" name={config.yAxisLabel || yAxisKey} label={{ value: config.yAxisLabel || yAxisKey, angle: -90, position: "insideLeft", offset: 10, fill: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: "bold" }}
               domain={['auto', 'auto']}
               stroke="rgba(255,255,255,0.4)" 
               fontSize={10} 
@@ -947,10 +941,10 @@ function DynamicChart({ config, isMobile = false }) {
         );
       case 'density':
         return (
-          <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 10, right: 30, left: 20, bottom: 25 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis dataKey={xAxisKey} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
-            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+            <XAxis dataKey={xAxisKey} label={{ value: config.xAxisLabel || xAxisKey, position: "insideBottom", offset: -10, fill: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: "bold" }} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+            <YAxis label={{ value: config.yAxisLabel || yAxisKey, angle: -90, position: "insideLeft", offset: 10, fill: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: "bold" }} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
             <Tooltip 
               formatter={formatValue} 
               contentStyle={{ 
@@ -2341,3 +2335,5 @@ function HowItWorksView({ setView }) {
 
 // Set global axios default
 axios.defaults.headers.common['X-User-ID'] = UID;
+
+
