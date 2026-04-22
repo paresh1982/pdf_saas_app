@@ -551,11 +551,12 @@ function renderContent(text, convId, isMobile = false) {
   return parts.map((part, i) => {
     // Code / JSON block
     if (part.startsWith('```')) {
-      const lang = part.match(/```(\w+)?/)?.[1] || '';
-      const code = part.replace(/```\w*\n?/g, '').replace(/```$/g, '').trim();
+      const match = part.match(/```\s*(\w+)?/);
+      const lang = match?.[1] ? match[1].toLowerCase() : '';
+      const code = part.replace(/```\s*\w*\n?/g, '').replace(/```$/g, '').trim();
 
       // Try to render JSON as a table or multiview dashboard
-      if (lang === 'json') {
+      if (lang === 'json' || code.startsWith('[') || code.startsWith('{')) {
         try {
           const parsed = JSON.parse(code);
           
