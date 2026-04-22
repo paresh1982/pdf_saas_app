@@ -1749,8 +1749,8 @@ export default function App() {
     const selected = Array.from(e.target.files);
     if (!selected.length) return;
 
-    if (!isAnalysisMode && uploadMode === 'single') {
-      // Re-enforce single file limit from 02ac6e7
+    if (uploadMode === 'single' && !isAnalysisMode) {
+      // Enforce single file limit
       setAttachedFiles([selected[0]]);
     } else {
       setAttachedFiles(prev => [...prev, ...selected]);
@@ -2017,7 +2017,174 @@ export default function App() {
                             <Layout size={14} /> Batch
                           </button>
                         </div>
-                      )} {
+                      )}
+
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full max-w-screen-xl border-2 border-dashed border-white/10 hover:border-primary/40 rounded-2xl px-6 py-3 md:px-6 md:py-4 cursor-pointer transition-all duration-500 group bg-surface/10 hover:bg-surface/20 mx-auto"
+                      >
+                        <div className="flex items-center justify-center gap-4">
+                          <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/5 text-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform border border-primary/10 shadow-lg">
+                            {uploadMode === 'single' ? <Paperclip size={20} /> : <Combine size={20} />}
+                          </div>
+                          <div className="text-left">
+                            <p className="text-base md:text-lg font-black text-white uppercase tracking-[0.2em]">
+                              {isAnalysisMode ? 'Drop Data File' : (uploadMode === 'single' ? 'Drop document' : 'Drop batch')}
+                            </p>
+                            <p className="text-[10px] text-secondary font-black uppercase tracking-[0.2em] mt-0 opacity-80">
+                              {isAnalysisMode ? 'Excel / CSV Priority' : 'Ready for DocJockey Speed'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* --- Welcome State Dialogue Box (Embedded) --- */}
+                      <div className="w-full max-w-screen-xl mx-auto mt-auto">
+                         {attachedFiles.length > 0 && (
+                           <div className="flex flex-wrap gap-2 mb-4 px-2">
+                             {attachedFiles.map((file, i) => (
+                               <span key={i} className="flex items-center gap-3 text-[10px] font-black uppercase leading-none bg-primary/10 text-primary border border-primary/20 px-4 py-2.5 rounded-xl shadow-lg animate-in zoom-in duration-300">
+                                 <FileText size={14} />
+                                 {file.name}
+                                 <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} className="hover:text-white ml-2 transition-colors">
+                                   <X size={14} />
+                                 </button>
+                               </span>
+                             ))}
+                           </div>
+                         )}
+                         {isAnalysisMode && (
+                         <ReportingEngine 
+                            activeConvId={activeConvId} 
+                            isMobile={isMobile} 
+                            sendMessage={sendMessage}
+                            attachedFilesCount={attachedFiles.length}
+                          />
+                         )}
+                         {/* Reusable Input Block */}
+                       <ChatInputArea 
+                            inputText={inputText}
+                            setInputText={setInputText}
+                            sendMessage={sendMessage}
+                            handleKeyDown={handleKeyDown}
+                            handleFileSelect={handleFileSelect}
+                            fileInputRef={fileInputRef}
+                            attachedFiles={attachedFiles}
+                            setAttachedFiles={setAttachedFiles}
+                            isLoading={isLoading}
+                            isEmbedded={true}
+                            isAnalysisMode={isAnalysisMode}
+                            setIsAnalysisMode={setIsAnalysisMode}
+                             uploadMode={uploadMode}
+                          />
+                      </div>
+                    </motion.div>
+                  </div>
+                ) : (
+                  <div className="max-w-screen-2xl mx-auto p-2 md:p-6 space-y-4 py-4">
+                    {messages.map((msg, i) => (
+                      <ChatMessage key={i} msg={msg} isMobile={isMobile} />
+                    ))}
+                    {isLoading && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4">
+                        <div className="w-10 h-10 rounded-2xl bg-surface border border-white/10 flex items-center justify-center shrink-0 shadow-lg">
+                          <Loader2 size={18} className="animate-spin text-primary" />
+                        </div>
+                        <div className="bg-surface/30 border border-white/5 rounded-2xl px-6 py-5 shadow-sm">
+                          <span className="text-[10px] font-black text-secondary uppercase tracking-[0.3em] animate-pulse">Running DocJockey Engine...</span>
+                        </div>
+                      </motion.div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                )
+              ) : (
+                <div className="flex flex-col">
+                  {currentView === 'about' && <AboutView />}
+                  {currentView === 'privacy' && <PrivacyView />}
+                  {currentView === 'disclaimer' && <DisclaimerView />}
+                  {currentView === 'contact' && <ContactView />}
+                  {currentView === 'howto' && <HowItWorksView setView={setCurrentView} />}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Floating Input Area (Sticky Overlay - only when chat is active) */}
+          <AnimatePresence>
+            {currentView === 'dashboard' && messages.length > 0 && (
+              <motion.div 
+                initial={{ y: 100 }}
+                animate={{ y: 0 }}
+                exit={{ y: 100 }}
+                className="sticky bottom-0 p-2 md:p-3 shrink-0 bg-background/80 backdrop-blur-xl border-t border-white/5 z-40"
+              >
+                <div className="max-w-screen-2xl mx-auto">
+                   {attachedFiles.length > 0 && (
+                     <div className="flex flex-wrap gap-2 mb-4 px-2">
+                       {attachedFiles.map((file, i) => (
+                         <span key={i} className="flex items-center gap-3 text-[10px] font-black uppercase leading-none bg-primary/10 text-primary border border-primary/20 px-4 py-2.5 rounded-xl shadow-lg">
+                           <FileText size={14} />
+                           {file.name}
+                           <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} className="hover:text-white ml-2 transition-colors">
+                             <X size={14} />
+                           </button>
+                         </span>
+                       ))}
+                     </div>
+                   )}
+                   {isAnalysisMode && (
+                     <ReportingEngine 
+                        activeConvId={activeConvId} 
+                        isMobile={isMobile} 
+                        sendMessage={sendMessage}
+                        attachedFilesCount={attachedFiles.length}
+                     />
+                   )}
+                   <ChatInputArea 
+                      inputText={inputText}
+                      setInputText={setInputText}
+                      sendMessage={sendMessage}
+                      handleKeyDown={handleKeyDown}
+                      handleFileSelect={handleFileSelect}
+                      fileInputRef={fileInputRef}
+                      attachedFiles={attachedFiles}
+                      setAttachedFiles={setAttachedFiles}
+                      isLoading={isLoading}
+                      isAnalysisMode={isAnalysisMode}
+                      setIsAnalysisMode={setIsAnalysisMode}
+                             uploadMode={uploadMode}
+                          />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
+
+      <SiteFooter setView={setCurrentView} />
+
+      {activeTool && <ToolModal tool={activeTool} onClose={() => setActiveTool(null)} />}
+    </div>
+  );
+}
+
+// ─── Reusable Chat Input Component ────────────────────────
+function ChatInputArea({ 
+  inputText, 
+  setInputText, 
+  sendMessage, 
+  handleKeyDown, 
+  handleFileSelect, 
+  fileInputRef, 
+  attachedFiles, 
+  setAttachedFiles,
+  isLoading,
+  isEmbedded = false,
+  isAnalysisMode = false,
+  setIsAnalysisMode,
+  uploadMode = 'single'
+}) {
   return (
     <div className="w-full">
       <div className="flex items-end gap-3 md:gap-4">
