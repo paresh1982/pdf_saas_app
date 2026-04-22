@@ -681,7 +681,8 @@ This ensures you use the EXACT column names as they appear in the file.
 CHART REQUIREMENTS:
 - DENSITY: chart_type='density'. data must be a JSON list of ~50 smooth KDE points: {"x": value, "y": density}. Use scipy.stats.gaussian_kde.
 - BOXPLOT: chart_type='boxplot'. data must be grouped quartiles: {"group": "Name", "min": val, "q1": val, "median": val, "q3": val, "max": val}.
-- SUMMARIES: CRITICAL: When asked for a summary or meta-description, provide a HIGHLY ELABORATE and COMPREHENSIVE analysis (minimum 4 paragraphs). Detail the data scope, column insights, and strategic implications. NEVER provide short summaries. or meta-description, provide a HIGHLY DETAILED and ELABORATE analysis (at least 3-4 paragraphs). Explain the variable distributions, any visible correlations, and the strategic significance of the findings. Avoid one-liners.
+- SUMMARIES: CRITICAL: Provide a HIGHLY ELABORATE 4-paragraph analysis PLUS a detailed "Metadata Inventory" section listing every column, its data type, and its purpose.
+- LABELS: Always use descriptive keys or meta-description, provide a HIGHLY ELABORATE and COMPREHENSIVE analysis (minimum 4 paragraphs). Detail the data scope, column insights, and strategic implications. NEVER provide short summaries. or meta-description, provide a HIGHLY DETAILED and ELABORATE analysis (at least 3-4 paragraphs). Explain the variable distributions, any visible correlations, and the strategic significance of the findings. Avoid one-liners.
 - LABELS: Always use descriptive keys for Y-axis data (e.g., use 'Density' for KDE data, 'Frequency' for histograms) AND provide explicit 'xAxisLabel' and 'yAxisLabel' keys in the chartConfig for all plots.
 - PRECISION: All numerical results MUST use exactly 2 decimal places. No commas in years or numbers (e.g., 2024.00, not 2,024).
 
@@ -1040,6 +1041,7 @@ app.listen(PORT, () => {
   console.log(`🚀 DocJockey Backend running on port ${PORT}`);
   initDB();
 });
+
 
 
 
