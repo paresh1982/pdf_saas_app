@@ -795,91 +795,66 @@ GENERAL:
     const bootstrap = `import sys, os\nsys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'python_libs')))\n\n`;
     fs.writeFileSync(tempScriptPath, bootstrap + pythonCode);
 
-        const execPromise = new Promise((resolve) => {
-        exec(`${PYTHON_CMD} "${tempScriptPath}"`, { timeout: 45000 }, async (error, stdout, stderr) => {
+    const execPromise = new Promise((resolve) => {
+        exec(`${PYTHON_CMD} "${tempScriptPath}"`, { timeout: 45000 }, (error, stdout, stderr) => {
             if (error) {
-                resolve(`? **Python Execution Error**:\n\`\`\`text\n${stderr || error.message}\n\`\`\``);
+                resolve(`❌ **Python Execution Error**:\n\`\`\`text\n${stderr || error.message}\n\`\`\``);
             } else {
-                try {
-                    let stdoutText = (stdout || '').trim();
-                    
-                    // --- NUCLEAR TECHNICAL PURGE ---
-                    const jsonMatch = stdoutText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-                    let jsonPart = jsonMatch ? jsonMatch[0] : null;
-                    
-                    let rawProse = stdoutText;
-                    if (jsonPart) {
-                        rawProse = stdoutText.replace(jsonPart, '').trim();
-                    }
+                let outputText = (stdout || '').trim();
 
-                    // Clean Prose (Generic scrubber)
-                    let cleanedProse = rawProse.split('\n').filter(line => {
-                        const l = line.trim();
-                        if (!l) return false;
-                        if (/^(Id|Sepal|Petal|index|Unnamed|Name:|dtype:)/i.test(l)) return false;
-                        if (/^\d+\s+[5-7]\.\d+\s+[2-4]\.\d+/.test(l)) return false;
-                        if (/^\d+\s+\d+\s+\d+/.test(l)) return false;
-                        return true;
-                    }).join('\n').trim();
-
-                    const isMagicSummary = message && (
-                        message.includes("[STRATEGIC_OVERVIEW_REQUEST]") || 
-                        message.includes("Briefly summarize what this data is about")
-                    );
-
-                    if (isMagicSummary) {
-                        let finalProse = cleanedProse;
-                        if (jsonPart) {
-                           try {
-                              const summaryRegex = /['"]summary['"]\s*:\s*['"]([\s\S]*?)['"]\s*[,}]/;
-                              const match = jsonPart.match(summaryRegex);
-                              if (match && match[1]) {
-                                 finalProse = match[1];
-                              } else {
-                                 const parsed = JSON.parse(jsonPart.replace(/'/g, '"'));
-                                 finalProse = parsed.summary || parsed.t || jsonPart;
-                              }
-                           } catch(e) {}
+                // --- MAGIC SUMMARY PATH (Strategic Overview) ---
+                const isMagicSummary = message && (
+                    message.includes("[STRATEGIC_OVERVIEW_REQUEST]") ||
+                    message.includes("Briefly summarize what this data is about")
+                );
+                if (isMagicSummary) {
+                    let finalProse = outputText;
+                    try {
+                        const jsonMatch = outputText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                        if (jsonMatch) {
+                            const parsed = JSON.parse(jsonMatch[0]);
+                            finalProse = parsed.summary || parsed.t || outputText;
+                            if (typeof finalProse === 'object') finalProse = finalProse.summary || finalProse.t || JSON.stringify(finalProse);
                         }
+                    } catch (e) {}
 
-                        const scrubbedProse = (typeof finalProse === 'string' ? finalProse : JSON.stringify(finalProse))
-                           .replace(/\\n/g, '\n')
-                           .replace(/[{}'"]/g, '')
-                           .replace(/summary\s*:\s*/g, '')
-                           .replace(/r?\/opt\/render\/project\/src\/backend\/uploads\/[0-9-]+[._]([a-zA-Z0-9.-]+)/gi, '$1')
-                           .replace(/r?\/opt\/render\/project\/src\/backend\/uploads\//gi, '')
-                           .replace(/[0-9]{10,}-[0-9]{5,}[._]/g, '')
-                           .trim();
+                    const scrubbedProse = (typeof finalProse === 'string' ? finalProse : JSON.stringify(finalProse))
+                        .replace(/```json[\s\S]*?```/gi, '')
+                        .replace(/```[\s\S]*?```/gi, '')
+                        .replace(/r?\/opt\/render\/project\/src\/backend\/uploads\/[0-9-]+[._]([a-zA-Z0-9.-]+)/gi, '$1')
+                        .replace(/r?\/opt\/render\/project\/src\/backend\/uploads\//gi, '')
+                        .replace(/[0-9]{10,}-[0-9]{5,}[._]/g, '')
+                        .trim();
 
-                        resolve(scrubbedProse);
-                        return;
-                    }
-
-                    // --- NORMAL QUESTION PATH ---
-                    if (jsonPart) {
-                        try {
-                            let parsed = JSON.parse(jsonPart);
-                            parsed = sanitizeAnalysisResponse(parsed, docs);
-                            
-                            const visualKeywords = ['plot', 'plotting', 'graph', 'graphing', 'chart', 'visual', 'visualise', 'visualize', 'trend', 'distribution', 'scatter', 'bar', 'histogram', 'line', 'view relationship', 'relationship', 'correlation', 'compare'];
-                            const userPrompt = (message || "").toLowerCase();
-                            const hasVisualIntent = visualKeywords.some(k => userPrompt.includes(k));
-                            
-                            if (hasVisualIntent) parsed.primaryView = "chart";
-                            else if (!parsed.primaryView) parsed.primaryView = "table"; 
-                            
-                            const cleanJson = JSON.stringify(parsed, null, 2);
-                            cleanedProse = (cleanedProse + `\n\n\`\`\`json\n${cleanJson}\n\`\`\`\n`).trim();
-                        } catch (e) {
-                            console.error("JSON Post-processing error:", e);
-                        }
-                    }
-
-                    resolve(`📊 **Data Analysis Result**:\n\n${cleanedProse}`);
-                } catch (err) {
-                    console.error("Post-processing crash:", err);
-                    resolve("📊 **Analysis Update**: The analysis succeeded but the final response formatting encountered an issue. Please try a simpler question.");
+                    resolve(scrubbedProse);
+                    return;
                 }
+
+                // --- NORMAL QUESTION PATH (Reference: 7e8fe36) ---
+                try {
+                    const jsonMatch = outputText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                    if (jsonMatch) {
+                        let parsed = JSON.parse(jsonMatch[0]);
+                        parsed = sanitizeAnalysisResponse(parsed, docs);
+
+                        const visualKeywords = ['plot', 'plotting', 'graph', 'graphing', 'chart', 'visual', 'visualise', 'visualize', 'trend', 'distribution', 'scatter', 'bar', 'histogram', 'line', 'view relationship', 'relationship', 'correlation', 'compare'];
+                        const userPrompt = (message || "").toLowerCase();
+                        const hasVisualIntent = visualKeywords.some(k => userPrompt.includes(k));
+
+                        if (hasVisualIntent) parsed.primaryView = "chart";
+                        else if (!parsed.primaryView) parsed.primaryView = "table";
+
+                        const cleanJson = JSON.stringify(parsed, null, 2);
+                        outputText = outputText.replace(jsonMatch[0], `\n\`\`\`json\n${cleanJson}\n\`\`\`\n`);
+                    } else {
+                        const sanitized = sanitizeAnalysisResponse({ t: outputText }, docs);
+                        outputText = sanitized.t;
+                    }
+                } catch (e) {
+                    console.error('⚠️ Sanitization Error:', e);
+                }
+
+                resolve(`🔬 **Data Analysis Result**:\n\n${outputText}`);
             }
         });
     });
