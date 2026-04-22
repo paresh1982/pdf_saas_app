@@ -800,77 +800,67 @@ GENERAL:
            if (error) {
                resolve(`❌ **Python Execution Error**:\n\`\`\`text\n${stderr || error.message}\n\`\`\``);
                                                } else {
-                 let stdoutText = (stdout || '').trim();
-                 
-                 // --- NUCLEAR TECHNICAL PURGE ---
-                 // 1. Extract JSON block (the only thing we truly value for structure)
-                 const jsonMatch = stdoutText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-                 let jsonPart = jsonMatch ? jsonMatch[0] : null;
-                 
-                 // 2. Extract PROSE (The summary text)
-                 let rawProse = stdoutText;
-                 if (jsonPart) {
-                    // Remove the JSON from the prose to avoid double renditions
-                    rawProse = stdoutText.replace(jsonPart, '').trim();
-                 }
-
-                 // 3. Clean Prose (Remove dataframe heads, Id columns, dtype info)
-                 let cleanedProse = rawProse.split('\n').filter(line => {
-                    const l = line.trim();
-                    if (!l) return false;
-                    if (/^(Id|Sepal|Petal|index|Unnamed|Name:|dtype:)/i.test(l)) return false;
-                    if (/^\d+\s+[5-7]\.\d+\s+[2-4]\.\d+/.test(l)) return false; // Iris row pattern
-                    if (/^\d+\s+\d+\s+\d+/.test(l)) return false; // Generic table row pattern
-                    return true;
-                 }).join('\n').trim();
-
-                 const isMagicSummary = message && (
-                  message.includes("[STRATEGIC_OVERVIEW_REQUEST]") || 
-                  message.includes("Briefly summarize what this data is about")
-                );
-
-                                                  if (isMagicSummary) {
-                     let finalProse = cleanedProse;
-                     try {
-                         const jsonMatch = stdoutText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-                         if (jsonMatch) {
-                             // Try to safely extract just the summary content if it looks like a Python dict string
-                             const rawObj = jsonMatch[0];
-                             const summaryRegex = /['"]summary['"]\s*:\s*['"]([\s\S]*?)['"]\s*[,}]/;
-                             const match = rawObj.match(summaryRegex);
-                             if (match && match[1]) {
-                                 finalProse = match[1];
                              } else {
-                                 // Fallback to JSON.parse if it's valid JSON
-                                 try {
-                                    const parsed = JSON.parse(rawObj.replace(/'/g, '"'));
-                                    finalProse = parsed.summary || parsed.t || rawObj;
-                                 } catch(e) {
-                                    finalProse = rawObj;
-                                 }
-                             }
-                         }
-                     } catch (e) {}
+                 try {
+                     let stdoutText = (stdout || '').trim();
+                     
+                     // --- NUCLEAR TECHNICAL PURGE ---
+                     const jsonMatch = stdoutText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                     let jsonPart = jsonMatch ? jsonMatch[0] : null;
+                     
+                     let rawProse = stdoutText;
+                     if (jsonPart) {
+                        rawProse = stdoutText.replace(jsonPart, '').trim();
+                     }
 
-                                          const scrubbedProse = (typeof finalProse === 'string' ? finalProse : JSON.stringify(finalProse))
-                        .replace(/\\n/g, '\n') // Unescape newlines
-                        .replace(/[{}'"]/g, '') // Remove remaining JSON braces/quotes
-                        .replace(/summary\s*:\s*/g, '') // Remove summary key
-                        .replace(/meta_description[\s\S]*/gi, '') // Remove meta description content
-                        .replace(/r?\/opt\/render\/project\/src\/backend\/uploads\/[0-9-]+[._]([a-zA-Z0-9.-]+)/gi, '$1') // Extract base name
-                        .replace(/r?\/opt\/render\/project\/src\/backend\/uploads\//gi, '') // Strip path
-                        .replace(/[0-9]{10,}-[0-9]{5,}[._]/g, '') // Strip numerical timestamp prefix
-                        .trim();
+                     let cleanedProse = rawProse.split('\n').filter(line => {
+                        const l = line.trim();
+                        if (!l) return false;
+                        if (/^(Id|Sepal|Petal|index|Unnamed|Name:|dtype:)/i.test(l)) return false;
+                        if (/^\d+\s+[5-7]\.\d+\s+[2-4]\.\d+/.test(l)) return false;
+                        if (/^\d+\s+\d+\s+\d+/.test(l)) return false;
+                        return true;
+                     }).join('\n').trim();
 
-                     resolve(scrubbedProse);
-                     return; 
-                 }
+                     const isMagicSummary = message && (
+                        message.includes("[STRATEGIC_OVERVIEW_REQUEST]") || 
+                        message.includes("Briefly summarize what this data is about")
+                     );
 
-                // --- INTEGRATED SANITIZATION & INTENT DETECTION ---
-                try {
-                    const jsonMatch = outputText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-                    if (jsonMatch) {
-                        let parsed = JSON.parse(jsonMatch[0]);
+                     if (isMagicSummary) {
+                        let finalProse = cleanedProse;
+                        if (jsonPart) {
+                           try {
+                              const summaryRegex = /['"]summary['"]\s*:\s*['"]([\s\S]*?)['"]\s*[,}]/;
+                              const match = jsonPart.match(summaryRegex);
+                              if (match && match[1]) {
+                                 finalProse = match[1];
+                              } else {
+                                 const parsed = JSON.parse(jsonPart.replace(/'/g, '"'));
+                                 finalProse = parsed.summary || parsed.t || jsonPart;
+                              }
+                           } catch(e) {}
+                        }
+
+                        const scrubbedProse = (typeof finalProse === 'string' ? finalProse : JSON.stringify(finalProse))
+                           .replace(/\\n/g, '\n')
+                           .replace(/[{}'"]/g, '')
+                           .replace(/summary\s*:\s*/g, '')
+                           .replace(/r?\/opt\/render\/project\/src\/backend\/uploads\/[0-9-]+[._]([a-zA-Z0-9.-]+)/gi, '$1')
+                           .replace(/r?\/opt\/render\/project\/src\/backend\/uploads\//gi, '')
+                           .replace(/[0-9]{10,}-[0-9]{5,}[._]/g, '')
+                           .trim();
+
+                        resolve(scrubbedProse);
+                        return; // EXIT IMMEDIATELY
+                     }
+
+                     // --- NORMAL QUESTION PATH ---
+                     try {
+                        if (jsonPart) {
+                           let parsed = JSON.parse(jsonPart);
+                           parsed = sanitizeAnalysisResponse(parsed, docs);
+                           // ... (Continue to normal resolve)
                         parsed = sanitizeAnalysisResponse(parsed, docs);
                         
                         const visualKeywords = ['plot', 'plotting', 'graph', 'graphing', 'chart', 'visual', 'visualise', 'visualize', 'trend', 'distribution', 'scatter', 'bar', 'histogram', 'line', 'view relationship', 'relationship', 'correlation', 'compare'];
@@ -1041,6 +1031,7 @@ app.listen(PORT, () => {
   console.log(`🚀 DocJockey Backend running on port ${PORT}`);
   initDB();
 });
+
 
 
 
