@@ -582,7 +582,26 @@ function renderContent(text, convId, isMobile = false) {
     }
 
     // Regular text — simple markdown
-    const cleanPart = part.replace(/\*\*\*/g, '').replace(/\*\*/g, '');
+        // Naked JSON Fallback
+    if (!part.startsWith("```") && part.includes("\"type\": \"multiview\"")) {
+      const nakedJsonMatch = part.match(/\{[\s\S]*"type"\s*:\s*"multiview"[\s\S]*\}/);
+      if (nakedJsonMatch) {
+         try {
+            const code = nakedJsonMatch[0];
+            const safeCode = code.replace(/:\s*NaN\b/g, ": null").replace(/:\s*Infinity\b/g, ": null").replace(/:\s*-Infinity\b/g, ": null");
+            const parsed = JSON.parse(safeCode);
+            // Replace the JSON from the part so it doesn't render as text too
+            part = part.replace(nakedJsonMatch[0], "").trim();
+            return (
+              <div key={i}>
+                <p className="text-sm text-white/80 leading-relaxed font-normal mb-2 whitespace-pre-wrap">{part}</p>
+                <AnalysisDashboard dataObj={parsed} raw={code} convId={convId} isMobile={isMobile} />
+              </div>
+            );
+         } catch(e) {}
+      }
+    }
+    const cleanPart = part.replace(/\*\*\*/g, "").replace(/\*\*/g, "");
     
     return (
       <div key={i} className="my-2">
