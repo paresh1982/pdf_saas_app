@@ -1675,6 +1675,7 @@ export default function App() {
     const formData = new FormData();
     formData.append('message', textToSend);
     if (activeConvId) formData.append('conversation_id', activeConvId);
+    formData.append('uploadMode', uploadMode);
     attachedFiles.forEach(f => formData.append('files', f));
 
     // Optimistic UI: show user message immediately

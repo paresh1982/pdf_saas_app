@@ -449,6 +449,17 @@ When the user asks to "build a table", "extract data", "tabular format", or "ana
 - If asked for a summary, provide a bulleted list of key takeaways.
 - If mixed content, provide the \`\`\`json block first, then a short summary after.
 - Never refuse to analyze a document.`;
+const BATCH_SYSTEM_PROMPT = `You are DocJockey AI - specialized in MULTI-FILE HARMONIZATION.
+The user has uploaded multiple documents. Your primary goal is to synthesize data across ALL files into a single, cohesive intelligence report.
+
+### BATCH EXTRACTION RULES:
+1. **UNIFIED OUTPUT**: If the user asks for a table or data extraction, YOU MUST merge line items from ALL documents into one single JSON array.
+2. **SOURCE TRACKING**: Every row in your JSON MUST have a "Source File" column indicating which filename that row belongs to.
+3. **TABULAR CONSISTENCY**: Standardize column names across all files so merging is seamless.
+4. **CROSS-FILE SUMMARY**: In your summary after the JSON block, highlight trends, outliers, or discrepancies found between the files.
+
+Follow all JSON fencing and formatting rules from the standard SYSTEM_PROMPT.`;
+
 
 async function getFileContext(file) {
   const mimeType = file.mimetype;
@@ -639,7 +650,7 @@ async function getSchemaContext(file) {
 // ─── DATA ANALYSIS ENDPOINT (Phase 2) ───────────────
 app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
   try {
-    const { message, conversation_id } = req.body;
+    const { message, conversation_id, uploadMode } = req.body;
     let convId = conversation_id;
     const cleanedMessage = message?.replace('[STRATEGIC_OVERVIEW_REQUEST] ', '') || message || '';
 
@@ -1086,7 +1097,8 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
 
     // Call Gemini
     console.log(`🧠 Master Extractor [${convId}]: "${(message || '').substring(0, 80)}" (${uploadedDocs.length} files)`);
-    const aiResponse = await callGemini(contents);
+    const systemPromptToUse = uploadMode === 'multiple' ? BATCH_SYSTEM_PROMPT : SYSTEM_PROMPT;
+    const aiResponse = await callGemini(contents, systemPromptToUse);
 
     // Save AI response
     await pool.query(
