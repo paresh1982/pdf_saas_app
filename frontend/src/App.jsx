@@ -557,7 +557,12 @@ function renderContent(text, convId, isMobile = false) {
       // Try to render JSON as a table or multiview dashboard
       if (lang === 'json') {
         try {
-          const parsed = JSON.parse(code);
+          // Sanitize Python-specific non-JSON values before parsing
+          const safeCode = code
+            .replace(/:\s*NaN\b/g, ": null")
+            .replace(/:\s*Infinity\b/g, ": null")
+            .replace(/:\s*-Infinity\b/g, ": null");
+          const parsed = JSON.parse(safeCode);
           
           if (parsed && typeof parsed === 'object' && parsed.type === 'multiview') {
              return <AnalysisDashboard key={i} dataObj={parsed} raw={code} convId={convId} isMobile={isMobile} />;
@@ -1007,17 +1012,17 @@ function DynamicChart({ config, isMobile = false }) {
 // ─── Analysis Dashboard (Multi-View) ──────────────────────────
 function AnalysisDashboard({ dataObj, raw, convId, isMobile = false }) {
   const hasChart = !!dataObj.chartConfig && !!dataObj.chartConfig.data && dataObj.chartConfig.data.length > 0;
-  const hasTable = !!dataObj.tableData || (
+  const isVisualOnly = dataObj.chartConfig && ['density', 'scatter', 'line', 'histogram', 'text'].includes(dataObj.chartConfig.type);
+  const hasTable = !isVisualOnly && (!!dataObj.tableData || (
     !!dataObj.chartConfig && 
     !!dataObj.chartConfig.data && 
-    dataObj.chartConfig.data.length > 0 &&
-    !['density', 'scatter', 'line', 'text'].includes(dataObj.chartConfig.type)
-  );
+    dataObj.chartConfig.data.length > 0
+  ));
 
-  const [activeTab, setActiveTab] = useState(dataObj.primaryView === 'chart' && hasChart ? 'chart' : (hasTable ? 'table' : 'chart'));
+  const [activeTab, setActiveTab] = useState(isVisualOnly ? 'chart' : (dataObj.primaryView === 'chart' && hasChart ? 'chart' : (hasTable ? 'table' : 'chart')));
 
   useEffect(() => {
-    if (dataObj.primaryView === 'chart' && hasChart) {
+    if (isVisualOnly || (dataObj.primaryView === 'chart' && hasChart)) {
       setActiveTab('chart');
     } else if (hasTable) {
       setActiveTab('table');
