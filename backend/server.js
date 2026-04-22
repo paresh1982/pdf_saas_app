@@ -680,7 +680,7 @@ STRICT RULES:
 4. NumPy 2.0+: NEVER use np.float_, np.bool_, np.int_. Use np.float64, np.int64, or native Python float/int.
 5. Cast all values before json.dumps() to avoid serialization errors.
 
-VISUALIZATION SELECTION � DEFAULT TO TABLE DATA:
+VISUALIZATION SELECTION � DEFAULT TO TABLE DATA:
   - ALWAYS set primaryView: "table" unless the user explicitly uses charting keywords like "plot", "chart", "visualize", "graph", "trend", "distribution", "boxplot", or "scatter".
   - If charting keywords are present: Set primaryView: "chart" AND provide both tableData and chartConfig.
   - If no charting keywords: Set primaryView: "table" AND provide tableData (the calculation results).
@@ -976,23 +976,119 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
   try {
     const { message, conversation_id } = req.body;
     let convId = conversation_id;
+
+    // Auto-create conversation if none provided
     if (!convId) {
-      convId = 'conv_' + Date.now();
-      await pool.query('INSERT INTO conversations (id, user_id, title, type) VALUES ($1, $2, $3, $4)', [convId, req.userId, message?.substring(0, 60), 'chat']);
+      convId = 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      const title = message?.substring(0, 60) || 'New Chat';
+      await pool.query(
+        'INSERT INTO conversations (id, user_id, title, type) VALUES ($1, $2, $3, $4)',
+        [convId, req.userId, title, 'chat']
+      );
     }
+
+    // Process files for AI context — read IMMEDIATELY while file is in memory/disk
+    const fileContexts = [];
     const uploadedDocs = [];
-    if (req.files) {
+    if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        await pool.query('INSERT INTO documents (conversation_id, user_id, filename, original_name, file_size) VALUES ($1, $2, $3, $4, $5)', [convId, req.userId, file.filename, file.originalname, file.size]);
+        const context = await getFileContext(file);
+        if (context) fileContexts.push(context);
+
+        // Save to DB
+        await pool.query(
+          'INSERT INTO documents (conversation_id, user_id, filename, original_name, file_size) VALUES ($1, $2, $3, $4, $5)',
+          [convId, req.userId, file.filename, file.originalname, file.size]
+        );
+        uploadedDocs.push({ filename: file.filename, original_name: file.originalname });
       }
     }
-    const { rows: history } = await pool.query('SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC', [convId]);
-    const geminiHistory = history.map(h => ({ role: h.role === 'model' ? 'model' : 'user', parts: [{ text: h.content }] }));
-    const aiText = await callGemini([...geminiHistory, { role: 'user', parts: [{ text: message }] }]);
-    await pool.query('INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)', [convId, 'user', message]);
-    await pool.query('INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)', [convId, 'model', aiText]);
-    res.json({ response: aiText, conversation_id: convId });
+
+    // Save user message
+    const attachmentNames = uploadedDocs.map(d => d.original_name);
+    await pool.query(
+      'INSERT INTO messages (conversation_id, role, content, attachments) VALUES ($1, $2, $3, $4)',
+      [convId, 'user', message || '', JSON.stringify(attachmentNames)]
+    );
+
+    // Load history
+    const historyResult = await pool.query(
+      'SELECT role, content, attachments FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+      [convId]
+    );
+    const dbMessages = historyResult.rows;
+
+    const contents = [];
+    for (const [index, msg] of dbMessages.entries()) {
+      const isLastMessage = index === dbMessages.length - 1;
+      let combinedText = msg.content;
+      const inlineDataParts = [];
+
+      // Current turn: Use freshly extracted file contexts (file is available on disk right now)
+      if (isLastMessage && fileContexts.length > 0) {
+        for (const ctx of fileContexts) {
+          if (ctx.text) combinedText += `\n\n--- DOCUMENT DATA ---\n${ctx.text}`;
+          if (ctx.inlineData) inlineDataParts.push({ inlineData: ctx.inlineData });
+        }
+      } else if (msg.attachments && msg.attachments !== '[]') {
+        // Historical turns: Attempt to restore from disk
+        try {
+          const fileNames = JSON.parse(msg.attachments);
+          const docsResult = await pool.query(
+            'SELECT filename, original_name FROM documents WHERE conversation_id = $1 AND original_name = ANY($2)',
+            [convId, fileNames]
+          );
+
+          let missingFiles = [];
+
+          for (const doc of docsResult.rows) {
+            const filePath = path.join(UPLOAD_DIR, doc.filename);
+            if (fs.existsSync(filePath)) {
+              const fileContext = await getFileContext({
+                path: filePath,
+                mimetype: 'application/octet-stream',
+                originalname: doc.original_name
+              });
+              if (fileContext) {
+                if (fileContext.text) combinedText += `\n\n--- DOCUMENT DATA ---\n${fileContext.text}`;
+                if (fileContext.inlineData) inlineDataParts.push({ inlineData: fileContext.inlineData });
+              }
+            } else {
+              missingFiles.push(doc.original_name);
+            }
+          }
+
+          if (missingFiles.length > 0) {
+            const errorMsg = `⚠️ **Session Expired:** The underlying documents (${missingFiles.join(', ')}) were purged from server storage. Please start a new chat and re-upload the files to continue.`;
+            await pool.query(
+              'INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)',
+              [convId, 'model', errorMsg]
+            );
+            return res.json({ response: errorMsg, conversation_id: convId });
+          }
+        } catch (e) {
+          console.error('Context recovery failed:', e);
+        }
+      }
+
+      // Build final parts for this turn
+      const parts = [{ text: combinedText }, ...inlineDataParts];
+      contents.push({ role: msg.role, parts });
+    }
+
+    // Call Gemini
+    console.log(`🧠 Master Extractor [${convId}]: "${(message || '').substring(0, 80)}" (${uploadedDocs.length} files)`);
+    const aiResponse = await callGemini(contents);
+
+    // Save AI response
+    await pool.query(
+      'INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)',
+      [convId, 'model', aiResponse]
+    );
+
+    res.json({ response: aiResponse, conversation_id: convId });
   } catch (err) {
+    console.error('Master Extractor Error:', err);
     res.status(500).json({ error: err.message });
   }
 });
