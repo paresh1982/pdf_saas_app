@@ -555,16 +555,9 @@ function renderContent(text, convId, isMobile = false) {
       const code = part.replace(/```\w*\n?/g, '').replace(/```$/g, '').trim();
 
       // Try to render JSON as a table or multiview dashboard
-      const isJsonBlock = lang.toLowerCase() === 'json' || code.startsWith('[') || code.startsWith('{');
-      
-      if (isJsonBlock) {
+      if (lang === 'json') {
         try {
-          // Sanitize Python-specific non-JSON values before parsing
-          const safeCode = code
-            .replace(/:\s*NaN\b/g, ": null")
-            .replace(/:\s*Infinity\b/g, ": null")
-            .replace(/:\s*-Infinity\b/g, ": null");
-          const parsed = JSON.parse(safeCode);
+          const parsed = JSON.parse(code);
           
           if (parsed && typeof parsed === 'object' && parsed.type === 'multiview') {
              return <AnalysisDashboard key={i} dataObj={parsed} raw={code} convId={convId} isMobile={isMobile} />;
@@ -574,10 +567,7 @@ function renderContent(text, convId, isMobile = false) {
           if (arr.length > 0 && typeof arr[0] === 'object') {
             return <DynamicTable key={i} data={arr} raw={code} convId={convId} />;
           }
-        } catch (e) { 
-          // If it fails to parse but was explicitly tagged as JSON, we still want to see the error in console
-          if (lang.toLowerCase() === 'json') console.error('JSON parse fail in markdown:', e);
-        }
+        } catch (e) { /* fall through to code block */ }
       }
       return (
         <pre key={i} className="bg-black/40 border border-white/5 rounded-xl p-4 my-3 overflow-x-auto text-xs font-mono text-emerald-400 leading-relaxed shadow-inner">
@@ -587,30 +577,14 @@ function renderContent(text, convId, isMobile = false) {
     }
 
     // Regular text — simple markdown
-        // Naked JSON Fallback
-    if (!part.startsWith("```") && part.includes("\"type\": \"multiview\"")) {
-      const nakedJsonMatch = part.match(/\{[\s\S]*"type"\s*:\s*"multiview"[\s\S]*\}/);
-      if (nakedJsonMatch) {
-         try {
-            const code = nakedJsonMatch[0];
-            const safeCode = code.replace(/:\s*NaN\b/g, ": null").replace(/:\s*Infinity\b/g, ": null").replace(/:\s*-Infinity\b/g, ": null");
-            const parsed = JSON.parse(safeCode);
-            // Replace the JSON from the part so it doesn't render as text too
-            part = part.replace(nakedJsonMatch[0], "").trim();
-            return (
-              <div key={i}>
-                <p className="text-sm text-white/80 leading-relaxed font-normal mb-2 whitespace-pre-wrap">{part}</p>
-                <AnalysisDashboard dataObj={parsed} raw={code} convId={convId} isMobile={isMobile} />
-              </div>
-            );
-         } catch(e) {}
-      }
-    }
-    const cleanPart = part.replace(/\*\*\*/g, "").replace(/\*\*/g, "");
+    const cleanPart = part.replace(/\*\*\*/g, '').replace(/\*\*/g, '');
     
     return (
-      <div key={i} className="my-2">
+      <div key={i} className="prose prose-sm max-w-none prose-invert font-medium">
         {cleanPart.split('\n').map((line, j) => {
+          if (line.startsWith('### ')) return <h3 key={j} className="text-base font-black text-white mt-1 mb-1 uppercase tracking-tight">{line.replace('### ', '')}</h3>;
+          if (line.startsWith('## ')) return <h2 key={j} className="text-lg font-black text-white mt-2 mb-1.5 uppercase tracking-tighter">{line.replace('## ', '')}</h2>;
+          if (line.startsWith('# ')) return <h1 key={j} className="text-2xl font-black text-white mt-3 mb-2 uppercase tracking-tighter">{line.replace('# ', '')}</h1>;
           if (line.startsWith('- ') || line.startsWith('* ')) return <li key={j} className="text-sm text-foreground/80 ml-4 mb-0.5 list-disc font-medium">{line.replace(/^[-*] /, '')}</li>;
           if (line.trim() === '') return <div key={j} className="h-1" />;
           return <p key={j} className="text-sm text-foreground/80 leading-relaxed mb-1.5">{line}</p>;
