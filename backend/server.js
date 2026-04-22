@@ -671,61 +671,55 @@ app.post('/api/analyze-data', upload.array('files', 10), async (req, res) => {
       filesContext += `File: ${doc.original_name}\nInternal Path: ${filePath}\n\n`;
     }
 
-    const systemPrompt = `You are a world-class Data Analyst.
-Turn the uploaded CSV into high-fidelity visual and strategic intelligence.
+    const systemPrompt = `You are a world-class Data Analyst. Turn the uploaded CSV into high-fidelity visual and strategic intelligence.
 
-DISCOVERY MANDATE:
-Before performing any analysis, you MUST include 'print(df.head().to_string())'. 
-This ensures you use the EXACT column names as they appear in the file.
+STRICT RULES:
+1. ONLY return Python code inside a single triple-backtick python block.
+2. NEVER use print(df.head()) or print(df.head().to_string()). NEVER print raw dataframe rows. This pollutes the output.
+3. USE the exact file paths provided. Do not guess paths.
+4. NumPy 2.0+: NEVER use np.float_, np.bool_, np.int_. Use np.float64, np.int64, or native Python float/int.
+5. Cast all values before json.dumps() to avoid serialization errors.
+
+VISUALIZATION SELECTION — always match chart type to the question:
+- "average / mean / sum / count by group" -> bar chart (primaryView: "bar"), tableData = computed stats rows
+- "distribution / spread / quartiles / boxplot" -> boxplot (primaryView: "boxplot")
+- "relationship / correlation / scatter" -> scatter (primaryView: "scatter")
+- "trend / over time / history" -> line chart (primaryView: "line")
+- "summarize / describe / what is this data" -> table only (primaryView: "table"), tableData = df.describe().reset_index().to_dict(orient="records")
+- NEVER default to boxplot for simple average/count/ranking questions.
 
 CHART REQUIREMENTS:
-- DENSITY: chart_type='density'. data must be a JSON list of ~50 smooth KDE points: {"x": value, "y": density}. Use scipy.stats.gaussian_kde.
-- BOXPLOT: chart_type='boxplot'. data must be grouped quartiles: {"group": "Name", "min": val, "q1": val, "median": val, "q3": val, "max": val}.
-- SUMMARIES: CRITICAL: Provide a HIGHLY ELABORATE 4-paragraph analysis PLUS a detailed "Metadata Inventory" section listing every column, its data type, and its purpose.
-- LABELS: Always use descriptive keys or meta-description, provide a HIGHLY ELABORATE and COMPREHENSIVE analysis (minimum 4 paragraphs). Detail the data scope, column insights, and strategic implications. NEVER provide short summaries. or meta-description, provide a HIGHLY DETAILED and ELABORATE analysis (at least 3-4 paragraphs). Explain the variable distributions, any visible correlations, and the strategic significance of the findings. Avoid one-liners.
-- LABELS: Always use descriptive keys for Y-axis data (e.g., use 'Density' for KDE data, 'Frequency' for histograms) AND provide explicit 'xAxisLabel' and 'yAxisLabel' keys in the chartConfig for all plots.
-- PRECISION: All numerical results MUST use exactly 2 decimal places. No commas in years or numbers (e.g., 2024.00, not 2,024).
+- BAR: data = [{"label": "GroupName", "value": 28.79}, ...]. xAxisKey="label", yAxisKey="value".
+- BOXPLOT: data = [{"group": "Name", "min": v, "q1": v, "median": v, "q3": v, "max": v}, ...].
+- SCATTER: data = list of row dicts with x, y, and optional groupByKey columns.
+- DENSITY: data = ~50 KDE points [{"x": val, "y": density}, ...]. Use scipy.stats.gaussian_kde.
+- Always include "xAxisLabel" and "yAxisLabel" in chartConfig.
+- All numbers: exactly 2 decimal places. Use float(round(x, 2)).
 
-OUTPUT SCHEMA:
-Return Python code that creates a 'response' dictionary:
+SUMMARY RULES:
+- The "summary" field MUST directly answer the user question in the FIRST sentence.
+- Example: "The average MPG of modern ICE cars is 28.79."
+- Then add 1-2 paragraphs of interpretation/context.
+- Do NOT include a Metadata Inventory section unless the user explicitly asks.
+
+OUTPUT SCHEMA — Python code must print exactly this JSON:
 {
     "type": "multiview",
-    "summary": "Professional analysis text...",
-    "primaryView": "chart_type",
+    "summary": "Direct answer + brief interpretation...",
+    "primaryView": "bar|scatter|boxplot|line|table",
+    "tableData": [{"col": val, ...}],
     "chartConfig": {
-        "type": "chart_type",
+        "type": "bar|scatter|boxplot|line",
         "data": [...],
-        "xAxisKey": "...",
-        "yAxisKey": "...",
-        "groupByKey": "..."
+        "xAxisKey": "label",
+        "yAxisKey": "value",
+        "xAxisLabel": "Human Readable",
+        "yAxisLabel": "Human Readable",
+        "groupByKey": "optional_group_col"
     }
 }
-CRITICAL: NumPy 2.0+ is active. NEVER use np.float_, np.bool, or np.int (deprecated). Use np.float64, np.int64, or native Python float/int. Cast all results before json.dumps() to avoid serialization errors.
 
-EXAMPLE OUTPUT FORMAT:
-\`\`\`python
-import json
-# ... analysis logic ...
-response = {
-    "type": "multiview",
-    "summary": "Comparing vehicle performance across groups...",
-    "primaryView": "scatter",
-    "tableData": df.to_dict(orient="records"),
-    "chartConfig": {
-        "type": "scatter",
-        "data": df.to_dict(orient="records"),
-        "xAxisKey": "weight", 
-        "yAxisKey": "mpg",
-        "groupByKey": "cylinders" # REQUIRED for multi-series colors and legend
-    }
-}
-print(json.dumps(response))
-\`\`\`
-
-GENERAL:
-1. ONLY return python code.
-2. USE paths exactly as given.
-3. REFER to previous messages for context if needed.`;
+REFER to previous messages for context if the user asks a follow-up question.`;
 
     // 2.5 Re-hydrate Conversation History (Crucial for Contextual Follow-ups)
     const { rows: history } = await pool.query(
@@ -1005,7 +999,6 @@ app.listen(PORT, () => {
   console.log(`ðŸš€ DocJockey Backend running on port ${PORT}`);
   initDB();
 });
-
 
 
 
