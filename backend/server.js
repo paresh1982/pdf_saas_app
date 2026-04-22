@@ -681,7 +681,7 @@ This ensures you use the EXACT column names as they appear in the file.
 CHART REQUIREMENTS:
 - DENSITY: chart_type='density'. data must be a JSON list of ~50 smooth KDE points: {"x": value, "y": density}. Use scipy.stats.gaussian_kde.
 - BOXPLOT: chart_type='boxplot'. data must be grouped quartiles: {"group": "Name", "min": val, "q1": val, "median": val, "q3": val, "max": val}.
-- SUMMARIES: When asked for a summary or meta-description, provide a HIGHLY DETAILED and ELABORATE analysis (at least 3-4 paragraphs). Explain the variable distributions, any visible correlations, and the strategic significance of the findings. Avoid one-liners.
+- SUMMARIES: CRITICAL: When asked for a summary or meta-description, provide a HIGHLY ELABORATE and COMPREHENSIVE analysis (minimum 4 paragraphs). Detail the data scope, column insights, and strategic implications. NEVER provide short summaries. or meta-description, provide a HIGHLY DETAILED and ELABORATE analysis (at least 3-4 paragraphs). Explain the variable distributions, any visible correlations, and the strategic significance of the findings. Avoid one-liners.
 - LABELS: Always use descriptive keys for Y-axis data (e.g., use 'Density' for KDE data, 'Frequency' for histograms) AND provide explicit 'xAxisLabel' and 'yAxisLabel' keys in the chartConfig for all plots.
 - PRECISION: All numerical results MUST use exactly 2 decimal places. No commas in years or numbers (e.g., 2024.00, not 2,024).
 
@@ -851,16 +851,17 @@ GENERAL:
                          }
                      } catch (e) {}
 
-                     const scrubbedProse = (typeof finalProse === 'string' ? finalProse : JSON.stringify(finalProse))
+                                          const scrubbedProse = (typeof finalProse === 'string' ? finalProse : JSON.stringify(finalProse))
                         .replace(/\\n/g, '\n') // Unescape newlines
                         .replace(/[{}'"]/g, '') // Remove remaining JSON braces/quotes
                         .replace(/summary\s*:\s*/g, '') // Remove summary key
                         .replace(/meta_description[\s\S]*/gi, '') // Remove meta description content
-                        .replace(/^Id\s+SepalLengthCm[\s\S]*?\n\n/gi, '') // Remove Iris-specific headers
-                        .replace(/^\s*\d+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+[\s\S]*?\n\n/gi, '') // Remove numeric rows
+                        .replace(/r?\/opt\/render\/project\/src\/backend\/uploads\/[0-9-]+[._]([a-zA-Z0-9.-]+)/gi, '$1') // Extract base name
+                        .replace(/r?\/opt\/render\/project\/src\/backend\/uploads\//gi, '') // Strip path
+                        .replace(/[0-9]{10,}-[0-9]{5,}[._]/g, '') // Strip numerical timestamp prefix
                         .trim();
 
-                     resolve(`?? **Data Analysis Result**:\n\n${scrubbedProse}`);
+                     resolve(scrubbedProse);
                      return; 
                  }
 
@@ -1039,6 +1040,7 @@ app.listen(PORT, () => {
   console.log(`🚀 DocJockey Backend running on port ${PORT}`);
   initDB();
 });
+
 
 
 
