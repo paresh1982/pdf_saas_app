@@ -993,7 +993,7 @@ app.post(['/api/generate-reporting-executive', '/api/reporting-executive', '/gen
 // ─── CHAT ENDPOINT ──────────────────────────
 app.post('/api/chat', upload.array('files', 10), async (req, res) => {
   try {
-    const { message, conversation_id } = req.body;
+    const { message, conversation_id, uploadMode } = req.body;
     let convId = conversation_id;
 
     // Auto-create conversation if none provided
