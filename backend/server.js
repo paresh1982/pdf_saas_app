@@ -395,6 +395,8 @@ app.get('/api/admin/env', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Diagnostic failed', details: err.message });
+  }
+});
 
 // ─── Gemini Engine ───────────────────────────────────────
 const SYSTEM_PROMPT = `You are DocJockey AI — a universal document intelligence assistant.
@@ -678,7 +680,7 @@ STRICT RULES:
 4. NumPy 2.0+: NEVER use np.float_, np.bool_, np.int_. Use np.float64, np.int64, or native Python float/int.
 5. Cast all values before json.dumps() to avoid serialization errors.
 
-VISUALIZATION SELECTION � DEFAULT TO TABLE DATA:
+VISUALIZATION SELECTION � DEFAULT TO TABLE DATA:
   - ALWAYS set primaryView: "table" unless the user explicitly uses charting keywords like "plot", "chart", "visualize", "graph", "trend", "distribution", "boxplot", or "scatter".
   - If charting keywords are present: Set primaryView: "chart" AND provide both tableData and chartConfig.
   - If no charting keywords: Set primaryView: "table" AND provide tableData (the calculation results).
@@ -975,51 +977,22 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
     const { message, conversation_id } = req.body;
     let convId = conversation_id;
     if (!convId) {
-      convId = 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-      await pool.query('INSERT INTO conversations (id, user_id, title, type) VALUES ($1, $2, $3, $4)', [convId, req.userId, message?.substring(0, 60) || 'New Session', 'chat']);
+      convId = 'conv_' + Date.now();
+      await pool.query('INSERT INTO conversations (id, user_id, title, type) VALUES ($1, $2, $3, $4)', [convId, req.userId, message?.substring(0, 60), 'chat']);
     }
-    
-    // 1. Save new documents to DB
-    if (req.files && req.files.length > 0) {
+    const uploadedDocs = [];
+    if (req.files) {
       for (const file of req.files) {
         await pool.query('INSERT INTO documents (conversation_id, user_id, filename, original_name, file_size) VALUES ($1, $2, $3, $4, $5)', [convId, req.userId, file.filename, file.originalname, file.size]);
       }
     }
-
-    // 2. Fetch ALL documents for this conversation (Context Re-hydration)
-    const { rows: allDocs } = await pool.query('SELECT filename, original_name FROM documents WHERE conversation_id = $1', [convId]);
-    const fileParts = [];
-    for (const doc of allDocs) {
-      const filePath = require('path').join(__dirname, 'uploads', doc.filename);
-      if (fs.existsSync(filePath)) {
-        const ext = require('path').extname(doc.filename).toLowerCase();
-        let mimeType = 'application/octet-stream';
-        if (ext === '.pdf') mimeType = 'application/pdf';
-        else if (ext === '.xlsx') mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-        else if (ext === '.csv') mimeType = 'text/csv';
-        else if (ext === '.png') mimeType = 'image/png';
-        else if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
-
-        const context = await getFileContext({ path: filePath, mimetype: mimeType, originalname: doc.original_name });
-        if (context) fileParts.push(context);
-      }
-    }
-
-    // 3. Prepare History and Call Gemini
     const { rows: history } = await pool.query('SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC', [convId]);
     const geminiHistory = history.map(h => ({ role: h.role === 'model' ? 'model' : 'user', parts: [{ text: h.content }] }));
-    
-    // Combine text message with all document contents
-    const currentParts = [{ text: message || "Analyze the provided documents." }, ...fileParts];
-    const aiText = await callGemini([...geminiHistory, { role: 'user', parts: currentParts }]);
-    
-    // 4. Save to History and Respond
-    await pool.query('INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)', [convId, 'user', message || "Uploaded documents"]);
+    const aiText = await callGemini([...geminiHistory, { role: 'user', parts: [{ text: message }] }]);
+    await pool.query('INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)', [convId, 'user', message]);
     await pool.query('INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)', [convId, 'model', aiText]);
-    
     res.json({ response: aiText, conversation_id: convId });
   } catch (err) {
-    console.error('Master Extractor Error:', err);
     res.status(500).json({ error: err.message });
   }
 });
