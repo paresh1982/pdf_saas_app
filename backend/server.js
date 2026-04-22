@@ -806,11 +806,26 @@ REFER to previous messages for context if the user asks a follow-up question.`;
                     try {
                         const jsonMatch = outputText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
                         if (jsonMatch) {
-                            const parsed = JSON.parse(jsonMatch[0]);
+                            // Sanitize Python-specific non-JSON values before parsing
+                            const safeJson = jsonMatch[0]
+                                .replace(/:\s*NaN\b/g, ': null')
+                                .replace(/:\s*Infinity\b/g, ': null')
+                                .replace(/:\s*-Infinity\b/g, ': null');
+                            const parsed = JSON.parse(safeJson);
                             finalProse = parsed.summary || parsed.t || outputText;
                             if (typeof finalProse === 'object') finalProse = finalProse.summary || finalProse.t || JSON.stringify(finalProse);
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        console.error('Magic summary JSON parse failed:', e.message);
+                        // Fallback: try to extract summary field with regex
+                        const summaryMatch = outputText.match(/"summary"\s*:\s*"([\s\S]*?)(?<!\\)"/);
+                        if (summaryMatch) finalProse = summaryMatch[1].replace(/\\n/g, '\n');
+                    }
+
+                    // Safety guard: if finalProse still looks like raw JSON, use a fallback
+                    if (typeof finalProse === 'string' && (finalProse.trim().startsWith('{') || finalProse.trim().startsWith('['))) {
+                        finalProse = 'Dataset loaded successfully. Please ask a specific question to begin analysis.';
+                    }
 
                     const scrubbedProse = (typeof finalProse === 'string' ? finalProse : JSON.stringify(finalProse))
                         .replace(/```json[\s\S]*?```/gi, '')
@@ -828,7 +843,11 @@ REFER to previous messages for context if the user asks a follow-up question.`;
                 try {
                     const jsonMatch = outputText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
                     if (jsonMatch) {
-                        let parsed = JSON.parse(jsonMatch[0]);
+                        const safeJsonStr = jsonMatch[0]
+                            .replace(/:\s*NaN\b/g, ": null")
+                            .replace(/:\s*Infinity\b/g, ": null")
+                            .replace(/:\s*-Infinity\b/g, ": null");
+                        let parsed = JSON.parse(safeJsonStr);
                         parsed = sanitizeAnalysisResponse(parsed, docs);
 
                         const visualKeywords = ['plot', 'plotting', 'graph', 'graphing', 'chart', 'visual', 'visualise', 'visualize', 'trend', 'distribution', 'scatter', 'bar', 'histogram', 'line', 'view relationship', 'relationship', 'correlation', 'compare'];
