@@ -875,14 +875,13 @@ GENERAL:
                         }
                     }
 
-                    resolve(`?? **Data Analysis Result**:\n\n${cleanedProse}`);
+                    resolve(`📊 **Data Analysis Result**:\n\n${cleanedProse}`);
                 } catch (err) {
                     console.error("Post-processing crash:", err);
-                    resolve("?? **Analysis Update**: The analysis succeeded but the final response formatting encountered an issue. Please try a simpler question.");
+                    resolve("📊 **Analysis Update**: The analysis succeeded but the final response formatting encountered an issue. Please try a simpler question.");
                 }
             }
         });
-    });
     });
 
     let finalResult = await execPromise;
