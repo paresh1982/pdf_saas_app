@@ -680,12 +680,11 @@ STRICT RULES:
 4. NumPy 2.0+: NEVER use np.float_, np.bool_, np.int_. Use np.float64, np.int64, or native Python float/int.
 5. Cast all values before json.dumps() to avoid serialization errors.
 
-VISUALIZATION SELECTION — always match chart type to the question:
-- "average / mean / sum / count by group" -> bar chart (primaryView: "bar"), tableData = computed stats rows
-- "distribution / spread / quartiles / boxplot" -> boxplot (primaryView: "boxplot")
-- "relationship / correlation / scatter" -> scatter (primaryView: "scatter")
-- "trend / over time / history" -> line chart (primaryView: "line")
-- "summarize / describe / what is this data" -> table only (primaryView: "table"), tableData = df.describe().reset_index().to_dict(orient="records")
+VISUALIZATION SELECTION – DEFAULT TO TABLE DATA:
+  - ALWAYS set primaryView: "table" unless the user explicitly uses charting keywords like "plot", "chart", "visualize", "graph", "trend", "distribution", "boxplot", or "scatter".
+  - If charting keywords are present: Set primaryView: "chart" AND provide both tableData and chartConfig.
+  - If no charting keywords: Set primaryView: "table" AND provide tableData (the calculation results).
+  - Summary Mandatory: "summarize / describe / what is this data" -> Force primaryView: "table".
 - NEVER default to boxplot for simple average/count/ranking questions.
 
 CHART REQUIREMENTS:
@@ -702,7 +701,7 @@ SUMMARY RULES:
 - Then add 1-2 paragraphs of interpretation/context.
 - Do NOT include a Metadata Inventory section unless the user explicitly asks.
 
-OUTPUT SCHEMA — Python code must print exactly this JSON:
+OUTPUT SCHEMA ï¿½ Python code must print exactly this JSON:
 {
     "type": "multiview",
     "summary": "Direct answer + brief interpretation...",
@@ -858,7 +857,8 @@ REFER to previous messages for context if the user asks a follow-up question.`;
                         else if (!parsed.primaryView) parsed.primaryView = "table";
 
                         const cleanJson = JSON.stringify(parsed, null, 2);
-                        outputText = outputText.replace(jsonMatch[0], `\n\`\`\`json\n${cleanJson}\n\`\`\`\n`);
+                        // Isolate JSON at the very end with clear delimiters to prevent leakage
+                        outputText = outputText.replace(jsonMatch[0], "").trim() + `\n\n\`\`\`json\n${cleanJson}\n\`\`\`\n`;
                     } else {
                         const sanitized = sanitizeAnalysisResponse({ t: outputText }, docs);
                         outputText = sanitized.t;
