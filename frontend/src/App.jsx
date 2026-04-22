@@ -555,7 +555,9 @@ function renderContent(text, convId, isMobile = false) {
       const code = part.replace(/```\w*\n?/g, '').replace(/```$/g, '').trim();
 
       // Try to render JSON as a table or multiview dashboard
-      if (lang === 'json') {
+      const isJsonBlock = lang.toLowerCase() === 'json' || code.startsWith('[') || code.startsWith('{');
+      
+      if (isJsonBlock) {
         try {
           // Sanitize Python-specific non-JSON values before parsing
           const safeCode = code
@@ -572,7 +574,10 @@ function renderContent(text, convId, isMobile = false) {
           if (arr.length > 0 && typeof arr[0] === 'object') {
             return <DynamicTable key={i} data={arr} raw={code} convId={convId} />;
           }
-        } catch (e) { /* fall through to code block */ }
+        } catch (e) { 
+          // If it fails to parse but was explicitly tagged as JSON, we still want to see the error in console
+          if (lang.toLowerCase() === 'json') console.error('JSON parse fail in markdown:', e);
+        }
       }
       return (
         <pre key={i} className="bg-black/40 border border-white/5 rounded-xl p-4 my-3 overflow-x-auto text-xs font-mono text-emerald-400 leading-relaxed shadow-inner">
