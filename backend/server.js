@@ -544,18 +544,22 @@ async function getFileContext(file) {
     const workbook = new ExcelJS.Workbook();
     if (mimeType === 'text/csv' || originalName.endsWith('.csv')) await workbook.csv.readFile(file.path);
     else await workbook.xlsx.readFile(file.path);
-    
-    let excelText = `[DOCUMENT ATTACHMENT: ${file.originalname}]\n`;
+
+    let excelText = `[FULL DOCUMENT DATA: ${file.originalname}]\n`;
     workbook.eachSheet(sheet => {
       excelText += `--- SHEET: ${sheet.name} ---\n`;
+      // PROCESS ALL ROWS - REMOVE ANY 5-ROW PREVIEW LIMITS
       sheet.eachRow((row, rowNum) => {
         const values = Array.isArray(row.values) ? row.values.slice(1) : Object.values(row.values);
-        excelText += `Row ${rowNum}: | ${values.filter(v => v !== undefined).join(' | ')} |\n`;
+        // Clean values to avoid JSON breakage
+        const cleanValues = values.map(v => (v === null || v === undefined) ? "" : String(v).replace(/\|/g, " "));
+        excelText += `Row ${rowNum}: | ${cleanValues.join(' | ')} |\n`;
       });
       excelText += `\n`;
     });
     return { text: excelText };
-  } else if (isWord) {
+  }
+ else if (isWord) {
     return {
       inlineData: {
         data: fs.readFileSync(file.path).toString('base64'),
@@ -576,7 +580,8 @@ async function callGemini(contents, customSystemPrompt = null) {
     'gemini-3.1-pro-preview'
   ];
 
-  const systemInstruction = customSystemPrompt || SYSTEM_PROMPT;
+  const systemInstruction = (customSystemPrompt || SYSTEM_PROMPT) + 
+    "\n\nCRITICAL: If the input data contains a large number of records (e.g. 365 rows), YOU MUST EXTRACT EVERY SINGLE ROW. DO NOT TRUNCATE, DO NOT SUMMARIZE, AND DO NOT SKIP ANY DATA. YOUR OUTPUT MUST BE A COMPLETE JSON ARRAY REPRESENTING THE ENTIRE DATASET.";
 
   for (let attempt = 0; attempt < models.length; attempt++) {
     const modelName = models[attempt];
