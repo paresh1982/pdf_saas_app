@@ -599,8 +599,11 @@ async function callGemini(contents, customSystemPrompt = null) {
     ];
   }
 
-  const systemInstruction = (customSystemPrompt || SYSTEM_PROMPT) + 
-    "\n\nCRITICAL: If the input data contains a large number of records (e.g. 365 rows), YOU MUST EXTRACT EVERY SINGLE ROW. DO NOT TRUNCATE, DO NOT SUMMARIZE, AND DO NOT SKIP ANY DATA. YOUR OUTPUT MUST BE A COMPLETE JSON ARRAY REPRESENTING THE ENTIRE DATASET.";
+  let systemInstruction = (customSystemPrompt || SYSTEM_PROMPT);
+  
+  if (isTableIntent) {
+    systemInstruction += "\n\nCRITICAL: If the input data contains a large number of records (e.g. 365 rows), YOU MUST EXTRACT EVERY SINGLE ROW. DO NOT TRUNCATE, DO NOT SUMMARIZE, AND DO NOT SKIP ANY DATA. YOUR OUTPUT MUST BE A COMPLETE JSON ARRAY REPRESENTING THE ENTIRE DATASET.";
+  }
 
   for (let attempt = 0; attempt < models.length; attempt++) {
     const modelName = models[attempt];
