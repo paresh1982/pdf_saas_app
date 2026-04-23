@@ -797,7 +797,7 @@ function DynamicTable({ data: inputData, raw, convId, isNested = false }) {
   }
 
   // Expand keys for all rows based on the map
-  const expandedData = data.map(row => {
+  const data = dataWithMap.map(row => {
     const newRow = {};
     Object.keys(row).forEach(k => {
       const expandedKey = keyMap[k] || k;
@@ -806,11 +806,11 @@ function DynamicTable({ data: inputData, raw, convId, isNested = false }) {
     return newRow;
   });
 
-  const headers = Object.keys(expandedData[0] || {});
+  const headers = Object.keys(data[0] || {});
   const filename = `docjockey_export_${Date.now()}`;
 
   const copyJSON = () => {
-    navigator.clipboard.writeText(raw || JSON.stringify(expandedData, null, 2));
+    navigator.clipboard.writeText(raw || JSON.stringify(data, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
