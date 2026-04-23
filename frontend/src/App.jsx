@@ -544,6 +544,68 @@ function ToolModal({ tool, onClose }) {
 }
 
 // ─── Markdown-lite renderer ──────────────────────────────
+/**
+ * Repairs truncated or malformed JSON strings by closing open structures.
+ */
+const repairJson = (str) => {
+  if (!str) return str;
+  let json = str.trim();
+  
+  // Find start of JSON structure
+  const startIdx = json.search(/[\[\{]/);
+  if (startIdx === -1) return str;
+  json = json.substring(startIdx);
+
+  let stack = [];
+  let inString = false;
+  let escaped = false;
+  let repaired = "";
+
+  for (let i = 0; i < json.length; i++) {
+    const c = json[i];
+    repaired += c;
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (c === '\\') {
+      escaped = true;
+      continue;
+    }
+
+    if (c === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) continue;
+
+    if (c === '{' || c === '[') {
+      stack.push(c);
+    } else if (c === '}' || c === ']') {
+      if (stack.length > 0) {
+        stack.pop();
+      }
+    }
+  }
+
+  // Repair
+  if (inString) repaired += '"';
+  
+  // Remove trailing comma if it exists before closing
+  repaired = repaired.trim().replace(/,\s*$/, "");
+
+  // Close all open braces/brackets
+  while (stack.length > 0) {
+    const top = stack.pop();
+    repaired += (top === '{' ? '}' : ']');
+  }
+
+  return repaired;
+};
+
 function renderContent(text, convId, isMobile = false) {
   if (!text) return null;
   const parts = text.split(/(```[\s\S]*?```)/g);
@@ -603,7 +665,19 @@ function renderContent(text, convId, isMobile = false) {
                return <DynamicTable key={i} data={tableData} raw={code} convId={convId} />;
              }
           }
-        } catch (e) { /* fall through to code block */ }
+        } catch (e) { 
+           // TRUNCATED JSON REPAIR FALLBACK
+           try {
+              const repairedCode = repairJson(code);
+              const parsed = JSON.parse(sanitizeAIJson(repairedCode));
+              if (parsed && typeof parsed === 'object') {
+                const arr = Array.isArray(parsed) ? parsed : [parsed];
+                if (arr.length > 0 && typeof arr[0] === 'object') {
+                   return <DynamicTable key={i} data={arr} raw={repairedCode} convId={convId} />;
+                }
+              }
+           } catch (innerE) { /* fall through */ }
+        }
       }
       return (
         <pre key={i} className="bg-black/40 border border-white/5 rounded-xl p-4 my-3 overflow-x-auto text-xs font-mono text-emerald-400 leading-relaxed shadow-inner">
@@ -615,38 +689,63 @@ function renderContent(text, convId, isMobile = false) {
     // Regular text — simple markdown
     const cleanPart = part.replace(/\*\*\*/g, '').replace(/\*\*/g, '');
     
-    // NAKED JSON FALLBACK
+    // NAKED JSON FALLBACK (with Repair)
+    let finalParsed = null;
+    let finalRaw = null;
     const nakedMatch = cleanPart.match(/(\[[\s\S]*?\]|\{[\s\S]*?\})/);
+
     if (nakedMatch) {
       try {
-        const potentialJson = nakedMatch[0];
-        const parsed = JSON.parse(sanitizeAIJson(potentialJson));
-        if (parsed && typeof parsed === 'object') {
-          const arr = Array.isArray(parsed) ? parsed : [parsed];
-          if (arr.length > 0 && typeof arr[0] === 'object' && !parsed.type) {
-            // Pre-prose
-            const preText = cleanPart.substring(0, nakedMatch.index).trim();
-            // Post-prose
-            const postText = cleanPart.substring(nakedMatch.index + potentialJson.length).trim();
+        finalRaw = nakedMatch[0];
+        finalParsed = JSON.parse(sanitizeAIJson(finalRaw));
+      } catch (e) {
+         // Attempt repair on potentially truncated naked JSON
+         const startIdx = cleanPart.search(/[\[\{]/);
+         if (startIdx !== -1) {
+            try {
+              const potentialTruncated = cleanPart.substring(startIdx);
+              finalRaw = repairJson(potentialTruncated);
+              finalParsed = JSON.parse(sanitizeAIJson(finalRaw));
+            } catch (innerE) { /* fail */ }
+         }
+      }
+    } else {
+       // Deep fallback for truncated JSON that doesn't even have a closing tag
+       const startIdx = cleanPart.search(/[\[\{]/);
+       if (startIdx !== -1) {
+          try {
+             const potentialTruncated = cleanPart.substring(startIdx);
+             finalRaw = repairJson(potentialTruncated);
+             finalParsed = JSON.parse(sanitizeAIJson(finalRaw));
+          } catch (e) { /* fail */ }
+       }
+    }
 
-            return (
-              <div key={i} className="space-y-3">
-                {preText && (
-                  <div className="prose prose-sm prose-invert font-medium text-foreground/80 leading-relaxed">
-                    {preText.split('\n').map((l, j) => <p key={j}>{l}</p>)}
-                  </div>
-                )}
-                <DynamicTable data={arr} raw={potentialJson} convId={convId} />
-                {postText && (
-                  <div className="prose prose-sm prose-invert font-medium text-foreground/80 leading-relaxed">
-                    {postText.split('\n').map((l, j) => <p key={j}>{l}</p>)}
-                  </div>
-                )}
+    if (finalParsed && typeof finalParsed === 'object') {
+      const arr = Array.isArray(finalParsed) ? finalParsed : [finalParsed];
+      if (arr.length > 0 && typeof arr[0] === 'object' && !finalParsed.type) {
+        // Pre-prose
+        const startIdx = cleanPart.search(/[\[\{]/);
+        const preText = startIdx !== -1 ? cleanPart.substring(0, startIdx).trim() : "";
+        // Post-prose (only if it wasn't a total truncation repair)
+        const postText = nakedMatch ? cleanPart.substring(nakedMatch.index + nakedMatch[0].length).trim() : "";
+
+        return (
+          <div key={i} className="space-y-3">
+            {preText && (
+              <div className="prose prose-sm prose-invert font-medium text-foreground/80 leading-relaxed">
+                {preText.split('\n').map((l, j) => <p key={j}>{l}</p>)}
               </div>
-            );
-          }
-        }
-      } catch (e) { /* ignore */ }
+            )}
+            <DynamicTable data={arr} raw={finalRaw} convId={convId} />
+            {postText && (
+              <div className="prose prose-sm prose-invert font-medium text-foreground/80 leading-relaxed">
+                {postText.split('\n').map((l, j) => <p key={j}>{l}</p>)}
+              </div>
+            )}
+          </div>
+        );
+      }
     }
 
     return (

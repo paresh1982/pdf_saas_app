@@ -255,6 +255,68 @@ const GET_BRANDED_HTML = (contentHtml, title = 'Executive Analysis Report') => `
 </html>
 `;
 /**
+ * Repairs truncated or malformed JSON strings by closing open structures.
+ */
+const repairJson = (str) => {
+  if (!str) return str;
+  let json = str.trim();
+  
+  // Find start of JSON structure
+  const startIdx = json.search(/[\[\{]/);
+  if (startIdx === -1) return str;
+  json = json.substring(startIdx);
+
+  let stack = [];
+  let inString = false;
+  let escaped = false;
+  let repaired = "";
+
+  for (let i = 0; i < json.length; i++) {
+    const c = json[i];
+    repaired += c;
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (c === '\\') {
+      escaped = true;
+      continue;
+    }
+
+    if (c === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) continue;
+
+    if (c === '{' || c === '[') {
+      stack.push(c);
+    } else if (c === '}' || c === ']') {
+      if (stack.length > 0) {
+        stack.pop();
+      }
+    }
+  }
+
+  // Repair
+  if (inString) repaired += '"';
+  
+  // Remove trailing comma if it exists before closing
+  repaired = repaired.trim().replace(/,\s*$/, "");
+
+  // Close all open braces/brackets
+  while (stack.length > 0) {
+    const top = stack.pop();
+    repaired += (top === '{' ? '}' : ']');
+  }
+
+  return repaired;
+};
+
+/**
  * Sanitizes the analysis response to hide internal server paths.
  * Replaces full paths with original filenames or generic labels.
  */
@@ -520,14 +582,17 @@ async function callGemini(contents, customSystemPrompt = null) {
     const modelName = models[attempt];
     try {
       let result;
+      // Increase output tokens for Pro models to handle larger tables
+      const maxTokens = modelName.includes('pro') ? 20000 : 8192;
+      
       if (typeof ai.getGenerativeModel === 'function') {
         const model = ai.getGenerativeModel({ model: modelName, systemInstruction });
-        result = await model.generateContent({ contents, generationConfig: { maxOutputTokens: 8192, temperature: 0.1 } });
+        result = await model.generateContent({ contents, generationConfig: { maxOutputTokens: maxTokens, temperature: 0.1 } });
       } else {
         result = await ai.models.generateContent({
           model: modelName,
           contents,
-          config: { systemInstruction, maxOutputTokens: 8192 }
+          config: { systemInstruction, maxOutputTokens: maxTokens }
         });
       }
 
@@ -1099,18 +1164,28 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
     const systemPromptToUse = uploadMode === 'multiple' ? BATCH_SYSTEM_PROMPT : SYSTEM_PROMPT;
     let aiResponse = await callGemini(contents, systemPromptToUse);
 
-    // --- JSON RESILIENCE LAYER (Shotgun Fencing) ---
+    // --- JSON RESILIENCE LAYER (Shotgun Fencing & Truncation Repair) ---
     try {
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-      if (jsonMatch && !aiResponse.includes('```json') && !aiResponse.includes('```[')) {
-        let parsed = JSON.parse(jsonMatch[0].replace(/:\s*NaN\b/g, ": null"));
-        // Sanitize to remove internal paths if Gemini leaked them
-        parsed = sanitizeAnalysisResponse(parsed, uploadedDocs);
-        const cleanJson = JSON.stringify(parsed, null, 2);
-        aiResponse = aiResponse.replace(jsonMatch[0], "").trim() + `\n\n\`\`\`json\n${cleanJson}\n\`\`\`\n`;
+      const startIdx = aiResponse.search(/[\[\{]/);
+      if (startIdx !== -1 && !aiResponse.includes('```json')) {
+        let potentialJson = aiResponse.substring(startIdx);
+        // Basic check: if it doesn't end with a closing tag, or we suspect it's raw
+        const endsWithClosing = potentialJson.trim().endsWith(']') || potentialJson.trim().endsWith('}');
+        
+        if (!endsWithClosing || !aiResponse.includes('```')) {
+          const repaired = repairJson(potentialJson);
+          try {
+            let parsed = JSON.parse(repaired.replace(/:\s*NaN\b/g, ": null"));
+            parsed = sanitizeAnalysisResponse(parsed, uploadedDocs);
+            const cleanJson = JSON.stringify(parsed, null, 2);
+            aiResponse = aiResponse.substring(0, startIdx).trim() + `\n\n\`\`\`json\n${cleanJson}\n\`\`\`\n`;
+          } catch (innerE) {
+            console.warn('⚠️ [Master Extractor] Repair failed to produce valid JSON:', innerE.message);
+          }
+        }
       }
     } catch (e) {
-      console.warn('⚠️ [Master Extractor] JSON Fencing Skip:', e.message);
+      console.warn('⚠️ [Master Extractor] JSON Fencing/Repair Skip:', e.message);
     }
 
     // Save AI response
