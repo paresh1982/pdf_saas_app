@@ -572,13 +572,28 @@ async function getFileContext(file) {
 }
 
 async function callGemini(contents, customSystemPrompt = null) {
+  // Determine if this is a high-fidelity extraction request (Master Extractor)
+  const isExtractionRequest = (customSystemPrompt || SYSTEM_PROMPT).includes('TABULAR EXTRACTION PROTOCOL');
+  const userMessage = contents[contents.length - 1]?.parts?.[0]?.text?.toLowerCase() || "";
+  const isTableIntent = userMessage.includes('table') || userMessage.includes('extract') || userMessage.includes('all rows');
+
   // --- COST-OPTIMIZER QUEUE: Ascending Price/Intelligence ---
-  const models = [
+  let models = [
     'gemini-2.5-flash',
     'gemini-3-flash-preview',
     'gemini-2.5-pro',
     'gemini-3.1-pro-preview'
   ];
+
+  // FORCE PRO MODELS for Master Extractor tasks to avoid Flash's "concise" summarization
+  if (isExtractionRequest && isTableIntent) {
+    console.log(`🚀 [Master Extractor] Extraction Intent Detected. Prioritizing Pro models for high-fidelity output.`);
+    models = [
+      'gemini-2.5-pro',
+      'gemini-3.1-pro-preview',
+      'gemini-2.5-flash'
+    ];
+  }
 
   const systemInstruction = (customSystemPrompt || SYSTEM_PROMPT) + 
     "\n\nCRITICAL: If the input data contains a large number of records (e.g. 365 rows), YOU MUST EXTRACT EVERY SINGLE ROW. DO NOT TRUNCATE, DO NOT SUMMARIZE, AND DO NOT SKIP ANY DATA. YOUR OUTPUT MUST BE A COMPLETE JSON ARRAY REPRESENTING THE ENTIRE DATASET.";
