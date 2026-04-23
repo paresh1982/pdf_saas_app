@@ -549,6 +549,16 @@ function renderContent(text, convId, isMobile = false) {
   const parts = text.split(/(```[\s\S]*?```)/g);
 
   return parts.map((part, i) => {
+    // Helper to fix common AI JSON non-conformance (like trailing commas)
+    const sanitizeAIJson = (str) => {
+      if (!str) return str;
+      return str
+        .replace(/,\s*([\}\]])/g, '$1') // Remove trailing commas before } or ]
+        .replace(/:\s*NaN\b/g, ": null")
+        .replace(/:\s*Infinity\b/g, ": null")
+        .replace(/:\s*-Infinity\b/g, ": null");
+    };
+
     // Code / JSON block
     if (part.startsWith('```')) {
       const match = part.match(/```\s*(\w+)?/);
@@ -558,7 +568,7 @@ function renderContent(text, convId, isMobile = false) {
       // Try to render JSON as a table or multiview dashboard
       if (lang === 'json' || code.startsWith('[') || code.startsWith('{')) {
         try {
-          const parsed = JSON.parse(code);
+          const parsed = JSON.parse(sanitizeAIJson(code));
           
           if (parsed && typeof parsed === 'object' && parsed.type === 'multiview') {
              return <AnalysisDashboard key={i} dataObj={parsed} raw={code} convId={convId} isMobile={isMobile} />;
@@ -586,7 +596,7 @@ function renderContent(text, convId, isMobile = false) {
     if (nakedMatch) {
       try {
         const potentialJson = nakedMatch[0];
-        const parsed = JSON.parse(potentialJson);
+        const parsed = JSON.parse(sanitizeAIJson(potentialJson));
         if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object') {
           // Pre-prose (text before the JSON)
           const preText = cleanPart.substring(0, nakedMatch.index).trim();
