@@ -580,6 +580,38 @@ function renderContent(text, convId, isMobile = false) {
     // Regular text — simple markdown
     const cleanPart = part.replace(/\*\*\*/g, '').replace(/\*\*/g, '');
     
+    // NAKED JSON FALLBACK: If a text part contains a valid JSON array but no backticks (common in Excel responses)
+    // We look for a block starting with [ and ending with ] that contains at least one object
+    const nakedMatch = cleanPart.match(/(\[[\s\S]*?\])/);
+    if (nakedMatch) {
+      try {
+        const potentialJson = nakedMatch[0];
+        const parsed = JSON.parse(potentialJson);
+        if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object') {
+          // Pre-prose (text before the JSON)
+          const preText = cleanPart.substring(0, nakedMatch.index).trim();
+          // Post-prose (text after the JSON)
+          const postText = cleanPart.substring(nakedMatch.index + potentialJson.length).trim();
+
+          return (
+            <div key={i} className="space-y-3">
+              {preText && (
+                <div className="prose prose-sm prose-invert font-medium text-foreground/80 leading-relaxed">
+                  {preText.split('\n').map((l, j) => <p key={j}>{l}</p>)}
+                </div>
+              )}
+              <DynamicTable data={parsed} raw={potentialJson} convId={convId} />
+              {postText && (
+                <div className="prose prose-sm prose-invert font-medium text-foreground/80 leading-relaxed">
+                  {postText.split('\n').map((l, j) => <p key={j}>{l}</p>)}
+                </div>
+              )}
+            </div>
+          );
+        }
+      } catch (e) { /* ignore, it's just text */ }
+    }
+
     return (
       <div key={i} className="prose prose-sm max-w-none prose-invert font-medium">
         {cleanPart.split('\n').map((line, j) => {

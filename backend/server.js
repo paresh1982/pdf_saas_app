@@ -436,6 +436,8 @@ When the user asks to "build a table", "extract data", or "analyze items":
 
 7. **TOTALS**: Include "Total" or "Subtotal" rows as the final items in the JSON array.
 
+8. **AI-NATIVE FENCING (CRITICAL)**: You MUST ALWAYS wrap your JSON output in triple backticks ( \`\`\`json ). This applies even if you are analyzing Excel or CSV files. NEVER output raw JSON without backticks.
+
 ### CONVERSATIONAL RULES
 - Respond helpfully and concisely.
 - If asked for a summary, provide a bulleted list of key takeaways.
@@ -451,6 +453,8 @@ The user has uploaded multiple documents. Your primary goal is to synthesize dat
 2. **SOURCE TRACKING**: Every row in your JSON MUST have a "Source File" column indicating which filename that row belongs to.
 3. **TABULAR CONSISTENCY**: Standardize column names across all files so merging is seamless.
 4. **CROSS-FILE SUMMARY**: In your summary after the JSON block, highlight trends, outliers, or discrepancies found between the files.
+
+5. **AI-NATIVE FENCING (CRITICAL)**: You MUST ALWAYS wrap your JSON output in triple backticks ( \`\`\`json ). NEVER output raw JSON without backticks. This ensures the UI can render the interactive table.
 
 Follow all JSON fencing and formatting rules from the standard SYSTEM_PROMPT.`;
 
