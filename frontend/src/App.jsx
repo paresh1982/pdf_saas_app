@@ -781,10 +781,31 @@ const formatAxisTick = (val) => {
 };
 
 // ─── Dynamic Table (renders ANY JSON array) ──────────────
-function DynamicTable({ data, raw, convId, isNested = false }) {
+function DynamicTable({ data: rawData, raw, convId, isNested = false }) {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(null);
-  if (!data || data.length === 0) return null;
+  if (!rawData || rawData.length === 0) return null;
+
+  // --- AUTO-EXPAND TOKEN COMPRESSION KEYS ---
+  const keyMap = {
+    "d": "Date",
+    "desc": "Description",
+    "db": "Debit",
+    "cr": "Credit",
+    "bal": "Balance",
+    "v": "Vendor",
+    "cat": "Category",
+    "_Section": "Source"
+  };
+
+  const data = rawData.map(row => {
+    const newRow = {};
+    Object.keys(row).forEach(k => {
+      const expandedKey = keyMap[k] || k;
+      newRow[expandedKey] = row[k];
+    });
+    return newRow;
+  });
 
   const headers = Object.keys(data[0]);
   const filename = `docjockey_export_${Date.now()}`;

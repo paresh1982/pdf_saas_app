@@ -602,7 +602,18 @@ async function callGemini(contents, customSystemPrompt = null) {
   let systemInstruction = (customSystemPrompt || SYSTEM_PROMPT);
   
   if (isTableIntent) {
-    systemInstruction += "\n\nCRITICAL: If the input data contains a large number of records (e.g. 365 rows), YOU MUST EXTRACT EVERY SINGLE ROW. DO NOT TRUNCATE, DO NOT SUMMARIZE, AND DO NOT SKIP ANY DATA. YOUR OUTPUT MUST BE A COMPLETE JSON ARRAY REPRESENTING THE ENTIRE DATASET.";
+    systemInstruction += `\n\n### TOKEN COMPRESSION PROTOCOL (FOR 100+ ROWS)
+If the dataset is large (365+ rows), YOU MUST use short JSON keys to fit within the token limit:
+- "d": Date
+- "desc": Description
+- "db": Debit
+- "cr": Credit
+- "bal": Balance/Closing Balance
+- "v": Vendor/Name
+- "cat": Category
+The UI will automatically expand these. Use them to ensure all 365+ rows are included.
+
+CRITICAL: YOU MUST EXTRACT EVERY SINGLE ROW. DO NOT TRUNCATE.`;
   }
 
   for (let attempt = 0; attempt < models.length; attempt++) {
