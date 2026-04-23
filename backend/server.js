@@ -436,6 +436,8 @@ When the user asks to "build a table", "extract data", or "analyze items":
 
 7. **TOTALS**: Include "Total" or "Subtotal" rows as the final items in the JSON array.
 
+9. **ROOT ARRAY ONLY**: Your output MUST starting with [ and end with ]. NEVER wrap your response in a root object like { "data": ... }.
+
 8. **AI-NATIVE FENCING (CRITICAL)**: You MUST ALWAYS wrap your JSON output in triple backticks ( \`\`\`json ). This applies even if you are analyzing Excel or CSV files. NEVER output raw JSON without backticks.
 
 ### CONVERSATIONAL RULES
