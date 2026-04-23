@@ -549,10 +549,12 @@ function renderContent(text, convId, isMobile = false) {
   const parts = text.split(/(```[\s\S]*?```)/g);
 
   return parts.map((part, i) => {
-    // Helper to fix common AI JSON non-conformance (like trailing commas)
+    // Helper to fix common AI JSON non-conformance (like trailing commas and comments)
     const sanitizeAIJson = (str) => {
       if (!str) return str;
       return str
+        .replace(/\/\/.*$/gm, '') // Remove single-line comments
+        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
         .replace(/,\s*([\}\]])/g, '$1') // Remove trailing commas before } or ]
         .replace(/:\s*NaN\b/g, ": null")
         .replace(/:\s*Infinity\b/g, ": null")
@@ -570,13 +572,14 @@ function renderContent(text, convId, isMobile = false) {
         try {
           const parsed = JSON.parse(sanitizeAIJson(code));
           
-          if (parsed && typeof parsed === 'object' && parsed.type === 'multiview') {
-             return <AnalysisDashboard key={i} dataObj={parsed} raw={code} convId={convId} isMobile={isMobile} />;
-          }
-
-          const arr = Array.isArray(parsed) ? parsed : [parsed];
-          if (arr.length > 0 && typeof arr[0] === 'object') {
-            return <DynamicTable key={i} data={arr} raw={code} convId={convId} />;
+          if (parsed && typeof parsed === 'object') {
+             if (parsed.type === 'multiview') {
+                return <AnalysisDashboard key={i} dataObj={parsed} raw={code} convId={convId} isMobile={isMobile} />;
+             }
+             const arr = Array.isArray(parsed) ? parsed : [parsed];
+             if (arr.length > 0 && typeof arr[0] === 'object') {
+               return <DynamicTable key={i} data={arr} raw={code} convId={convId} />;
+             }
           }
         } catch (e) { /* fall through to code block */ }
       }
@@ -590,36 +593,38 @@ function renderContent(text, convId, isMobile = false) {
     // Regular text — simple markdown
     const cleanPart = part.replace(/\*\*\*/g, '').replace(/\*\*/g, '');
     
-    // NAKED JSON FALLBACK: If a text part contains a valid JSON array but no backticks (common in Excel responses)
-    // We look for a block starting with [ and ending with ] that contains at least one object
-    const nakedMatch = cleanPart.match(/(\[[\s\S]*?\])/);
+    // NAKED JSON FALLBACK
+    const nakedMatch = cleanPart.match(/(\[[\s\S]*?\]|\{[\s\S]*?\})/);
     if (nakedMatch) {
       try {
         const potentialJson = nakedMatch[0];
         const parsed = JSON.parse(sanitizeAIJson(potentialJson));
-        if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object') {
-          // Pre-prose (text before the JSON)
-          const preText = cleanPart.substring(0, nakedMatch.index).trim();
-          // Post-prose (text after the JSON)
-          const postText = cleanPart.substring(nakedMatch.index + potentialJson.length).trim();
+        if (parsed && typeof parsed === 'object') {
+          const arr = Array.isArray(parsed) ? parsed : [parsed];
+          if (arr.length > 0 && typeof arr[0] === 'object' && !parsed.type) {
+            // Pre-prose
+            const preText = cleanPart.substring(0, nakedMatch.index).trim();
+            // Post-prose
+            const postText = cleanPart.substring(nakedMatch.index + potentialJson.length).trim();
 
-          return (
-            <div key={i} className="space-y-3">
-              {preText && (
-                <div className="prose prose-sm prose-invert font-medium text-foreground/80 leading-relaxed">
-                  {preText.split('\n').map((l, j) => <p key={j}>{l}</p>)}
-                </div>
-              )}
-              <DynamicTable data={parsed} raw={potentialJson} convId={convId} />
-              {postText && (
-                <div className="prose prose-sm prose-invert font-medium text-foreground/80 leading-relaxed">
-                  {postText.split('\n').map((l, j) => <p key={j}>{l}</p>)}
-                </div>
-              )}
-            </div>
-          );
+            return (
+              <div key={i} className="space-y-3">
+                {preText && (
+                  <div className="prose prose-sm prose-invert font-medium text-foreground/80 leading-relaxed">
+                    {preText.split('\n').map((l, j) => <p key={j}>{l}</p>)}
+                  </div>
+                )}
+                <DynamicTable data={arr} raw={potentialJson} convId={convId} />
+                {postText && (
+                  <div className="prose prose-sm prose-invert font-medium text-foreground/80 leading-relaxed">
+                    {postText.split('\n').map((l, j) => <p key={j}>{l}</p>)}
+                  </div>
+                )}
+              </div>
+            );
+          }
         }
-      } catch (e) { /* ignore, it's just text */ }
+      } catch (e) { /* ignore */ }
     }
 
     return (
