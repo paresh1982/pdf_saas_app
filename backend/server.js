@@ -469,7 +469,7 @@ technical manuals, lab reports, resumes, cheat sheets, academic papers, and more
 ### TABULAR EXTRACTION PROTOCOL (CRITICAL)
 When the user asks to "build a table", "extract data", or "analyze items":
 
-1. **ZERO PROSE POLICY**: Do NOT explain what you are doing. Do NOT apologize. Do NOT add intros like "Here is the data". START your response immediately with \`\`\`json and END it with \`\`\`. 
+1. **ZERO PROSE (Extraction Only)**: If the request is a pure data extraction (e.g., "Extract all"), do NOT add intros or apologies. If the user explicitly asks a question or for an explanation ALONGSIDE the table, provide the JSON block FIRST, followed by your explanation below it.
 
 2. **PERSISTENCE GUARANTEE**: If a value (like "Date", "Invoice #", or "Vendor") appears only once at the top of a page but applies to a table below it, YOU MUST REPEAT that value for every row in the JSON. 
    - **ZERO BLANK POLICY**: No row should have an empty "Date" if a date is detectable on the page.
