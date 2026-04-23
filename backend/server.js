@@ -1097,7 +1097,21 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
     // Call Gemini
     console.log(`🧠 Master Extractor [${convId}]: "${(message || '').substring(0, 80)}" (${uploadedDocs.length} files)`);
     const systemPromptToUse = uploadMode === 'multiple' ? BATCH_SYSTEM_PROMPT : SYSTEM_PROMPT;
-    const aiResponse = await callGemini(contents, systemPromptToUse);
+    let aiResponse = await callGemini(contents, systemPromptToUse);
+
+    // --- JSON RESILIENCE LAYER (Shotgun Fencing) ---
+    try {
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+      if (jsonMatch && !aiResponse.includes('```json') && !aiResponse.includes('```[')) {
+        let parsed = JSON.parse(jsonMatch[0].replace(/:\s*NaN\b/g, ": null"));
+        // Sanitize to remove internal paths if Gemini leaked them
+        parsed = sanitizeAnalysisResponse(parsed, uploadedDocs);
+        const cleanJson = JSON.stringify(parsed, null, 2);
+        aiResponse = aiResponse.replace(jsonMatch[0], "").trim() + `\n\n\`\`\`json\n${cleanJson}\n\`\`\`\n`;
+      }
+    } catch (e) {
+      console.warn('⚠️ [Master Extractor] JSON Fencing Skip:', e.message);
+    }
 
     // Save AI response
     await pool.query(

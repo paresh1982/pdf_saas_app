@@ -576,9 +576,31 @@ function renderContent(text, convId, isMobile = false) {
              if (parsed.type === 'multiview') {
                 return <AnalysisDashboard key={i} dataObj={parsed} raw={code} convId={convId} isMobile={isMobile} />;
              }
-             const arr = Array.isArray(parsed) ? parsed : [parsed];
-             if (arr.length > 0 && typeof arr[0] === 'object') {
-               return <DynamicTable key={i} data={arr} raw={code} convId={convId} />;
+
+             // --- SMART STRUCTURE DETECTION ---
+             let tableData = [];
+             if (Array.isArray(parsed)) {
+               tableData = parsed;
+             } else {
+               // Check for common patterns: { "data": [...] } or { "rows": [...] }
+               if (Array.isArray(parsed.data)) tableData = parsed.data;
+               else if (Array.isArray(parsed.rows)) tableData = parsed.rows;
+               else if (Array.isArray(parsed.items)) tableData = parsed.items;
+               else {
+                 // Check if it's a map of arrays (e.g., multiple sheets: { "Sheet1": [...], "Sheet2": [...] })
+                 const keys = Object.keys(parsed);
+                 const allArrays = keys.length > 0 && keys.every(k => Array.isArray(parsed[k]));
+                 if (allArrays) {
+                   // Flatten all sheets into one table, adding a "_Section" column
+                   tableData = keys.flatMap(k => parsed[k].map(row => ({ ...row, "_Section": k })));
+                 } else {
+                   tableData = [parsed]; // Single object
+                 }
+               }
+             }
+
+             if (tableData.length > 0 && typeof tableData[0] === 'object') {
+               return <DynamicTable key={i} data={tableData} raw={code} convId={convId} />;
              }
           }
         } catch (e) { /* fall through to code block */ }
