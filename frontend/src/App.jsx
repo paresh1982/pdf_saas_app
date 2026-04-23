@@ -781,24 +781,23 @@ const formatAxisTick = (val) => {
 };
 
 // ─── Dynamic Table (renders ANY JSON array) ──────────────
-function DynamicTable({ data: rawData, raw, convId, isNested = false }) {
+function DynamicTable({ data: inputData, raw, convId, isNested = false }) {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(null);
-  if (!rawData || rawData.length === 0) return null;
+  if (!inputData || inputData.length === 0) return null;
 
-  // --- AUTO-EXPAND TOKEN COMPRESSION KEYS ---
-  const keyMap = {
-    "d": "Date",
-    "desc": "Description",
-    "db": "Debit",
-    "cr": "Credit",
-    "bal": "Balance",
-    "v": "Vendor",
-    "cat": "Category",
-    "_Section": "Source"
-  };
+  // --- DYNAMIC SELF-MAPPING ENGINE ---
+  // Detect if the AI provided a compression map in the first row
+  let data = [...inputData];
+  let keyMap = { "_Section": "Source" }; // Default built-in map
+  
+  if (data[0] && data[0]._map) {
+    keyMap = { ...keyMap, ...data[0]._map };
+    data.shift(); // Remove the map row from the visible table
+  }
 
-  const data = rawData.map(row => {
+  // Expand keys for all rows based on the map
+  const expandedData = data.map(row => {
     const newRow = {};
     Object.keys(row).forEach(k => {
       const expandedKey = keyMap[k] || k;
@@ -807,11 +806,11 @@ function DynamicTable({ data: rawData, raw, convId, isNested = false }) {
     return newRow;
   });
 
-  const headers = Object.keys(data[0]);
+  const headers = Object.keys(expandedData[0] || {});
   const filename = `docjockey_export_${Date.now()}`;
 
   const copyJSON = () => {
-    navigator.clipboard.writeText(raw || JSON.stringify(data, null, 2));
+    navigator.clipboard.writeText(raw || JSON.stringify(expandedData, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

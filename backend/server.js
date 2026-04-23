@@ -602,16 +602,12 @@ async function callGemini(contents, customSystemPrompt = null) {
   let systemInstruction = (customSystemPrompt || SYSTEM_PROMPT);
   
   if (isTableIntent) {
-    systemInstruction += `\n\n### TOKEN COMPRESSION PROTOCOL (FOR 100+ ROWS)
-If the dataset is large (365+ rows), YOU MUST use short JSON keys to fit within the token limit:
-- "d": Date
-- "desc": Description
-- "db": Debit
-- "cr": Credit
-- "bal": Balance/Closing Balance
-- "v": Vendor/Name
-- "cat": Category
-The UI will automatically expand these. Use them to ensure all 365+ rows are included.
+    systemInstruction += `\n\n### DYNAMIC TOKEN COMPRESSION (FOR 100+ ROWS)
+If the dataset is large (100+ rows), YOU MUST use short JSON keys to fit within the token limit.
+1. The FIRST element in your JSON array must be a mapping object with the key "_map".
+   Example: [{"_map": {"d": "Date", "desc": "Description", "amt": "Total Amount"}}, {"d": "2025-01-01", ...}]
+2. Use these short keys for all subsequent rows.
+3. Choose 1-3 character keys that make sense for the current document's headers.
 
 CRITICAL: YOU MUST EXTRACT EVERY SINGLE ROW. DO NOT TRUNCATE.`;
   }
