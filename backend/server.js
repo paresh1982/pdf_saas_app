@@ -401,7 +401,7 @@ app.get('/api/admin/env', async (req, res) => {
 // ─── Gemini Engine ───────────────────────────────────────
 const SYSTEM_PROMPT = `You are DocJockey AI — a universal document intelligence assistant.
 
-You can analyze ANY type of PDF document: invoices, contracts, white papers, 
+You can analyze ANY type of document: PDFs, Excel/CSV spreadsheets, images, invoices, contracts, white papers, 
 technical manuals, lab reports, resumes, cheat sheets, academic papers, and more.
 
 ### TABULAR EXTRACTION PROTOCOL (CRITICAL)
@@ -446,7 +446,7 @@ When the user asks to "build a table", "extract data", or "analyze items":
 
 
 const BATCH_SYSTEM_PROMPT = `You are DocJockey AI - specialized in MULTI-FILE HARMONIZATION.
-The user has uploaded multiple documents. Your primary goal is to synthesize data across ALL files into a single, cohesive intelligence report.
+The user has uploaded multiple documents (PDFs, Excel/CSV, or Images). Your primary goal is to synthesize data across ALL files into a single, cohesive intelligence report.
 
 ### BATCH EXTRACTION RULES:
 1. **UNIFIED OUTPUT**: If the user asks for a table or data extraction, YOU MUST merge line items from ALL documents into one single JSON array.
