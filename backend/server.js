@@ -1235,6 +1235,114 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
   }
 });
 
+// ─── Batch Merge Engine ─────────────────────────────────────
+const { execFile } = require('child_process');
+
+app.post('/api/batch/analyze', upload.array('files', 50), async (req, res) => {
+  try {
+    const filesInfo = [];
+    for (const file of req.files) {
+      const ext = path.extname(file.originalname).toLowerCase();
+      let sheets = [];
+      let columns = [];
+      
+      try {
+        if (ext === '.xlsx' || ext === '.xls') {
+          const workbook = new ExcelJS.Workbook();
+          await workbook.xlsx.readFile(file.path);
+          workbook.eachSheet((worksheet) => {
+            sheets.push(worksheet.name);
+            if (columns.length === 0) {
+              const row = worksheet.getRow(1);
+              if (row && row.values) {
+                 row.eachCell((cell) => columns.push(cell.value ? cell.value.toString() : ''));
+              }
+            }
+          });
+        } else if (ext === '.csv') {
+          sheets.push('Sheet1');
+          const workbook = new ExcelJS.Workbook();
+          await workbook.csv.readFile(file.path);
+          const worksheet = workbook.worksheets[0];
+          if (worksheet) {
+            const row = worksheet.getRow(1);
+            if (row && row.values) {
+              row.eachCell((cell) => columns.push(cell.value ? cell.value.toString() : ''));
+            }
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to analyze ${file.originalname}:`, err);
+      }
+      
+      filesInfo.push({
+        name: file.originalname,
+        path: file.path, 
+        sheets: sheets,
+        columns: [...new Set(columns)].filter(Boolean)
+      });
+    }
+    res.json({ files: filesInfo });
+  } catch (err) {
+    console.error('Batch Analyze Error:', err);
+    res.status(500).json({ error: 'Failed to analyze batch files' });
+  }
+});
+
+app.post('/api/batch/execute', async (req, res) => {
+  try {
+    const { files, sheet_name, columns, mode, ai_instructions, output_format } = req.body;
+    const outputFilename = `docjockey_merged_${Date.now()}`;
+    const configPath = path.join(UPLOAD_DIR, `${outputFilename}_config.json`);
+    
+    // Map files to their local paths
+    const filePaths = files.map(f => f.path);
+    
+    const config = {
+      files: filePaths,
+      sheet_name: sheet_name,
+      columns: columns,
+      output_format: output_format || 'xlsx',
+      output_filename: outputFilename,
+      mapping: {} 
+    };
+    
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    
+    const pyScript = path.join(__dirname, 'scripts', 'batch_processor.py');
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+    
+    execFile(pythonCmd, [pyScript, configPath], { maxBuffer: 1024 * 1024 * 50 }, (error, stdout, stderr) => {
+      try { fs.unlinkSync(configPath); } catch (e) {}
+      
+      if (error) {
+        console.error('Batch Execute Python Error:', stderr || error.message);
+        return res.status(500).json({ error: 'Merge execution failed', details: stderr || error.message });
+      }
+      
+      const successMatch = stdout.match(/SUCCESS_PATH:\s*(.+)/);
+      if (successMatch) {
+        const finalPath = successMatch[1].trim();
+        const downloadUrl = `/api/download-result?file=${encodeURIComponent(finalPath.replace(/\\/g, '/'))}`;
+        res.json({ downloadUrl });
+      } else {
+        res.status(500).json({ error: 'Could not determine output path', details: stdout });
+      }
+    });
+    
+  } catch (err) {
+    console.error('Batch Execute Error:', err);
+    res.status(500).json({ error: 'Failed to execute batch merge' });
+  }
+});
+
+app.get('/api/download-result', (req, res) => {
+  const filePath = req.query.file;
+  if (!filePath) return res.status(400).send('No file specified');
+  const fullPath = path.resolve(__dirname, '..', filePath);
+  res.download(fullPath);
+});
+
 // ─── Export Endpoints (Excel & Word) ───────────────────────
 app.post('/api/export/excel', async (req, res) => {
   try {
