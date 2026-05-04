@@ -1924,6 +1924,9 @@ export default function App() {
     } else {
       setAttachedFiles(prev => [...prev, ...selected]);
     }
+    
+    // Clear the input value so selecting the same file again triggers onChange
+    e.target.value = null;
   };
 
   return (
