@@ -87,7 +87,9 @@ def process_batch(config_path):
         final_df = pd.concat(dfs, ignore_index=True)
         
         # Save output with professional formatting
-        output_path = f"uploads/{output_filename}.{output_format}"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        uploads_dir = os.path.abspath(os.path.join(script_dir, '..', 'uploads'))
+        output_path = os.path.join(uploads_dir, f"{output_filename}.{output_format}")
         
         if output_format == 'csv':
             final_df.to_csv(output_path, index=False)
