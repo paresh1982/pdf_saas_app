@@ -1357,9 +1357,27 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
     const fileBuffer = fs.readFileSync(firstFile.path);
 
     if (toolId === 'pdf-to-word') {
-      const data = await pdfParse(fileBuffer);
+      let extractedText = '';
+      const isImage = firstFile.mimetype.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(firstFile.originalname);
+      
+      if (isImage) {
+        const fileContext = await getFileContext({
+          path: firstFile.path,
+          mimetype: firstFile.mimetype,
+          originalname: firstFile.originalname
+        });
+        const result = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: [fileContext.inlineData, "Extract all text from this document exactly as it appears. Do not use markdown tags like ```."],
+        });
+        extractedText = typeof result.text === 'function' ? result.text() : result.text;
+      } else {
+        const data = await pdfParse(fileBuffer);
+        extractedText = data.text;
+      }
+
       const doc = new Document({
-        sections: [{ children: [new Paragraph({ text: data.text })] }]
+        sections: [{ children: [new Paragraph({ text: extractedText })] }]
       });
       const buffer = await Packer.toBuffer(doc);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
@@ -1368,12 +1386,31 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
     } 
     
     if (toolId === 'pdf-to-excel') {
-      const data = await pdfParse(fileBuffer);
-      const lines = data.text.split('\n').filter(l => l.trim().length > 0);
+      let extractedLines = [];
+      const isImage = firstFile.mimetype.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(firstFile.originalname);
+      
+      if (isImage) {
+        const fileContext = await getFileContext({
+          path: firstFile.path,
+          mimetype: firstFile.mimetype,
+          originalname: firstFile.originalname
+        });
+        const result = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: [fileContext.inlineData, "Extract the data from this document and format it strictly as a CSV without any markdown block tags like ```csv. Include headers if applicable."],
+        });
+        const rawAi = typeof result.text === 'function' ? result.text() : result.text;
+        extractedLines = rawAi.replace(/```csv/gi, '').replace(/```/g, '').split('\n').filter(l => l.trim().length > 0);
+      } else {
+        const data = await pdfParse(fileBuffer);
+        extractedLines = data.text.split('\n').filter(l => l.trim().length > 0);
+      }
+      
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet('Extracted Data');
-      lines.forEach((line) => {
-        sheet.addRow([line]); 
+      extractedLines.forEach((line) => {
+        // Simple comma split handling for CSV parsing.
+        sheet.addRow(line.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''))); 
       });
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Excel_${Date.now()}.xlsx"`);
