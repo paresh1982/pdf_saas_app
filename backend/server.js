@@ -1235,6 +1235,89 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
   }
 });
 
+// ─── Export Endpoints (Excel & Word) ───────────────────────
+app.post('/api/export/excel', async (req, res) => {
+  try {
+    const { data, filename } = req.body;
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('DocJockey Export');
+    
+    if (data && data.length > 0) {
+      const headers = Object.keys(data[0]);
+      sheet.columns = headers.map(h => ({ header: h.toUpperCase(), key: h, width: 20 }));
+      
+      // Styling Header
+      sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      sheet.getRow(1).fill = { type: 'pattern', pattern:'solid', fgColor:{ argb:'FF2D3748' } };
+      
+      data.forEach(row => sheet.addRow(row));
+    }
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename || 'export'}.xlsx`);
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('Excel Export Error:', err);
+    res.status(500).json({ error: 'Failed to generate Excel file' });
+  }
+});
+
+app.post('/api/export/word', async (req, res) => {
+  try {
+    const { data, filename } = req.body;
+    let docRows = [];
+    
+    if (data && data.length > 0) {
+      const headers = Object.keys(data[0]);
+      
+      // Header Row
+      const headerRow = new TableRow({
+        children: headers.map(h => new TableCell({
+          children: [new Paragraph({ text: h.toUpperCase(), style: 'Strong' })],
+          shading: { fill: "2D3748" },
+        }))
+      });
+      docRows.push(headerRow);
+      
+      // Data Rows
+      data.forEach(row => {
+        const dataRow = new TableRow({
+          children: headers.map(h => new TableCell({
+            children: [new Paragraph({ text: String(row[h] || '—') })]
+          }))
+        });
+        docRows.push(dataRow);
+      });
+    }
+
+    const table = new Table({
+      rows: docRows,
+      width: { size: 100, type: WidthType.PERCENTAGE },
+    });
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({ text: "DocJockey Intelligence Export", heading: HeadingLevel.HEADING_1 }),
+          new Paragraph({ text: `Generated on: ${new Date().toLocaleString()}` }),
+          new Paragraph({ text: "" }), // Spacing
+          table
+        ],
+      }],
+    });
+
+    const buffer = await Packer.toBuffer(doc);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename || 'export'}.docx`);
+    res.send(buffer);
+  } catch (err) {
+    console.error('Word Export Error:', err);
+    res.status(500).json({ error: 'Failed to generate Word file' });
+  }
+});
+
 // ─── Production Static Serving ─────────────────────────────
 const DIST_PATH = path.join(__dirname, '..', 'frontend', 'dist');
 if (fs.existsSync(DIST_PATH)) {
