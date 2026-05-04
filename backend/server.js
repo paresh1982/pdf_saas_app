@@ -1343,6 +1343,103 @@ app.get('/api/download-result', (req, res) => {
   res.download(fullPath);
 });
 
+// ─── PDF Tools & Conversion Suite ───────────────────────────
+app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
+  try {
+    const toolId = req.params.toolId;
+    const files = req.files;
+    
+    if (!files || files.length === 0) {
+      return res.status(400).send('No files uploaded');
+    }
+
+    const firstFile = files[0];
+    const fileBuffer = fs.readFileSync(firstFile.path);
+
+    if (toolId === 'pdf-to-word') {
+      const data = await pdfParse(fileBuffer);
+      const doc = new Document({
+        sections: [{ children: [new Paragraph({ text: data.text })] }]
+      });
+      const buffer = await Packer.toBuffer(doc);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Word_${Date.now()}.docx"`);
+      return res.send(buffer);
+    } 
+    
+    if (toolId === 'pdf-to-excel') {
+      const data = await pdfParse(fileBuffer);
+      const lines = data.text.split('\n').filter(l => l.trim().length > 0);
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Extracted Data');
+      lines.forEach((line) => {
+        sheet.addRow([line]); 
+      });
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Excel_${Date.now()}.xlsx"`);
+      await workbook.xlsx.write(res);
+      return res.end();
+    }
+    
+    if (toolId === 'word-to-pdf') {
+      const result = await mammoth.extractRawText({ path: firstFile.path });
+      const pdfDoc = await PDFDocument.create();
+      let page = pdfDoc.addPage();
+      const text = result.value || "No text extracted";
+      // Basic wrapping to prevent crash on long text
+      const lines = text.split('\n');
+      let y = page.getHeight() - 50;
+      for (const line of lines) {
+         if (y < 50) { page = pdfDoc.addPage(); y = page.getHeight() - 50; }
+         page.drawText(line.substring(0, 100), { x: 50, y, size: 10 });
+         y -= 15;
+      }
+      const pdfBytes = await pdfDoc.save();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Converted_${Date.now()}.pdf"`);
+      return res.send(Buffer.from(pdfBytes));
+    }
+    
+    if (toolId === 'excel-to-pdf') {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(firstFile.path);
+      const pdfDoc = await PDFDocument.create();
+      workbook.eachSheet((worksheet) => {
+        let page = pdfDoc.addPage();
+        let y = page.getHeight() - 50;
+        worksheet.eachRow((row) => {
+          if (y < 50) { page = pdfDoc.addPage(); y = page.getHeight() - 50; }
+          page.drawText(row.values.filter(Boolean).join(' | ').substring(0, 100), { x: 50, y, size: 10 });
+          y -= 15;
+        });
+      });
+      const pdfBytes = await pdfDoc.save();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Converted_${Date.now()}.pdf"`);
+      return res.send(Buffer.from(pdfBytes));
+    }
+    
+    if (toolId === 'merge') {
+      const mergedPdf = await PDFDocument.create();
+      for (const file of files) {
+        const pdfBytes = fs.readFileSync(file.path);
+        const pdf = await PDFDocument.load(pdfBytes);
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        copiedPages.forEach((page) => mergedPdf.addPage(page));
+      }
+      const pdfBytes = await mergedPdf.save();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Merged_${Date.now()}.pdf"`);
+      return res.send(Buffer.from(pdfBytes));
+    }
+
+    return res.status(400).json({ error: `Tool ${toolId} not fully implemented yet.` });
+  } catch (err) {
+    console.error(`Tool Error [${req.params.toolId}]:`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Export Endpoints (Excel & Word) ───────────────────────
 app.post('/api/export/excel', async (req, res) => {
   try {
