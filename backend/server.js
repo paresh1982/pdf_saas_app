@@ -1470,6 +1470,111 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       return res.send(Buffer.from(pdfBytes));
     }
 
+    if (toolId === 'split') {
+      const sequence = req.body.sequence; // e.g., "1-3, 4-5" or empty for individual
+      const pdfBytes = fs.readFileSync(firstFile.path);
+      const pdf = await PDFDocument.load(pdfBytes);
+      const totalPages = pdf.getPageCount();
+      
+      const outPdf = await PDFDocument.create();
+      let pagesToExtract = [];
+      
+      if (sequence) {
+        const parts = sequence.split(',').map(s => s.trim());
+        for (const part of parts) {
+          if (part.includes('-')) {
+            const [start, end] = part.split('-').map(Number);
+            for (let i = start; i <= end; i++) {
+               if (i >= 1 && i <= totalPages) pagesToExtract.push(i - 1);
+            }
+          } else {
+            const i = Number(part);
+            if (i >= 1 && i <= totalPages) pagesToExtract.push(i - 1);
+          }
+        }
+      } else {
+        // Just extract the first page as a fallback if no sequence
+        pagesToExtract.push(0);
+      }
+      
+      const copiedPages = await outPdf.copyPages(pdf, pagesToExtract);
+      copiedPages.forEach((page) => outPdf.addPage(page));
+      
+      const outBytes = await outPdf.save();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Split_${Date.now()}.pdf"`);
+      return res.send(Buffer.from(outBytes));
+    }
+    
+    if (toolId === 'compress' || toolId === 'repair') {
+      // PDF-Lib inherently drops unused objects and fixes xref tables on load/save
+      const pdfBytes = fs.readFileSync(firstFile.path);
+      const pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+      const outBytes = await pdf.save({ useObjectStreams: true });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_${toolId === 'compress' ? 'Compressed' : 'Repaired'}_${Date.now()}.pdf"`);
+      return res.send(Buffer.from(outBytes));
+    }
+    
+    if (toolId === 'rotate') {
+      const degrees = parseInt(req.body.degrees) || 90;
+      const pdfBytes = fs.readFileSync(firstFile.path);
+      const pdf = await PDFDocument.load(pdfBytes);
+      const pages = pdf.getPages();
+      pages.forEach(page => {
+        const currentRotation = page.getRotation().angle;
+        page.setRotation(degrees + currentRotation);
+      });
+      const outBytes = await pdf.save();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Rotated_${Date.now()}.pdf"`);
+      return res.send(Buffer.from(outBytes));
+    }
+
+    if (toolId === 'reorder') {
+      const sequence = req.body.sequence; // e.g., "3,1,2"
+      const pdfBytes = fs.readFileSync(firstFile.path);
+      const pdf = await PDFDocument.load(pdfBytes);
+      const totalPages = pdf.getPageCount();
+      
+      const outPdf = await PDFDocument.create();
+      let pageIndices = [];
+      if (sequence) {
+        pageIndices = sequence.split(',').map(s => Number(s.trim()) - 1).filter(i => i >= 0 && i < totalPages);
+      }
+      
+      const copiedPages = await outPdf.copyPages(pdf, pageIndices.length > 0 ? pageIndices : pdf.getPageIndices());
+      copiedPages.forEach((page) => outPdf.addPage(page));
+      
+      const outBytes = await outPdf.save();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Reordered_${Date.now()}.pdf"`);
+      return res.send(Buffer.from(outBytes));
+    }
+    
+    if (toolId === 'edit') {
+      const instructions = req.body.ai_instructions || 'Redraft this document cleanly.';
+      const fileContext = await getFileContext({
+        path: firstFile.path,
+        mimetype: firstFile.mimetype,
+        originalname: firstFile.originalname
+      });
+      const result = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [fileContext.inlineData, `Read this document and rewrite/redraft it according to these instructions: "${instructions}". Output the clean, final text without markdown tags.`],
+      });
+      const aiText = typeof result.text === 'function' ? result.text() : result.text;
+      
+      // Output as a clean Word Document since "editing/redrafting" is best served as editable text
+      const doc = new Document({
+        sections: [{ children: aiText.split('\n').map(line => new Paragraph({ text: line })) }]
+      });
+      const buffer = await Packer.toBuffer(doc);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_SmartRedraft_${Date.now()}.docx"`);
+      return res.send(buffer);
+    }
+
     return res.status(400).json({ error: `Tool ${toolId} not fully implemented yet.` });
   } catch (err) {
     console.error(`Tool Error [${req.params.toolId}]:`, err);
