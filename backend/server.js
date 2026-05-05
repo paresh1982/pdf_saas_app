@@ -1414,15 +1414,46 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
     }
     
     if (toolId === 'word-to-pdf') {
-      const result = await mammoth.extractRawText({ path: firstFile.path });
+      if (firstFile.originalname.toLowerCase().endsWith('.doc')) {
+        return res.status(400).json({ error: 'Legacy .doc format is not supported by the parser. Please save your file as .docx and try again.' });
+      }
+
+      let result;
+      try {
+        result = await mammoth.extractRawText({ path: firstFile.path });
+      } catch (e) {
+        return res.status(400).json({ error: 'Failed to read Word document. Ensure it is a valid, uncorrupted .docx file.' });
+      }
+
       const pdfDoc = await PDFDocument.create();
       let page = pdfDoc.addPage();
       const text = (result.value || "No text extracted").replace(/₹/g, 'Rs.').replace(/[^\x20-\x7E\s]/g, '?');
-      const lines = text.split('\n');
+      
+      // Proper Text Wrapping (Prevent Data Loss on long paragraphs)
+      const paragraphs = text.split('\n');
+      const lines = [];
+      const MAX_LEN = 95;
+      for (const p of paragraphs) {
+        if (p.trim().length === 0) {
+          lines.push('');
+          continue;
+        }
+        let currentLine = '';
+        for (const word of p.split(' ')) {
+          if (currentLine.length + word.length + 1 > MAX_LEN) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine = currentLine ? currentLine + ' ' + word : word;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+      }
+
       let y = page.getHeight() - 50;
       for (const line of lines) {
          if (y < 50) { page = pdfDoc.addPage(); y = page.getHeight() - 50; }
-         page.drawText(line.substring(0, 100), { x: 50, y, size: 10 });
+         page.drawText(line, { x: 50, y, size: 10 });
          y -= 15;
       }
       const pdfBytes = await pdfDoc.save();
@@ -1433,7 +1464,13 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
     
     if (toolId === 'excel-to-pdf') {
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.readFile(firstFile.path);
+      const isCsv = firstFile.mimetype === 'text/csv' || firstFile.originalname.toLowerCase().endsWith('.csv');
+      if (isCsv) {
+        await workbook.csv.readFile(firstFile.path);
+      } else {
+        await workbook.xlsx.readFile(firstFile.path);
+      }
+      
       const pdfDoc = await PDFDocument.create();
       const targetSheets = req.body.sheets ? req.body.sheets.split(',').map(s => s.trim().toLowerCase()) : [];
       
@@ -1446,7 +1483,10 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
           if (y < 50) { page = pdfDoc.addPage(); y = page.getHeight() - 50; }
           let rowValues = [];
           row.eachCell({ includeEmpty: true }, (cell) => {
-             let val = cell.text || cell.value || '';
+             let val = cell.text || (cell.value && cell.value.result !== undefined ? cell.value.result : cell.value) || '';
+             if (val instanceof Date) val = val.toISOString().split('T')[0];
+             else if (typeof val === 'object') val = JSON.stringify(val);
+             
              val = String(val).replace(/₹/g, 'Rs.').replace(/[^\x20-\x7E\s]/g, ' ');
              rowValues.push(val);
           });
@@ -1454,6 +1494,11 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
           y -= 15;
         });
       });
+
+      if (pdfDoc.getPageCount() === 0) {
+         let page = pdfDoc.addPage();
+         page.drawText("No data found or target sheet did not match.", { x: 50, y: page.getHeight() - 50, size: 12 });
+      }
       const pdfBytes = await pdfDoc.save();
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Converted_${Date.now()}.pdf"`);
@@ -1463,11 +1508,29 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
     if (toolId === 'merge') {
       const mergedPdf = await PDFDocument.create();
       for (const file of files) {
-        const pdfBytes = fs.readFileSync(file.path);
-        const pdf = await PDFDocument.load(pdfBytes);
-        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-        copiedPages.forEach((page) => mergedPdf.addPage(page));
+        const fileBytes = fs.readFileSync(file.path);
+        
+        try {
+          if (file.mimetype.startsWith('image/') || /\.(jpg|jpeg|png)$/i.test(file.originalname)) {
+            let image;
+            if (file.mimetype === 'image/png' || file.originalname.toLowerCase().endsWith('.png')) {
+              image = await mergedPdf.embedPng(fileBytes);
+            } else {
+              image = await mergedPdf.embedJpg(fileBytes);
+            }
+            const page = mergedPdf.addPage([image.width, image.height]);
+            page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+          } else {
+            const pdf = await PDFDocument.load(fileBytes, { ignoreEncryption: true });
+            const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+            copiedPages.forEach((page) => mergedPdf.addPage(page));
+          }
+        } catch (e) {
+          console.error(`Skipping unmergeable file ${file.originalname}:`, e);
+        }
       }
+      
+      if (mergedPdf.getPageCount() === 0) mergedPdf.addPage(); // Prevent empty document crash
       const pdfBytes = await mergedPdf.save();
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Merged_${Date.now()}.pdf"`);
@@ -1475,9 +1538,14 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
     }
 
     if (toolId === 'split') {
-      const sequence = req.body.sequence; // e.g., "1-3, 4-5" or empty for individual
+      const sequence = req.body.sequence || req.body.ranges; // Frontend uses 'ranges' for split
       const pdfBytes = fs.readFileSync(firstFile.path);
-      const pdf = await PDFDocument.load(pdfBytes);
+      let pdf;
+      try {
+        pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+      } catch (e) {
+        return res.status(400).json({ error: 'Failed to read PDF. Ensure it is a valid, uncorrupted document.' });
+      }
       const totalPages = pdf.getPageCount();
       
       const outPdf = await PDFDocument.create();
@@ -1496,9 +1564,10 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
             if (i >= 1 && i <= totalPages) pagesToExtract.push(i - 1);
           }
         }
-      } else {
-        // Just extract the first page as a fallback if no sequence
-        pagesToExtract.push(0);
+      } 
+      
+      if (pagesToExtract.length === 0) {
+        pagesToExtract = [0]; // Fallback to first page if invalid sequence
       }
       
       const copiedPages = await outPdf.copyPages(pdf, pagesToExtract);
@@ -1511,9 +1580,16 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
     }
     
     if (toolId === 'compress' || toolId === 'repair') {
-      // PDF-Lib inherently drops unused objects and fixes xref tables on load/save
+      if (firstFile.mimetype.startsWith('image/') || /\.(jpg|jpeg|png)$/i.test(firstFile.originalname)) {
+        return res.status(400).json({ error: 'Compress/Repair tools only support PDF documents, not images.' });
+      }
       const pdfBytes = fs.readFileSync(firstFile.path);
-      const pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+      let pdf;
+      try {
+        pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+      } catch (e) {
+        return res.status(400).json({ error: 'File is severely corrupted and cannot be repaired automatically.' });
+      }
       const outBytes = await pdf.save({ useObjectStreams: true });
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="DocJockey_${toolId === 'compress' ? 'Compressed' : 'Repaired'}_${Date.now()}.pdf"`);
@@ -1521,9 +1597,17 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
     }
     
     if (toolId === 'rotate') {
+      if (firstFile.mimetype.startsWith('image/') || /\.(jpg|jpeg|png)$/i.test(firstFile.originalname)) {
+        return res.status(400).json({ error: 'Rotate Pages tool only supports PDF documents.' });
+      }
       const degrees = parseInt(req.body.degrees) || 90;
       const pdfBytes = fs.readFileSync(firstFile.path);
-      const pdf = await PDFDocument.load(pdfBytes);
+      let pdf;
+      try {
+        pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+      } catch (e) {
+        return res.status(400).json({ error: 'Failed to read PDF. Ensure it is a valid, uncorrupted document.' });
+      }
       const pages = pdf.getPages();
       pages.forEach(page => {
         const currentRotation = page.getRotation().angle;
@@ -1536,15 +1620,27 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
     }
 
     if (toolId === 'reorder') {
+      if (firstFile.mimetype.startsWith('image/') || /\.(jpg|jpeg|png)$/i.test(firstFile.originalname)) {
+        return res.status(400).json({ error: 'Organize Pages tool only supports PDF documents.' });
+      }
       const sequence = req.body.sequence; // e.g., "3,1,2"
       const pdfBytes = fs.readFileSync(firstFile.path);
-      const pdf = await PDFDocument.load(pdfBytes);
+      let pdf;
+      try {
+        pdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+      } catch (e) {
+        return res.status(400).json({ error: 'Failed to read PDF. Ensure it is a valid, uncorrupted document.' });
+      }
       const totalPages = pdf.getPageCount();
       
       const outPdf = await PDFDocument.create();
       let pageIndices = [];
       if (sequence) {
         pageIndices = sequence.split(',').map(s => Number(s.trim()) - 1).filter(i => i >= 0 && i < totalPages);
+      }
+      
+      if (pageIndices.length === 0 && sequence) {
+         return res.status(400).json({ error: 'None of the requested pages exist in this document.' });
       }
       
       const copiedPages = await outPdf.copyPages(pdf, pageIndices.length > 0 ? pageIndices : pdf.getPageIndices());
@@ -1557,17 +1653,23 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
     }
     
     if (toolId === 'edit') {
-      const instructions = req.body.ai_instructions || 'Redraft this document cleanly.';
+      const instructions = req.body.instructions || req.body.ai_instructions || 'Redraft this document cleanly.';
       const fileContext = await getFileContext({
         path: firstFile.path,
         mimetype: firstFile.mimetype,
         originalname: firstFile.originalname
       });
+      
+      if (!fileContext) {
+        return res.status(400).json({ error: 'Unsupported file type for A.I. Smart Redraft.' });
+      }
+
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: [fileContext, `Read this document and rewrite/redraft it according to these instructions: "${instructions}". Output the clean, final text without markdown tags.`],
       });
-      const aiText = typeof result.text === 'function' ? result.text() : result.text;
+      const rawAi = typeof result.text === 'function' ? result.text() : result.text;
+      const aiText = rawAi || 'No redrafting could be completed.';
       
       // Output as a clean Word Document since "editing/redrafting" is best served as editable text
       const doc = new Document({
