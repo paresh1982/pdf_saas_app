@@ -1369,13 +1369,48 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
 
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [fileContext, "Extract all text from this document exactly as it appears. Do not use markdown tags like ```."],
+        contents: [fileContext, "Extract all content from this document. Preserve the exact layout, structure, and reading order. If the document contains tables (like payment advice, forms, or invoices), you MUST output them strictly as Markdown tables (using | column | column | format). Do not use markdown block tags like ```markdown."],
       });
       const rawAi = typeof result.text === 'function' ? result.text() : result.text;
       const extractedText = rawAi || 'No text could be extracted.';
 
+      const docLines = extractedText.split('\n');
+      const docChildren = [];
+      let currentTableRows = [];
+
+      const flushTable = () => {
+         if (currentTableRows.length > 0) {
+            docChildren.push(new Table({
+               width: { size: 100, type: WidthType.PERCENTAGE },
+               rows: currentTableRows.map(row => new TableRow({
+                  children: row.map(cell => new TableCell({
+                     children: [new Paragraph({ text: cell.trim() })],
+                     margins: { top: 100, bottom: 100, left: 100, right: 100 }
+                  }))
+               }))
+            }));
+            currentTableRows = [];
+         }
+      };
+
+      for (const line of docLines) {
+         const trimmed = line.trim();
+         if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+            const cells = trimmed.split('|').slice(1, -1);
+            if (!trimmed.includes('---')) {
+               currentTableRows.push(cells);
+            }
+         } else {
+            flushTable();
+            if (trimmed.length > 0) {
+               docChildren.push(new Paragraph({ text: trimmed }));
+            }
+         }
+      }
+      flushTable();
+
       const doc = new Document({
-        sections: [{ children: extractedText.split('\n').map(line => new Paragraph({ text: line })) }]
+        sections: [{ children: docChildren }]
       });
       const buffer = await Packer.toBuffer(doc);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
@@ -1396,7 +1431,7 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
 
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [fileContext, "Extract the data from this document and format it strictly as a CSV without any markdown block tags like ```csv. Include headers if applicable."],
+        contents: [fileContext, "Extract the data from this document and format it strictly as a CSV without any markdown block tags like ```csv. Preserve the exact layout and tabular structure of the original document as closely as possible. If the original document contains a vertical table of keys and values (like a form or payment advice), output a vertical CSV with two columns. Do NOT transpose or pivot the data into a single row."],
       });
       const rawAi = typeof result.text === 'function' ? result.text() : result.text;
       const safeText = rawAi || 'No data could be extracted.';
