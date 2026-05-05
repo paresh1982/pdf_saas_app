@@ -1364,7 +1364,7 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       });
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [fileContext.inlineData, "Extract all text from this document exactly as it appears. Do not use markdown tags like ```."],
+        contents: [fileContext, "Extract all text from this document exactly as it appears. Do not use markdown tags like ```."],
       });
       const extractedText = typeof result.text === 'function' ? result.text() : result.text;
 
@@ -1385,7 +1385,7 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       });
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [fileContext.inlineData, "Extract the data from this document and format it strictly as a CSV without any markdown block tags like ```csv. Include headers if applicable."],
+        contents: [fileContext, "Extract the data from this document and format it strictly as a CSV without any markdown block tags like ```csv. Include headers if applicable."],
       });
       const rawAi = typeof result.text === 'function' ? result.text() : result.text;
       const extractedLines = rawAi.replace(/```csv/gi, '').replace(/```/g, '').split('\n').filter(l => l.trim().length > 0);
@@ -1553,7 +1553,7 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       });
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [fileContext.inlineData, `Read this document and rewrite/redraft it according to these instructions: "${instructions}". Output the clean, final text without markdown tags.`],
+        contents: [fileContext, `Read this document and rewrite/redraft it according to these instructions: "${instructions}". Output the clean, final text without markdown tags.`],
       });
       const aiText = typeof result.text === 'function' ? result.text() : result.text;
       
