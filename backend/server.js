@@ -1465,43 +1465,61 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
       
       let page = pdfDoc.addPage();
-      const text = (result.value || "No text extracted").replace(/₹/g, 'Rs.').replace(/[^\x20-\x7E\s]/g, '?');
-      
-      // Proper Text Wrapping (Prevent Data Loss on long paragraphs)
-      const paragraphs = text.split('\n');
-      const lines = [];
-      const MAX_LEN = 95;
-      for (const p of paragraphs) {
-        if (p.trim().length === 0) {
-          lines.push('');
-          continue;
-        }
-        let currentLine = '';
-        for (const word of p.split(' ')) {
-          if (currentLine.length + word.length + 1 > MAX_LEN) {
-            lines.push(currentLine);
-            currentLine = word;
-          } else {
-            currentLine = currentLine ? currentLine + ' ' + word : word;
-          }
-        }
-        if (currentLine) lines.push(currentLine);
-      }
-
       let y = page.getHeight() - 50;
-      for (const line of lines) {
+      
+      const { value: htmlText } = await mammoth.convertToHtml({ path: firstFile.path });
+      // Split HTML into logical block-level chunks
+      const blocks = htmlText.split(/(?=<(?:h[1-6]|p|ul|ol|table)[^>]*>)/i);
+      const MAX_LEN = 95;
+
+      const drawTextWrapped = (text, size, isBold, xOffset = 50, color = rgb(0,0,0)) => {
+         // Strip HTML tags and decode HTML entities
+         const cleanText = text.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/&#x2013;/g, '-').replace(/₹/g, 'Rs.');
+         const words = cleanText.split(' ');
+         let currentLine = '';
+         
+         for (const word of words) {
+            if (currentLine.length + word.length > MAX_LEN) {
+               if (y < 50) { page = pdfDoc.addPage(); y = page.getHeight() - 50; }
+               page.drawText(currentLine.replace(/[^\x20-\x7E\s]/g, '?'), { x: xOffset, y, size, font: isBold ? boldFont : font, color });
+               y -= (size + 6);
+               currentLine = word;
+            } else {
+               currentLine = currentLine ? currentLine + ' ' + word : word;
+            }
+         }
+         if (currentLine) {
+            if (y < 50) { page = pdfDoc.addPage(); y = page.getHeight() - 50; }
+            page.drawText(currentLine.replace(/[^\x20-\x7E\s]/g, '?'), { x: xOffset, y, size, font: isBold ? boldFont : font, color });
+            y -= (size + 6);
+         }
+      };
+
+      for (let block of blocks) {
+         if (!block.trim()) continue;
          if (y < 50) { page = pdfDoc.addPage(); y = page.getHeight() - 50; }
-         
-         // Smart Heading Detection
-         const isHeading = line.length > 0 && line.length < 65 && !line.endsWith('.') && !line.endsWith(',');
-         
-         page.drawText(line, { 
-             x: 50, y, 
-             size: isHeading ? 12 : 10,
-             font: isHeading ? boldFont : font
-         });
-         y -= isHeading ? 20 : 15;
+
+         if (block.match(/^<h[1-3]/i)) {
+             y -= 10;
+             // Match standard Word document heading styling (dark blue, bold, larger)
+             drawTextWrapped(block, 14, true, 50, rgb(0.18, 0.45, 0.71));
+             y -= 5;
+         } else if (block.match(/^<h[4-6]/i)) {
+             y -= 5;
+             drawTextWrapped(block, 12, true, 50, rgb(0.18, 0.45, 0.71));
+             y -= 5;
+         } else if (block.match(/^<(ul|ol)/i)) {
+             const listItems = block.split(/<li[^>]*>/i).slice(1);
+             for (const li of listItems) {
+                 drawTextWrapped('• ' + li.split('</li>')[0], 10, li.includes('<strong>') || li.includes('<b>'), 70);
+             }
+             y -= 5;
+         } else {
+             drawTextWrapped(block, 10, block.includes('<strong>') || block.includes('<b>'), 50);
+             y -= 5;
+         }
       }
+      
       const pdfBytes = await pdfDoc.save();
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Converted_${Date.now()}.pdf"`);
