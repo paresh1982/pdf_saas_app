@@ -1461,6 +1461,9 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       }
 
       const pdfDoc = await PDFDocument.create();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      
       let page = pdfDoc.addPage();
       const text = (result.value || "No text extracted").replace(/₹/g, 'Rs.').replace(/[^\x20-\x7E\s]/g, '?');
       
@@ -1488,8 +1491,16 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       let y = page.getHeight() - 50;
       for (const line of lines) {
          if (y < 50) { page = pdfDoc.addPage(); y = page.getHeight() - 50; }
-         page.drawText(line, { x: 50, y, size: 10 });
-         y -= 15;
+         
+         // Smart Heading Detection
+         const isHeading = line.length > 0 && line.length < 65 && !line.endsWith('.') && !line.endsWith(',');
+         
+         page.drawText(line, { 
+             x: 50, y, 
+             size: isHeading ? 12 : 10,
+             font: isHeading ? boldFont : font
+         });
+         y -= isHeading ? 20 : 15;
       }
       const pdfBytes = await pdfDoc.save();
       res.setHeader('Content-Type', 'application/pdf');
@@ -1507,6 +1518,8 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       }
       
       const pdfDoc = await PDFDocument.create();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
       const targetSheets = req.body.sheets ? req.body.sheets.split(',').map(s => s.trim().toLowerCase()) : [];
       
       workbook.eachSheet((worksheet) => {
@@ -1514,19 +1527,48 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
         
         let page = pdfDoc.addPage();
         let y = page.getHeight() - 50;
+        
+        // Calculate dynamic column widths
+        const colWidths = [];
         worksheet.eachRow((row) => {
+           row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+               let val = cell.text || (cell.value && cell.value.result !== undefined ? cell.value.result : cell.value) || '';
+               const width = font.widthOfTextAtSize(String(val).substring(0, 50), 9) + 15;
+               if (!colWidths[colNumber]) colWidths[colNumber] = 40;
+               if (width > colWidths[colNumber]) colWidths[colNumber] = width;
+           });
+        });
+
+        worksheet.eachRow((row, rowNum) => {
           if (y < 50) { page = pdfDoc.addPage(); y = page.getHeight() - 50; }
-          let rowValues = [];
-          row.eachCell({ includeEmpty: true }, (cell) => {
+          let currentX = 50;
+          
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
              let val = cell.text || (cell.value && cell.value.result !== undefined ? cell.value.result : cell.value) || '';
              if (val instanceof Date) val = val.toISOString().split('T')[0];
              else if (typeof val === 'object') val = JSON.stringify(val);
              
-             val = String(val).replace(/₹/g, 'Rs.').replace(/[^\x20-\x7E\s]/g, ' ');
-             rowValues.push(val);
+             val = String(val).replace(/₹/g, 'Rs.').replace(/[^\x20-\x7E\s]/g, ' ').substring(0, 80);
+             const isHeader = rowNum === 1;
+             const width = colWidths[colNumber] || 50;
+             
+             page.drawRectangle({
+                x: currentX, y: y - 5,
+                width: width, height: 20,
+                borderColor: rgb(0,0,0), borderWidth: 1,
+                color: isHeader ? rgb(0.9, 0.9, 0.9) : rgb(1, 1, 1)
+             });
+             
+             page.drawText(val, { 
+                x: currentX + 5, y: y, 
+                size: 9, 
+                font: isHeader ? boldFont : font,
+                color: rgb(0,0,0)
+             });
+             
+             currentX += width;
           });
-          page.drawText(rowValues.join(' | ').substring(0, 110), { x: 50, y, size: 9 });
-          y -= 15;
+          y -= 20;
         });
       });
 
