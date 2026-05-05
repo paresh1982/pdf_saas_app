@@ -1705,6 +1705,7 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       if (firstFile.mimetype.startsWith('image/') || /\.(jpg|jpeg|png)$/i.test(firstFile.originalname)) {
         return res.status(400).json({ error: 'Rotate Pages tool only supports PDF documents.' });
       }
+      const { degrees: pdfDegrees } = require('pdf-lib');
       const degrees = parseInt(req.body.degrees) || 90;
       const pdfBytes = fs.readFileSync(firstFile.path);
       let pdf;
@@ -1716,7 +1717,7 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       const pages = pdf.getPages();
       pages.forEach(page => {
         const currentRotation = page.getRotation().angle;
-        page.setRotation(degrees + currentRotation);
+        page.setRotation(pdfDegrees(degrees + currentRotation));
       });
       const outBytes = await pdf.save();
       res.setHeader('Content-Type', 'application/pdf');
@@ -1771,14 +1772,48 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
 
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [fileContext, `Read this document and rewrite/redraft it according to these instructions: "${instructions}". Output the clean, final text without markdown tags.`],
+        contents: [fileContext, `Read this document and rewrite/redraft it according to these instructions: "${instructions}". Preserve the exact layout, structure, and reading order. If the document contains tables (like payment advice, forms, or invoices), you MUST output them strictly as Markdown tables (using | column | column | format). Do not use markdown block tags like \`\`\`markdown. Output the clean, final text.`],
       });
       const rawAi = typeof result.text === 'function' ? result.text() : result.text;
       const aiText = rawAi || 'No redrafting could be completed.';
       
-      // Output as a clean Word Document since "editing/redrafting" is best served as editable text
+      const docLines = aiText.split('\n');
+      const docChildren = [];
+      let currentTableRows = [];
+
+      const flushTable = () => {
+         if (currentTableRows.length > 0) {
+            docChildren.push(new Table({
+               width: { size: 100, type: WidthType.PERCENTAGE },
+               rows: currentTableRows.map(row => new TableRow({
+                  children: row.map(cell => new TableCell({
+                     children: [new Paragraph({ text: cell.trim() })],
+                     margins: { top: 100, bottom: 100, left: 100, right: 100 }
+                  }))
+               }))
+            }));
+            currentTableRows = [];
+         }
+      };
+
+      for (const line of docLines) {
+         const trimmed = line.trim();
+         if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+            const cells = trimmed.split('|').slice(1, -1);
+            if (!trimmed.includes('---')) {
+               currentTableRows.push(cells);
+            }
+         } else {
+            flushTable();
+            if (trimmed.length > 0) {
+               docChildren.push(new Paragraph({ text: trimmed }));
+            }
+         }
+      }
+      flushTable();
+
       const doc = new Document({
-        sections: [{ children: aiText.split('\n').map(line => new Paragraph({ text: line })) }]
+        sections: [{ children: docChildren }]
       });
       const buffer = await Packer.toBuffer(doc);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
