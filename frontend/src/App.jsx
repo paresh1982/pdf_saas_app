@@ -343,7 +343,12 @@ function ToolModal({ tool, onClose }) {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', response.headers['content-disposition']?.split('filename=')[1]?.replace(/"/g, '') || `DocJockey_${tool.id}_${Date.now()}.pdf`);
+      let fallbackExt = '.pdf';
+      if (tool.id === 'pdf-to-word' || tool.id === 'edit') fallbackExt = '.docx';
+      if (tool.id === 'pdf-to-excel') fallbackExt = '.xlsx';
+      
+      const headerFilename = response.headers['content-disposition']?.split('filename=')[1]?.replace(/"/g, '');
+      link.setAttribute('download', headerFilename || `DocJockey_${tool.id}_${Date.now()}${fallbackExt}`);
       document.body.appendChild(link);
       link.click();
       link.remove();

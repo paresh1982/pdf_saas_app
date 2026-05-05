@@ -1362,11 +1362,17 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
         mimetype: firstFile.mimetype,
         originalname: firstFile.originalname
       });
+      
+      if (!fileContext) {
+        return res.status(400).json({ error: 'Unsupported file type for conversion.' });
+      }
+
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: [fileContext, "Extract all text from this document exactly as it appears. Do not use markdown tags like ```."],
       });
-      const extractedText = typeof result.text === 'function' ? result.text() : result.text;
+      const rawAi = typeof result.text === 'function' ? result.text() : result.text;
+      const extractedText = rawAi || 'No text could be extracted.';
 
       const doc = new Document({
         sections: [{ children: extractedText.split('\n').map(line => new Paragraph({ text: line })) }]
@@ -1383,12 +1389,18 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
         mimetype: firstFile.mimetype,
         originalname: firstFile.originalname
       });
+      
+      if (!fileContext) {
+        return res.status(400).json({ error: 'Unsupported file type for conversion.' });
+      }
+
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: [fileContext, "Extract the data from this document and format it strictly as a CSV without any markdown block tags like ```csv. Include headers if applicable."],
       });
       const rawAi = typeof result.text === 'function' ? result.text() : result.text;
-      const extractedLines = rawAi.replace(/```csv/gi, '').replace(/```/g, '').split('\n').filter(l => l.trim().length > 0);
+      const safeText = rawAi || 'No data could be extracted.';
+      const extractedLines = safeText.replace(/```csv/gi, '').replace(/```/g, '').split('\n').filter(l => l.trim().length > 0);
       
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet('Extracted Data');
