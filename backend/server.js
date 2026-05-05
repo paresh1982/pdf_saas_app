@@ -1633,6 +1633,7 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
     }
 
     if (toolId === 'split') {
+      const archiver = require('archiver');
       const sequence = req.body.sequence || req.body.ranges; // Frontend uses 'ranges' for split
       const pdfBytes = fs.readFileSync(firstFile.path);
       let pdf;
@@ -1643,35 +1644,44 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       }
       const totalPages = pdf.getPageCount();
       
-      const outPdf = await PDFDocument.create();
-      let pagesToExtract = [];
+      const parts = sequence ? sequence.split(',').map(s => s.trim()).filter(Boolean) : [];
       
-      if (sequence) {
-        const parts = sequence.split(',').map(s => s.trim());
-        for (const part of parts) {
-          if (part.includes('-')) {
-            const [start, end] = part.split('-').map(Number);
-            for (let i = start; i <= end; i++) {
-               if (i >= 1 && i <= totalPages) pagesToExtract.push(i - 1);
-            }
-          } else {
-            const i = Number(part);
-            if (i >= 1 && i <= totalPages) pagesToExtract.push(i - 1);
-          }
-        }
-      } 
-      
-      if (pagesToExtract.length === 0) {
-        pagesToExtract = [0]; // Fallback to first page if invalid sequence
+      // If no sequence provided, split into individual pages
+      if (parts.length === 0) {
+        for (let i = 1; i <= totalPages; i++) parts.push(`${i}`);
       }
       
-      const copiedPages = await outPdf.copyPages(pdf, pagesToExtract);
-      copiedPages.forEach((page) => outPdf.addPage(page));
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Split_${Date.now()}.zip"`);
       
-      const outBytes = await outPdf.save();
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Split_${Date.now()}.pdf"`);
-      return res.send(Buffer.from(outBytes));
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      archive.pipe(res);
+      
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        let pagesToExtract = [];
+        
+        if (part.includes('-')) {
+          const [start, end] = part.split('-').map(Number);
+          for (let j = start; j <= end; j++) {
+             if (j >= 1 && j <= totalPages) pagesToExtract.push(j - 1);
+          }
+        } else {
+          const pageNum = Number(part);
+          if (pageNum >= 1 && pageNum <= totalPages) pagesToExtract.push(pageNum - 1);
+        }
+        
+        if (pagesToExtract.length > 0) {
+          const outPdf = await PDFDocument.create();
+          const copiedPages = await outPdf.copyPages(pdf, pagesToExtract);
+          copiedPages.forEach((page) => outPdf.addPage(page));
+          const outBytes = await outPdf.save();
+          archive.append(Buffer.from(outBytes), { name: `split_${part}.pdf` });
+        }
+      }
+      
+      await archive.finalize();
+      return; // archiver handles sending the response
     }
     
     if (toolId === 'compress' || toolId === 'repair') {
