@@ -506,6 +506,8 @@ When the user asks to "build a table", "extract data", or "analyze items":
 
 8. **AI-NATIVE FENCING (CRITICAL)**: You MUST ALWAYS wrap your JSON output in triple backticks ( \`\`\`json ). This applies even if you are analyzing Excel or CSV files. NEVER output raw JSON without backticks.
 
+10. **STRICT KEY MATCHING**: If the user specifies column headers in their prompt (e.g. 'Function | Description'), YOU MUST use those EXACT strings (preserving case and spaces) as your JSON keys to ensure the data renders in the table.
+
 ### CONVERSATIONAL RULES
 - Respond helpfully and concisely.
 - If asked for a summary, provide a bulleted list of key takeaways.
@@ -564,13 +566,9 @@ async function getFileContext(file) {
     return { text: excelText };
   }
  else if (isWord) {
-    return {
-      inlineData: {
-        data: fs.readFileSync(file.path).toString('base64'),
-        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      },
-      text: `[DOCUMENT ATTACHMENT: ${file.originalname}]`
-    };
+    const result = await mammoth.extractRawText({ path: file.path });
+    const wordText = result.value || '[Could not extract text from Word file]';
+    return { text: `[WORD DOCUMENT: ${file.originalname}]\n${wordText}` };
   }
   return null;
 }
