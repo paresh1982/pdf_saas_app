@@ -1369,7 +1369,7 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
 
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [fileContext, "Extract all content from this document. Preserve the exact layout, structure, and reading order. If the document contains tables (like payment advice, forms, or invoices), you MUST output them strictly as Markdown tables (using | column | column | format). Do not split numeric values like amounts with commas (e.g., '5,00,000.00') across multiple columns. Do not use markdown block tags like ```markdown."],
+        contents: [fileContext, "Extract all content from this document. Preserve the exact layout, structure, and symbols exactly as they appear (do not replace dashes or bullets with question marks). If the document contains tables, you MUST output them strictly as Markdown tables. Do NOT output empty leading or trailing columns/cells just for layout spacing. Preserve bold text using **bold** and headings using # Heading tags. Do not use markdown block tags like ```markdown."],
       });
       const rawAi = typeof result.text === 'function' ? result.text() : result.text;
       const extractedText = rawAi || 'No text could be extracted.';
@@ -1398,12 +1398,26 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
          if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
             const cells = trimmed.split('|').slice(1, -1);
             if (!trimmed.includes('---')) {
-               currentTableRows.push(cells);
+               currentTableRows.push(cells.map(c => c.trim()));
             }
          } else {
             flushTable();
             if (trimmed.length > 0) {
-               docChildren.push(new Paragraph({ text: trimmed }));
+               // Robust Markdown Parsing for Word
+               if (trimmed.startsWith('#')) {
+                  const level = (trimmed.match(/^#+/) || ['#'])[0].length;
+                  const text = trimmed.replace(/^#+\s*/, '');
+                  docChildren.push(new Paragraph({
+                     children: [new TextRun({ text, bold: true, size: 28, color: "2E74B5" })],
+                     spacing: { before: 240, after: 120 }
+                  }));
+               } else if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
+                  docChildren.push(new Paragraph({
+                     children: [new TextRun({ text: trimmed.replace(/\*\*/g, ''), bold: true })]
+                  }));
+               } else {
+                  docChildren.push(new Paragraph({ text: trimmed }));
+               }
             }
          }
       }
@@ -1431,7 +1445,7 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
 
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [fileContext, "Extract the data from this document and format it strictly as a pipe-separated (|) table without any markdown block tags like ```. Preserve the exact layout and tabular structure of the original document as closely as possible. Include all headers, bank names, and titles at the top. If the original document contains a vertical table of keys and values (like a form or payment advice), output a vertical table with two columns. Do NOT split numeric values with commas across multiple pipes. Do NOT transpose or pivot the data into a single row."],
+        contents: [fileContext, "Extract the data from this document and format it strictly as a pipe-separated (|) table without any markdown block tags like ```. Preserve the exact layout, symbols, and tabular structure exactly. Include all headers and titles. Do NOT output empty leading or trailing cells just for layout alignment. If it's a key-value form, use two columns starting at the very first column (no empty padding on the left). Do NOT split numeric values with commas across pipes."],
       });
       const rawAi = typeof result.text === 'function' ? result.text() : result.text;
       const safeText = rawAi || 'No data could be extracted.';
@@ -1441,8 +1455,8 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       const sheet = workbook.addWorksheet('Extracted Data');
       
       extractedLines.forEach((line) => {
-        // Handle both Markdown table format | key | value | and flat key | value
-        let cells = line.split('|').map(cell => cell.trim()).filter(c => c !== '');
+        // Aggressively filter out ghost layout cells
+        let cells = line.split('|').map(cell => cell.trim()).filter(c => c !== '' && c !== '\u00A0');
         if (cells.length > 0) {
            const row = sheet.addRow(cells);
            if (cells.length === 1) {
@@ -1799,7 +1813,7 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
 
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [fileContext, `Read this document and rewrite/redraft it according to these instructions: "${instructions}". Preserve the exact layout, structure, and reading order. If the document contains tables (like payment advice, forms, or invoices), you MUST output them strictly as Markdown tables (using | column | column | format). Do not use markdown block tags like \`\`\`markdown. Output the clean, final text.`],
+        contents: [fileContext, `Read this document and rewrite/redraft it according to these instructions: "${instructions}". Preserve the exact layout, structure, symbols, and formatting. Output headings using # tags and bold text using **bold**. Output tables using | pipes. Do NOT output empty layout columns. Do not replace symbols with question marks. Output the clean, final text.`],
       });
       const rawAi = typeof result.text === 'function' ? result.text() : result.text;
       const aiText = rawAi || 'No redrafting could be completed.';
@@ -1828,12 +1842,26 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
          if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
             const cells = trimmed.split('|').slice(1, -1);
             if (!trimmed.includes('---')) {
-               currentTableRows.push(cells);
+               currentTableRows.push(cells.map(c => c.trim()));
             }
          } else {
             flushTable();
             if (trimmed.length > 0) {
-               docChildren.push(new Paragraph({ text: trimmed }));
+               // High-Fidelity Word Formatting
+               if (trimmed.startsWith('#')) {
+                  const level = (trimmed.match(/^#+/) || ['#'])[0].length;
+                  const text = trimmed.replace(/^#+\s*/, '');
+                  docChildren.push(new Paragraph({
+                     children: [new TextRun({ text, bold: true, size: 28, color: "2E74B5" })],
+                     spacing: { before: 240, after: 120 }
+                  }));
+               } else if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
+                  docChildren.push(new Paragraph({
+                     children: [new TextRun({ text: trimmed.replace(/\*\*/g, ''), bold: true })]
+                  }));
+               } else {
+                  docChildren.push(new Paragraph({ text: trimmed }));
+               }
             }
          }
       }
