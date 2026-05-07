@@ -1818,62 +1818,76 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
       const rawAi = typeof result.text === 'function' ? result.text() : result.text;
       const aiText = rawAi || 'No redrafting could be completed.';
       
-      const docLines = aiText.split('\n');
-      const docChildren = [];
-      let currentTableRows = [];
+      const pdfDoc = await PDFDocument.create();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      
+      let page = pdfDoc.addPage();
+      let y = page.getHeight() - 50;
+      const MAX_LEN = 95;
 
-      const flushTable = () => {
-         if (currentTableRows.length > 0) {
-            docChildren.push(new Table({
-               width: { size: 100, type: WidthType.PERCENTAGE },
-               rows: currentTableRows.map(row => new TableRow({
-                  children: row.map(cell => new TableCell({
-                     children: [new Paragraph({ text: cell.trim() })],
-                     margins: { top: 100, bottom: 100, left: 100, right: 100 }
-                  }))
-               }))
-            }));
-            currentTableRows = [];
+      const drawTextWrapped = (text, size, isBold, xOffset = 50, color = rgb(0,0,0)) => {
+         const cleanText = text.replace(/[\u2013\u2014]/g, '-')
+                               .replace(/[\u2018\u2019]/g, "'")
+                               .replace(/[\u201C\u201D]/g, '"')
+                               .replace(/₹/g, 'Rs.');
+         
+         const words = cleanText.split(' ');
+         let currentLine = '';
+         
+         for (const word of words) {
+            if (currentLine.length + word.length > MAX_LEN) {
+               if (y < 50) { page = pdfDoc.addPage(); y = page.getHeight() - 50; }
+               page.drawText(currentLine.replace(/[^\x20-\x7E\s]/g, '?'), { x: xOffset, y, size, font: isBold ? boldFont : font, color });
+               y -= (size + 6);
+               currentLine = word;
+            } else {
+               currentLine = currentLine ? currentLine + ' ' + word : word;
+            }
+         }
+         if (currentLine) {
+            if (y < 50) { page = pdfDoc.addPage(); y = page.getHeight() - 50; }
+            page.drawText(currentLine.replace(/[^\x20-\x7E\s]/g, '?'), { x: xOffset, y, size, font: isBold ? boldFont : font, color });
+            y -= (size + 6);
          }
       };
 
+      const docLines = aiText.split('\n');
       for (const line of docLines) {
          const trimmed = line.trim();
+         if (!trimmed) { y -= 12; continue; }
+         if (y < 50) { page = pdfDoc.addPage(); y = page.getHeight() - 50; }
+
          if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
-            const cells = trimmed.split('|').slice(1, -1);
-            if (!trimmed.includes('---')) {
-               currentTableRows.push(cells.map(c => c.trim()));
-            }
+            const cells = trimmed.split('|').map(c => c.trim()).filter(c => c !== '');
+            if (trimmed.includes('---')) continue;
+            
+            let x = 50;
+            const tableWidth = page.getWidth() - 100;
+            const colWidth = tableWidth / cells.length;
+            
+            cells.forEach((cell) => {
+               page.drawRectangle({ x, y: y-5, width: colWidth, height: 22, borderColor: rgb(0.7, 0.7, 0.7), borderWidth: 0.5 });
+               page.drawText(cell.substring(0, 30), { x: x + 5, y: y + 2, size: 9, font });
+               x += colWidth;
+            });
+            y -= 22;
+         } else if (trimmed.startsWith('#')) {
+            const text = trimmed.replace(/^#+\s*/, '');
+            y -= 8;
+            drawTextWrapped(text, 14, true, 50, rgb(0.18, 0.45, 0.71));
+            y -= 4;
+         } else if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
+            drawTextWrapped(trimmed.replace(/\*\*/g, ''), 11, true);
          } else {
-            flushTable();
-            if (trimmed.length > 0) {
-               // High-Fidelity Word Formatting
-               if (trimmed.startsWith('#')) {
-                  const level = (trimmed.match(/^#+/) || ['#'])[0].length;
-                  const text = trimmed.replace(/^#+\s*/, '');
-                  docChildren.push(new Paragraph({
-                     children: [new TextRun({ text, bold: true, size: 28, color: "2E74B5" })],
-                     spacing: { before: 240, after: 120 }
-                  }));
-               } else if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
-                  docChildren.push(new Paragraph({
-                     children: [new TextRun({ text: trimmed.replace(/\*\*/g, ''), bold: true })]
-                  }));
-               } else {
-                  docChildren.push(new Paragraph({ text: trimmed }));
-               }
-            }
+            drawTextWrapped(trimmed, 11, false);
          }
       }
-      flushTable();
 
-      const doc = new Document({
-        sections: [{ children: docChildren }]
-      });
-      const buffer = await Packer.toBuffer(doc);
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_SmartRedraft_${Date.now()}.docx"`);
-      return res.send(buffer);
+      const outBytes = await pdfDoc.save();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="DocJockey_SmartRedraft_${Date.now()}.pdf"`);
+      return res.send(Buffer.from(outBytes));
     }
 
     return res.status(400).json({ error: `Tool ${toolId} not fully implemented yet.` });

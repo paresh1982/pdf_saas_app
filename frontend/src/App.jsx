@@ -344,7 +344,7 @@ function ToolModal({ tool, onClose }) {
       const link = document.createElement('a');
       link.href = url;
       let fallbackExt = '.pdf';
-      if (tool.id === 'pdf-to-word' || tool.id === 'edit') fallbackExt = '.docx';
+      if (tool.id === 'pdf-to-word') fallbackExt = '.docx';
       if (tool.id === 'pdf-to-excel') fallbackExt = '.xlsx';
       
       const headerFilename = response.headers['content-disposition']?.split('filename=')[1]?.replace(/"/g, '');
