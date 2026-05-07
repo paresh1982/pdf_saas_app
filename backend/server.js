@@ -1369,7 +1369,7 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
 
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [fileContext, "Extract all content from this document. Preserve the exact layout, structure, and reading order. If the document contains tables (like payment advice, forms, or invoices), you MUST output them strictly as Markdown tables (using | column | column | format). Do not use markdown block tags like ```markdown."],
+        contents: [fileContext, "Extract all content from this document. Preserve the exact layout, structure, and reading order. If the document contains tables (like payment advice, forms, or invoices), you MUST output them strictly as Markdown tables (using | column | column | format). Do not split numeric values like amounts with commas (e.g., '5,00,000.00') across multiple columns. Do not use markdown block tags like ```markdown."],
       });
       const rawAi = typeof result.text === 'function' ? result.text() : result.text;
       const extractedText = rawAi || 'No text could be extracted.';
@@ -1431,16 +1431,36 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
 
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [fileContext, "Extract the data from this document and format it strictly as a CSV without any markdown block tags like ```csv. Preserve the exact layout and tabular structure of the original document as closely as possible. If the original document contains a vertical table of keys and values (like a form or payment advice), output a vertical CSV with two columns. Do NOT transpose or pivot the data into a single row."],
+        contents: [fileContext, "Extract the data from this document and format it strictly as a pipe-separated (|) table without any markdown block tags like ```. Preserve the exact layout and tabular structure of the original document as closely as possible. If the original document contains a vertical table of keys and values (like a form or payment advice), output a vertical table with two columns. Do NOT split numeric values with commas across multiple pipes. Do NOT transpose or pivot the data into a single row."],
       });
       const rawAi = typeof result.text === 'function' ? result.text() : result.text;
       const safeText = rawAi || 'No data could be extracted.';
-      const extractedLines = safeText.replace(/```csv/gi, '').replace(/```/g, '').split('\n').filter(l => l.trim().length > 0);
+      const extractedLines = safeText.replace(/```/g, '').split('\n').filter(l => l.trim().length > 0);
       
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet('Extracted Data');
+      
       extractedLines.forEach((line) => {
-        sheet.addRow(line.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''))); 
+        // Handle both Markdown table format | key | value | and flat key | value
+        let cells = line.split('|').map(cell => cell.trim()).filter(c => c !== '');
+        if (cells.length > 0) {
+           const row = sheet.addRow(cells);
+           // Apply a "Premium" look: Bold the first cell (the Key/Label)
+           row.getCell(1).font = { bold: true };
+           row.getCell(1).fill = { type: 'pattern', pattern:'solid', fgColor:{ argb:'FFF7FAFC' } };
+        }
+      });
+
+      // Auto-fit columns for a professional feel
+      sheet.columns.forEach(column => { column.width = 35; });
+      
+      // Add border to all active cells
+      sheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'}
+          };
+        });
       });
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="DocJockey_Excel_${Date.now()}.xlsx"`);
