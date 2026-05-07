@@ -1431,7 +1431,7 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
 
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [fileContext, "Extract the data from this document and format it strictly as a pipe-separated (|) table without any markdown block tags like ```. Preserve the exact layout and tabular structure of the original document as closely as possible. If the original document contains a vertical table of keys and values (like a form or payment advice), output a vertical table with two columns. Do NOT split numeric values with commas across multiple pipes. Do NOT transpose or pivot the data into a single row."],
+        contents: [fileContext, "Extract the data from this document and format it strictly as a pipe-separated (|) table without any markdown block tags like ```. Preserve the exact layout and tabular structure of the original document as closely as possible. Include all headers, bank names, and titles at the top. If the original document contains a vertical table of keys and values (like a form or payment advice), output a vertical table with two columns. Do NOT split numeric values with commas across multiple pipes. Do NOT transpose or pivot the data into a single row."],
       });
       const rawAi = typeof result.text === 'function' ? result.text() : result.text;
       const safeText = rawAi || 'No data could be extracted.';
@@ -1445,9 +1445,16 @@ app.post('/api/tools/:toolId', upload.any(), async (req, res) => {
         let cells = line.split('|').map(cell => cell.trim()).filter(c => c !== '');
         if (cells.length > 0) {
            const row = sheet.addRow(cells);
-           // Apply a "Premium" look: Bold the first cell (the Key/Label)
-           row.getCell(1).font = { bold: true };
-           row.getCell(1).fill = { type: 'pattern', pattern:'solid', fgColor:{ argb:'FFF7FAFC' } };
+           if (cells.length === 1) {
+              // Title/Header Row: Merge and Center professionally
+              sheet.mergeCells(`A${row.number}:B${row.number}`);
+              row.getCell(1).font = { bold: true, size: 14, color: { argb: 'FF1A365D' } };
+              row.getCell(1).alignment = { horizontal: 'center' };
+           } else {
+              // Data Row: Key | Value
+              row.getCell(1).font = { bold: true };
+              row.getCell(1).fill = { type: 'pattern', pattern:'solid', fgColor:{ argb:'FFF7FAFC' } };
+           }
         }
       });
 
