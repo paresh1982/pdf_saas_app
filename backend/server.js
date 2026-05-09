@@ -1116,7 +1116,8 @@ async function callGeminiWithContinuation(contents, systemPrompt) {
     let parsedRows = [];
     try {
       const repaired = repairJson(jsonStr); // existing repairJson function — unchanged
-      const cleaned = repaired.replace(/:\s*NaN\b/g, ': null');
+      const sanitized = repaired.replace(/:(\s*[}\]])/g, ': null$1'); // fix empty values e.g. {"key":} → {"key":null}
+      const cleaned = sanitized.replace(/:\s*NaN\b/g, ': null');
       parsedRows = JSON.parse(cleaned);
       if (!Array.isArray(parsedRows)) parsedRows = [parsedRows];
     } catch (e) {
