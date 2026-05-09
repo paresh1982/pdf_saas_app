@@ -613,7 +613,7 @@ async function callGemini(contents, customSystemPrompt = null) {
         result = await ai.models.generateContent({
           model: modelName,
           contents,
-          config: { systemInstruction, maxOutputTokens: maxTokens }
+          config: { systemInstruction, maxOutputTokens: maxTokens, temperature: 0.1 }
         });
       }
 
@@ -1140,7 +1140,9 @@ async function callGeminiWithContinuation(contents, systemPrompt) {
     if (!isTruncated) break;
 
     // STEP 8: Build continuation prompt anchored to the last row extracted
-    const lastRow = parsedRows[parsedRows.length - 1];
+    // Use the last row with real data as the anchor (not a null/sanitized row)
+    const lastValidRow = [...parsedRows].reverse().find(r => Object.values(r).some(v => v !== null && v !== '' && v !== undefined));
+    const lastRow = lastValidRow || parsedRows[parsedRows.length - 1];
     const continuationPrompt = `You were extracting data from the document into a JSON table.
 You stopped at this last row (do NOT repeat it):
 ${JSON.stringify(lastRow)}
