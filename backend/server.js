@@ -1075,6 +1075,98 @@ app.post(['/api/generate-reporting-executive', '/api/reporting-executive', '/gen
   }
 });
 
+// ─── CONTINUATION LOOP ENGINE ─────────────────────────────
+// Wraps callGemini with an automatic retry loop to handle truncated JSON.
+// If Gemini cuts off its output mid-table, this function detects it,
+// sends a "continue from last row" prompt, and merges all results.
+// Only activates for JSON extraction responses — all other calls pass through unchanged.
+async function callGeminiWithContinuation(contents, systemPrompt) {
+  const MAX_LOOPS = 5; // Safety cap — prevents runaway API calls
+
+  // STEP 1: Initial call
+  let currentResponse = await callGemini(contents, systemPrompt);
+
+  // STEP 2: Is this a JSON extraction response? If not, return immediately (no loop needed).
+  const hasJsonFence = currentResponse.includes('```json');
+  const isNakedJson = currentResponse.trim().startsWith('[');
+  if (!hasJsonFence && !isNakedJson) {
+    return currentResponse; // Conversational reply — pass through untouched
+  }
+
+  let allRows = [];
+  let loopCount = 0;
+
+  while (loopCount < MAX_LOOPS) {
+    // STEP 3: Extract the raw JSON string from the response
+    let jsonStr = '';
+    const fenceMatch = currentResponse.match(/```json\s*([\s\S]*?)(?:```|$)/);
+    if (fenceMatch) {
+      jsonStr = fenceMatch[1].trim();
+    } else {
+      const startIdx = currentResponse.search(/[\[\{]/);
+      if (startIdx !== -1) jsonStr = currentResponse.substring(startIdx);
+    }
+
+    if (!jsonStr) break; // Nothing to parse — stop
+
+    // STEP 4: Detect truncation — if JSON doesn't end with ] it was cut off
+    const isTruncated = !jsonStr.trim().endsWith(']') && !jsonStr.trim().endsWith('}');
+
+    // STEP 5: Repair and parse what we have
+    let parsedRows = [];
+    try {
+      const repaired = repairJson(jsonStr); // existing repairJson function — unchanged
+      const cleaned = repaired.replace(/:\s*NaN\b/g, ': null');
+      parsedRows = JSON.parse(cleaned);
+      if (!Array.isArray(parsedRows)) parsedRows = [parsedRows];
+    } catch (e) {
+      console.error(`[Continuation Loop ${loopCount + 1}] JSON parse failed:`, e.message);
+      break; // Can't parse — return best available
+    }
+
+    // STEP 6: Merge rows — skip exact duplicate of last accumulated row
+    if (allRows.length === 0) {
+      allRows = parsedRows;
+    } else {
+      const lastAccumulated = JSON.stringify(allRows[allRows.length - 1]);
+      const skipFirst = parsedRows.length > 0 && JSON.stringify(parsedRows[0]) === lastAccumulated;
+      allRows = [...allRows, ...parsedRows.slice(skipFirst ? 1 : 0)];
+    }
+
+    console.log(`[Continuation Loop ${loopCount + 1}] Total rows: ${allRows.length}. Truncated: ${isTruncated}`);
+
+    // STEP 7: If complete, stop the loop
+    if (!isTruncated) break;
+
+    // STEP 8: Build continuation prompt anchored to the last row extracted
+    const lastRow = parsedRows[parsedRows.length - 1];
+    const continuationPrompt = `You were extracting data from the document into a JSON table.
+You stopped at this last row (do NOT repeat it):
+${JSON.stringify(lastRow)}
+
+Continue extracting from the NEXT row onwards.
+Return ONLY the remaining rows as a JSON array starting with [ and ending with ].
+Wrap in \`\`\`json block. Do not add any intro text.`;
+
+    // STEP 9: Append model + user continuation turns and call again
+    const continuationContents = [
+      ...contents,
+      { role: 'model', parts: [{ text: currentResponse }] },
+      { role: 'user',  parts: [{ text: continuationPrompt }] }
+    ];
+
+    currentResponse = await callGemini(continuationContents, systemPrompt);
+    loopCount++;
+  }
+
+  if (loopCount >= MAX_LOOPS) {
+    console.warn(`[Continuation Loop] Reached MAX_LOOPS (${MAX_LOOPS}). Returning best available result with ${allRows.length} rows.`);
+  }
+
+  // STEP 10: Return the complete merged JSON as a properly fenced block
+  return '```json\n' + JSON.stringify(allRows, null, 2) + '\n```';
+}
+
 // ─── CHAT ENDPOINT ──────────────────────────
 app.post('/api/chat', upload.array('files', 10), async (req, res) => {
   try {
@@ -1183,7 +1275,7 @@ app.post('/api/chat', upload.array('files', 10), async (req, res) => {
     // Call Gemini
     console.log(`🧠 Master Extractor [${convId}]: "${(message || '').substring(0, 80)}" (${uploadedDocs.length} files)`);
     const systemPromptToUse = uploadMode === 'multiple' ? BATCH_SYSTEM_PROMPT : SYSTEM_PROMPT;
-    let aiResponse = await callGemini(contents, systemPromptToUse);
+    let aiResponse = await callGeminiWithContinuation(contents, systemPromptToUse);
 
     // --- JSON RESILIENCE LAYER (Shotgun Fencing & Truncation Repair) ---
     try {
