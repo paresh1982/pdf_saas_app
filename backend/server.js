@@ -474,7 +474,7 @@ When the user asks to "build a table", "extract data", or "analyze items":
 2. **PERSISTENCE GUARANTEE**: If a value (like "Date", "Invoice #", or "Vendor") appears only once at the top of a page but applies to a table below it, YOU MUST REPEAT that value for every row in the JSON. 
    - **ZERO BLANK POLICY**: No row should have an empty "Date" if a date is detectable on the page.
 
-3. **FULL DATASET EXTRACTION**: If the source has 365 rows, YOU MUST OUTPUT 365 ROWS. Never truncate, never summarize, and never skip data.
+3. **FULL DATASET EXTRACTION (CRITICAL — NON-NEGOTIABLE)**: You MUST extract EVERY SINGLE row from the document without exception. If the source has 600 rows, your JSON array MUST contain 600 rows. NEVER close the JSON array until you have reached the absolute last row/item in the document. Stopping early or deciding a subset is "enough" is a critical failure. Never truncate, never summarize, never skip data.
 
 2. **GOLDEN EXAMPLE (Persistence)**:
    Source Visual:
