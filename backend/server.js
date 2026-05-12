@@ -528,7 +528,9 @@ The user has uploaded multiple documents (PDFs, Excel/CSV, or Images). Your prim
 
 Follow all JSON fencing and formatting rules from the standard SYSTEM_PROMPT.
 
-6. **STRICT KEY MATCHING**: If the user specifies column headers in their prompt (e.g. 'Function | Description'), YOU MUST use those EXACT strings (preserving case and spaces) as your JSON keys to ensure the data renders in the table.`;
+6. **STRICT KEY MATCHING**: If the user specifies column headers in their prompt (e.g. 'Function | Description'), YOU MUST use those EXACT strings (preserving case and spaces) as your JSON keys to ensure the data renders in the table.
+
+7. **FULL DATASET EXTRACTION (CRITICAL — NON-NEGOTIABLE)**: You MUST extract EVERY SINGLE row from ALL documents without exception. NEVER close the JSON array until you have reached the absolute last row of the last document. Stopping early or deciding a subset is "enough" is a critical failure. Never truncate, never summarize, never skip data.`;
 
 async function getFileContext(file) {
   const mimeType = file.mimetype;
