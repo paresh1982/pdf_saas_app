@@ -1116,10 +1116,21 @@ async function callGeminiWithContinuation(contents, systemPrompt) {
     // STEP 4: Detect truncation — if JSON doesn't end with ] it was cut off
     const isTruncated = !jsonStr.trim().endsWith(']') && !jsonStr.trim().endsWith('}');
 
-    // STEP 5: Repair and parse what we have
+    // STEP 5: Pre-clean truncated JSON (discard the very last incomplete object)
+    if (isTruncated) {
+      const lastBrace = jsonStr.lastIndexOf('{');
+      if (lastBrace > 0) { // Don't drop if it's the only object
+        let cleaned = jsonStr.substring(0, lastBrace).trim();
+        if (cleaned.endsWith(',')) cleaned = cleaned.substring(0, cleaned.length - 1);
+        if (!cleaned.endsWith(']')) cleaned += ']';
+        jsonStr = cleaned;
+      }
+    }
+
+    // STEP 6: Repair and parse what we have
     let parsedRows = [];
     try {
-      const repaired = repairJson(jsonStr); // existing repairJson function — unchanged
+      const repaired = repairJson(jsonStr); // existing repairJson function
       const sanitized = repaired.replace(/:(\s*[}\]])/g, ': null$1'); // fix empty values e.g. {"key":} → {"key":null}
       const cleaned = sanitized.replace(/:\s*NaN\b/g, ': null');
       parsedRows = JSON.parse(cleaned);
