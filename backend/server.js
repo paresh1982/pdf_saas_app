@@ -526,7 +526,9 @@ The user has uploaded multiple documents (PDFs, Excel/CSV, or Images). Your prim
 
 5. **AI-NATIVE FENCING (CRITICAL)**: You MUST ALWAYS wrap your JSON output in triple backticks ( \`\`\`json ). NEVER output raw JSON without backticks. This ensures the UI can render the interactive table.
 
-Follow all JSON fencing and formatting rules from the standard SYSTEM_PROMPT.`;
+Follow all JSON fencing and formatting rules from the standard SYSTEM_PROMPT.
+
+6. **STRICT KEY MATCHING**: If the user specifies column headers in their prompt (e.g. 'Function | Description'), YOU MUST use those EXACT strings (preserving case and spaces) as your JSON keys to ensure the data renders in the table.`;
 
 async function getFileContext(file) {
   const mimeType = file.mimetype;
